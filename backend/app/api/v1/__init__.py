@@ -2,7 +2,7 @@
 API v1 Router
 """
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, users, products, orders, wallet, chat, seller_profile, tariff, partners, reviews, admin, locations, upload, categories, analytics, notifications, favorites
+from app.api.v1.endpoints import auth, users, products, orders, wallet, chat, seller_profile, tariff, partners, reviews, admin, locations, upload, categories, analytics, notifications, favorites, search, reports, recommendations
 
 api_router = APIRouter()
 
@@ -24,3 +24,6 @@ api_router.include_router(categories.router, prefix="/categories", tags=["Catego
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(favorites.router, prefix="/user", tags=["Favorites & History"])
+api_router.include_router(search.router, prefix="/search", tags=["Search"])
+api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+api_router.include_router(recommendations.router, prefix="/recommendations", tags=["Recommendations"])

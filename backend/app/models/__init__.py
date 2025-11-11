@@ -11,6 +11,7 @@ from app.models.location import City, Market
 from app.models.promotion import AutoPromotion
 from app.models.notification import Notification
 from app.models.favorite import Favorite, ViewHistory
+from app.models.report import Report
 
 __all__ = [
     "User",
@@ -30,4 +31,5 @@ __all__ = [
     "Notification",
     "Favorite",
     "ViewHistory",
+    "Report",
 ]
