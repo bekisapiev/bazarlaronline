@@ -9,6 +9,8 @@ from app.models.chat import Chat, Message
 from app.models.review import Review
 from app.models.location import City, Market
 from app.models.promotion import AutoPromotion
+from app.models.notification import Notification
+from app.models.favorite import Favorite, ViewHistory
 
 __all__ = [
     "User",
@@ -25,4 +27,7 @@ __all__ = [
     "City",
     "Market",
     "AutoPromotion",
+    "Notification",
+    "Favorite",
+    "ViewHistory",
 ]

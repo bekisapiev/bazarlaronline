@@ -48,6 +48,9 @@ class User(Base):
     reviews_received = relationship("Review", foreign_keys="Review.seller_id", back_populates="seller")
     withdrawal_requests = relationship("WithdrawalRequest", back_populates="user")
     referrer = relationship("User", remote_side=[id], foreign_keys=[referred_by])
+    notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
+    view_history = relationship("ViewHistory", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.email}>"
