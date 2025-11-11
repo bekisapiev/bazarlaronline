@@ -1,0 +1,15 @@
+"""
+API v1 Router
+"""
+from fastapi import APIRouter
+from app.api.v1.endpoints import auth, users, products, orders, wallet, chat
+
+api_router = APIRouter()
+
+# Include routers
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(users.router, prefix="/users", tags=["Users"])
+api_router.include_router(products.router, prefix="/products", tags=["Products"])
+api_router.include_router(orders.router, prefix="/orders", tags=["Orders"])
+api_router.include_router(wallet.router, prefix="/wallet", tags=["Wallet"])
+api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
