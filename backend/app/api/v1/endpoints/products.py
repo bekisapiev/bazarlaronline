@@ -37,19 +37,36 @@ PROMOTION_PRICES = {
 
 @router.get("/")
 async def get_products(
-    type: Optional[str] = Query(None, description="goods or services"),
-    category_id: Optional[int] = None,
-    city_id: Optional[int] = None,
-    seller_type: Optional[str] = None,
-    search: Optional[str] = None,
+    category_id: Optional[int] = Query(None, description="Filter by category"),
+    city_id: Optional[int] = Query(None, description="Filter by seller city"),
+    seller_type: Optional[str] = Query(None, description="Filter by seller type (market, boutique, shop, etc)"),
+    search: Optional[str] = Query(None, description="Search in product titles"),
+    min_price: Optional[float] = Query(None, description="Minimum price"),
+    max_price: Optional[float] = Query(None, description="Maximum price"),
     limit: int = Query(settings.DEFAULT_PAGE_SIZE, le=settings.MAX_PAGE_SIZE),
     offset: int = 0,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Get list of products with filters
+
+    Filters:
+    - category_id: Filter by product category
+    - city_id: Filter by seller city (from seller profile)
+    - seller_type: Filter by seller type (market, boutique, shop, office, home, mobile, warehouse)
+    - search: Search in product titles
+    - min_price/max_price: Filter by price range
     """
-    query = select(Product).where(Product.status == "active")
+    from app.models.user import SellerProfile
+
+    # Base query with join to seller profile for city and seller_type filters
+    if city_id or seller_type:
+        query = select(Product).join(
+            SellerProfile,
+            Product.seller_id == SellerProfile.user_id
+        ).where(Product.status == "active")
+    else:
+        query = select(Product).where(Product.status == "active")
 
     # Apply filters
     if category_id:
@@ -58,6 +75,19 @@ async def get_products(
     if search:
         query = query.where(Product.title.ilike(f"%{search}%"))
 
+    if min_price is not None:
+        query = query.where(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.where(Product.price <= max_price)
+
+    # Seller profile filters
+    if city_id:
+        query = query.where(SellerProfile.city_id == city_id)
+
+    if seller_type:
+        query = query.where(SellerProfile.seller_type == seller_type)
+
     # Order by promoted first, then by created_at
     query = query.order_by(
         desc(Product.is_promoted),
@@ -65,28 +95,49 @@ async def get_products(
         desc(Product.created_at)
     )
 
+    # Count total before pagination
+    count_query = select(func.count()).select_from(Product)
+    if city_id or seller_type:
+        count_query = count_query.join(
+            SellerProfile,
+            Product.seller_id == SellerProfile.user_id
+        )
+    count_query = count_query.where(Product.status == "active")
+
+    if category_id:
+        count_query = count_query.where(Product.category_id == category_id)
+    if search:
+        count_query = count_query.where(Product.title.ilike(f"%{search}%"))
+    if min_price is not None:
+        count_query = count_query.where(Product.price >= min_price)
+    if max_price is not None:
+        count_query = count_query.where(Product.price <= max_price)
+    if city_id:
+        count_query = count_query.where(SellerProfile.city_id == city_id)
+    if seller_type:
+        count_query = count_query.where(SellerProfile.seller_type == seller_type)
+
+    count_result = await db.execute(count_query)
+    total = count_result.scalar()
+
     # Pagination
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
     products = result.scalars().all()
 
-    # Count total
-    count_result = await db.execute(
-        select(func.count()).select_from(Product).where(Product.status == "active")
-    )
-    total = count_result.scalar()
-
     return {
         "items": [
             {
                 "id": str(p.id),
+                "seller_id": str(p.seller_id),
                 "title": p.title,
                 "price": float(p.price),
                 "discount_price": float(p.discount_price) if p.discount_price else None,
                 "discount_percent": p.discount_percent,
                 "images": p.images or [],
-                "is_promoted": p.is_promoted
+                "is_promoted": p.is_promoted,
+                "views_count": p.views_count
             }
             for p in products
         ],
