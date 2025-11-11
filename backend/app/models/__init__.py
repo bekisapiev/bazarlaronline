@@ -12,6 +12,7 @@ from app.models.promotion import AutoPromotion
 from app.models.notification import Notification
 from app.models.favorite import Favorite, ViewHistory
 from app.models.report import Report
+from app.models.coupon import Coupon, CouponUsage
 
 __all__ = [
     "User",
@@ -32,4 +33,6 @@ __all__ = [
     "Favorite",
     "ViewHistory",
     "Report",
+    "Coupon",
+    "CouponUsage",
 ]
