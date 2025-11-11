@@ -1,0 +1,111 @@
+"""
+Product Schemas
+"""
+from pydantic import BaseModel
+from typing import Optional, List, Dict
+from decimal import Decimal
+from datetime import datetime
+
+
+class ProductCreate(BaseModel):
+    """Product creation request"""
+    title: str
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    price: Decimal
+    discount_price: Optional[Decimal] = None
+    partner_percent: Optional[Decimal] = 0
+    delivery_type: Optional[str] = "pickup"
+    delivery_methods: Optional[List[str]] = None
+    characteristics: Optional[List[Dict[str, str]]] = None
+    images: Optional[List[str]] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "title": "iPhone 15 Pro",
+                "description": "Новый iPhone 15 Pro, 256GB",
+                "category_id": 1,
+                "price": 120000,
+                "discount_price": 110000,
+                "partner_percent": 5,
+                "delivery_type": "paid",
+                "delivery_methods": ["taxi", "express"],
+                "characteristics": [
+                    {"name": "Цвет", "value": "Черный"},
+                    {"name": "Память", "value": "256GB"}
+                ],
+                "images": ["url1", "url2"]
+            }
+        }
+
+
+class ProductUpdate(BaseModel):
+    """Product update request"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    price: Optional[Decimal] = None
+    discount_price: Optional[Decimal] = None
+    partner_percent: Optional[Decimal] = None
+    delivery_type: Optional[str] = None
+    delivery_methods: Optional[List[str]] = None
+    characteristics: Optional[List[Dict[str, str]]] = None
+    images: Optional[List[str]] = None
+    status: Optional[str] = None
+
+
+class ProductResponse(BaseModel):
+    """Product response"""
+    id: str
+    seller_id: str
+    title: str
+    description: Optional[str]
+    category_id: Optional[int]
+    price: Decimal
+    discount_price: Optional[Decimal]
+    discount_percent: Optional[int]
+    partner_percent: Decimal
+    delivery_type: Optional[str]
+    delivery_methods: Optional[List[str]]
+    characteristics: Optional[List[Dict[str, str]]]
+    images: Optional[List[str]]
+    status: str
+    is_promoted: bool
+    promoted_at: Optional[datetime]
+    views_count: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ProductListResponse(BaseModel):
+    """Product list item response"""
+    id: str
+    title: str
+    price: Decimal
+    discount_price: Optional[Decimal]
+    discount_percent: Optional[int]
+    images: Optional[List[str]]
+    is_promoted: bool
+    seller: Dict[str, any]
+
+    class Config:
+        from_attributes = True
+
+
+class CategoryResponse(BaseModel):
+    """Category response"""
+    id: int
+    parent_id: Optional[int]
+    name: str
+    slug: str
+    level: int
+    icon: Optional[str]
+    sort_order: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
