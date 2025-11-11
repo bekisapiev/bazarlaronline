@@ -9,6 +9,10 @@ from app.models.chat import Chat, Message
 from app.models.review import Review
 from app.models.location import City, Market
 from app.models.promotion import AutoPromotion
+from app.models.notification import Notification
+from app.models.favorite import Favorite, ViewHistory
+from app.models.report import Report
+from app.models.coupon import Coupon, CouponUsage
 
 __all__ = [
     "User",
@@ -25,4 +29,10 @@ __all__ = [
     "City",
     "Market",
     "AutoPromotion",
+    "Notification",
+    "Favorite",
+    "ViewHistory",
+    "Report",
+    "Coupon",
+    "CouponUsage",
 ]

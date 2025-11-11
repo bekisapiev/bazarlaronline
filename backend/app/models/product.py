@@ -61,6 +61,8 @@ class Product(Base):
     seller = relationship("User", back_populates="products")
     category = relationship("Category", back_populates="products")
     auto_promotions = relationship("AutoPromotion", back_populates="product")
+    favorited_by = relationship("Favorite", back_populates="product", cascade="all, delete-orphan")
+    views = relationship("ViewHistory", back_populates="product", cascade="all, delete-orphan")
 
     # Constraints
     __table_args__ = (
