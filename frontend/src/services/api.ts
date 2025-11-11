@@ -43,6 +43,7 @@ export const authAPI = {
   googleAuth: (token: string) => api.post('/auth/google', { token }),
   refreshToken: (refreshToken: string) => api.post('/auth/refresh', { refresh_token: refreshToken }),
   logout: () => api.post('/auth/logout'),
+  getCurrentUser: () => api.get('/auth/me'),
 };
 
 export const productsAPI = {
@@ -82,4 +83,9 @@ export const usersAPI = {
   updateCurrentUser: (data: any) => api.put('/users/me', data),
   getUserById: (id: string) => api.get(`/users/${id}`),
   getSellerProfile: (userId: string) => api.get(`/users/${userId}/seller-profile`),
+};
+
+export const sellerProfileAPI = {
+  createProfile: (data: any) => api.post('/seller-profile/', data),
+  updateProfile: (data: any) => api.put('/seller-profile/', data),
 };
