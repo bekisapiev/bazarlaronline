@@ -1,13 +1,83 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
-import { useSelector } from 'react-redux';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  Container,
+  IconButton,
+  Badge,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
+import {
+  Notifications as NotificationsIcon,
+  Favorite as FavoriteIcon,
+  ShoppingCart as CartIcon,
+  AccountCircle as AccountIcon,
+  Settings as SettingsIcon,
+  ExitToApp as LogoutIcon,
+  Dashboard as DashboardIcon,
+  AdminPanelSettings as AdminIcon,
+} from '@mui/icons-material';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
+import { notificationsAPI } from '../../services/api';
+import { setUnreadCount } from '../../store/slices/notificationsSlice';
 import SearchBar from '../common/SearchBar';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { unreadCount } = useSelector((state: RootState) => state.notifications);
+  const { favoriteIds } = useSelector((state: RootState) => state.favorites);
+  const { items: cartItems } = useSelector((state: RootState) => state.cart);
+
+  const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUnreadCount();
+    }
+  }, [isAuthenticated]);
+
+  const loadUnreadCount = async () => {
+    try {
+      const response = await notificationsAPI.getUnreadCount();
+      dispatch(setUnreadCount(response.data.unread_count));
+    } catch (error) {
+      console.error('Error loading unread count:', error);
+    }
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileAnchor(null);
+  };
+
+  const handleProfileNavigation = (path: string) => {
+    navigate(path);
+    handleProfileMenuClose();
+  };
+
+  const handleLogout = () => {
+    // Handle logout logic
+    handleProfileMenuClose();
+    navigate('/login');
+  };
+
+  const isAdmin = user?.role === 'admin';
+  const isSeller = user?.tariff && user.tariff !== 'free';
 
   return (
     <AppBar position="sticky" color="default" elevation={1}>
@@ -34,23 +104,116 @@ const Header: React.FC = () => {
           </Box>
 
           {/* Navigation */}
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button color="inherit" onClick={() => navigate('/sellers')}>
               Продавцы
             </Button>
 
             {isAuthenticated ? (
               <>
+                {/* Notifications */}
+                <IconButton
+                  color="inherit"
+                  onClick={() => navigate('/notifications')}
+                  aria-label="notifications"
+                >
+                  <Badge badgeContent={unreadCount} color="error">
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+
+                {/* Favorites */}
+                <IconButton
+                  color="inherit"
+                  onClick={() => navigate('/favorites')}
+                  aria-label="favorites"
+                >
+                  <Badge badgeContent={favoriteIds.size} color="primary">
+                    <FavoriteIcon />
+                  </Badge>
+                </IconButton>
+
+                {/* Cart */}
+                <IconButton
+                  color="inherit"
+                  onClick={() => navigate('/cart')}
+                  aria-label="cart"
+                >
+                  <Badge badgeContent={cartItems.length} color="secondary">
+                    <CartIcon />
+                  </Badge>
+                </IconButton>
+
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={() => navigate('/add')}
+                  sx={{ mx: 1 }}
                 >
-                  Добавить объявление
+                  Добавить
                 </Button>
-                <Button color="inherit" onClick={() => navigate('/profile')}>
-                  Профиль
-                </Button>
+
+                {/* Profile Menu */}
+                <IconButton
+                  onClick={handleProfileMenuOpen}
+                  aria-label="account"
+                  aria-controls="profile-menu"
+                  aria-haspopup="true"
+                >
+                  <Avatar sx={{ width: 32, height: 32 }}>
+                    {user?.full_name?.[0] || <AccountIcon />}
+                  </Avatar>
+                </IconButton>
+
+                <Menu
+                  id="profile-menu"
+                  anchorEl={profileAnchor}
+                  open={Boolean(profileAnchor)}
+                  onClose={handleProfileMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                >
+                  <MenuItem onClick={() => handleProfileNavigation('/profile')}>
+                    <ListItemIcon>
+                      <AccountIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Профиль</ListItemText>
+                  </MenuItem>
+
+                  {isSeller && (
+                    <MenuItem onClick={() => handleProfileNavigation('/seller/dashboard')}>
+                      <ListItemIcon>
+                        <DashboardIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Мой магазин</ListItemText>
+                    </MenuItem>
+                  )}
+
+                  {isAdmin && (
+                    <MenuItem onClick={() => handleProfileNavigation('/admin')}>
+                      <ListItemIcon>
+                        <AdminIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Админ панель</ListItemText>
+                    </MenuItem>
+                  )}
+
+                  <MenuItem onClick={() => handleProfileNavigation('/settings')}>
+                    <ListItemIcon>
+                      <SettingsIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Настройки</ListItemText>
+                  </MenuItem>
+
+                  <Divider />
+
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Выйти</ListItemText>
+                  </MenuItem>
+                </Menu>
               </>
             ) : (
               <Button
