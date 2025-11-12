@@ -46,7 +46,7 @@ class User(Base):
     sent_messages = relationship("Message", foreign_keys="Message.sender_id", back_populates="sender")
     reviews_given = relationship("Review", foreign_keys="Review.buyer_id", back_populates="buyer")
     reviews_received = relationship("Review", foreign_keys="Review.seller_id", back_populates="seller")
-    withdrawal_requests = relationship("WithdrawalRequest", back_populates="user")
+    withdrawal_requests = relationship("WithdrawalRequest", foreign_keys="WithdrawalRequest.user_id", back_populates="user")
     referrer = relationship("User", remote_side=[id], foreign_keys=[referred_by])
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
