@@ -2,7 +2,7 @@
 Product Schemas
 """
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from datetime import datetime
 
@@ -90,7 +90,7 @@ class ProductListResponse(BaseModel):
     discount_percent: Optional[int]
     images: Optional[List[str]]
     is_promoted: bool
-    seller: Dict[str, any]
+    seller: Dict[str, Any]
 
     class Config:
         from_attributes = True

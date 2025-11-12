@@ -9,6 +9,11 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import SellersPage from './pages/SellersPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
+import NotificationsPage from './pages/NotificationsPage';
+import FavoritesPage from './pages/FavoritesPage';
+import SettingsPage from './pages/SettingsPage';
+import SellerDashboardPage from './pages/SellerDashboardPage';
+import AdminPanelPage from './pages/AdminPanelPage';
 import './App.css';
 
 function App() {
@@ -22,7 +27,14 @@ function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/sellers" element={<SellersPage />} />
+          <Route path="/sellers/:id" element={<SellersPage />} />
           <Route path="/profile/*" element={<ProfilePage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
+          <Route path="/admin" element={<AdminPanelPage />} />
+          <Route path="/admin/panel" element={<AdminPanelPage />} />
         </Routes>
       </main>
       <Footer />
