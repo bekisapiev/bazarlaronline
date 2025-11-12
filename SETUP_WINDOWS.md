@@ -292,10 +292,10 @@ INSERT INTO cities (id, name, slug) VALUES
 (3, 'Джалал-Абад', 'jalal-abad');
 
 -- Рынки в Бишкеке
-INSERT INTO markets (id, city_id, name, slug, address) VALUES
-(1, 1, 'Дордой', 'dordoy', 'ул. Шабдан Баатыра'),
-(2, 1, 'Ошский рынок', 'oshskiy', 'ул. Киевская'),
-(3, 1, 'Ортосайский рынок', 'ortosay', 'ул. Ахунбаева');
+INSERT INTO markets (id, city_id, name, address) VALUES
+(1, 1, 'Дордой', 'ул. Шабдан Баатыра'),
+(2, 1, 'Ошский рынок', 'ул. Киевская'),
+(3, 1, 'Ортосайский рынок', 'ул. Ахунбаева');
 
 -- Категории
 INSERT INTO categories (id, name, slug, level, is_active, sort_order) VALUES
