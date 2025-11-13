@@ -200,7 +200,7 @@ const ProfilePage: React.FC = () => {
       setWalletLoading(true);
       const [balanceRes, transactionsRes] = await Promise.all([
         walletAPI.getBalance(),
-        walletAPI.getTransactions(20, 0),
+        walletAPI.getTransactions({ limit: 20, offset: 0 }),
       ]);
       setWalletBalance(balanceRes.data.balance);
       setTransactions(transactionsRes.data);
