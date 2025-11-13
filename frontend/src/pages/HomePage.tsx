@@ -223,7 +223,7 @@ const HomePage: React.FC = () => {
 
       const response = await productsAPI.getProducts(params);
       // Handle different response formats
-      let newProducts = [];
+      let newProducts: Product[] = [];
       if (Array.isArray(response.data)) {
         newProducts = response.data;
       } else if (response.data?.items && Array.isArray(response.data.items)) {
