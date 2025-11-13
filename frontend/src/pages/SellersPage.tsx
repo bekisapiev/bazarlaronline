@@ -117,27 +117,36 @@ const SellersPage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(response.data);
+      // Handle different response formats
+      const citiesData = Array.isArray(response.data) ? response.data : response.data?.cities || [];
+      setCities(citiesData);
     } catch (err) {
       console.error('Failed to load cities:', err);
+      setCities([]); // Set empty array on error
     }
   };
 
   const loadMarkets = async () => {
     try {
       const response = await productsAPI.getMarkets(cityId ? { city_id: cityId } : {});
-      setMarkets(response.data);
+      // Handle different response formats
+      const marketsData = Array.isArray(response.data) ? response.data : response.data?.markets || [];
+      setMarkets(marketsData);
     } catch (err) {
       console.error('Failed to load markets:', err);
+      setMarkets([]); // Set empty array on error
     }
   };
 
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
+      // Handle different response formats
+      const categoriesData = Array.isArray(response.data) ? response.data : response.data?.categories || [];
+      setCategories(categoriesData);
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]); // Set empty array on error
     }
   };
 
@@ -222,7 +231,7 @@ const SellersPage: React.FC = () => {
           onChange={(e) => handleFilterChange('city', e.target.value)}
         >
           <MenuItem value="">Все города</MenuItem>
-          {cities.map((city) => (
+          {Array.isArray(cities) && cities.map((city) => (
             <MenuItem key={city.id} value={city.id}>
               {city.name}
             </MenuItem>
@@ -239,7 +248,7 @@ const SellersPage: React.FC = () => {
           onChange={(e) => handleFilterChange('market', e.target.value)}
         >
           <MenuItem value="">Все рынки</MenuItem>
-          {markets.map((market) => (
+          {Array.isArray(markets) && markets.map((market) => (
             <MenuItem key={market.id} value={market.id}>
               {market.name}
             </MenuItem>
@@ -256,7 +265,7 @@ const SellersPage: React.FC = () => {
           onChange={(e) => handleFilterChange('category', e.target.value)}
         >
           <MenuItem value="">Все категории</MenuItem>
-          {categories.map((cat) => (
+          {Array.isArray(categories) && categories.map((cat) => (
             <MenuItem key={cat.id} value={cat.id}>
               {cat.name}
             </MenuItem>
@@ -501,19 +510,19 @@ const SellersPage: React.FC = () => {
         {/* Active Filters */}
         {(cityId || marketId || categoryId || minRating > 0 || verifiedOnly) && (
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {cityId && (
+            {cityId && Array.isArray(cities) && (
               <Chip
                 label={`Город: ${cities.find((c) => c.id === Number(cityId))?.name}`}
                 onDelete={() => handleFilterChange('city', '')}
               />
             )}
-            {marketId && (
+            {marketId && Array.isArray(markets) && (
               <Chip
                 label={`Рынок: ${markets.find((m) => m.id === Number(marketId))?.name}`}
                 onDelete={() => handleFilterChange('market', '')}
               />
             )}
-            {categoryId && (
+            {categoryId && Array.isArray(categories) && (
               <Chip
                 label={`Категория: ${categories.find((c) => c.id === Number(categoryId))?.name}`}
                 onDelete={() => handleFilterChange('category', '')}
@@ -575,7 +584,7 @@ const SellersPage: React.FC = () => {
               </Typography>
 
               <Grid container spacing={3}>
-                {sellers.map(renderSellerCard)}
+                {Array.isArray(sellers) && sellers.map(renderSellerCard)}
               </Grid>
 
               {/* Pagination */}
