@@ -168,27 +168,36 @@ const HomePage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(response.data);
+      // Ensure we set an array, handle different response formats
+      const citiesData = Array.isArray(response.data) ? response.data : response.data?.cities || [];
+      setCities(citiesData);
     } catch (error) {
       console.error('Error loading cities:', error);
+      setCities([]); // Set empty array on error
     }
   };
 
   const loadMarkets = async (cityId: number) => {
     try {
       const response = await productsAPI.getMarkets({ city_id: cityId });
-      setMarkets(response.data);
+      // Ensure we set an array, handle different response formats
+      const marketsData = Array.isArray(response.data) ? response.data : response.data?.markets || [];
+      setMarkets(marketsData);
     } catch (error) {
       console.error('Error loading markets:', error);
+      setMarkets([]); // Set empty array on error
     }
   };
 
   const loadCategories = async () => {
     try {
       const response = await productsAPI.getCategories();
-      setCategories(response.data);
+      // Ensure we set an array, handle different response formats
+      const categoriesData = Array.isArray(response.data) ? response.data : response.data?.categories || [];
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading categories:', error);
+      setCategories([]); // Set empty array on error
     }
   };
 
@@ -213,7 +222,15 @@ const HomePage: React.FC = () => {
       if (sellerType) params.seller_type = sellerType;
 
       const response = await productsAPI.getProducts(params);
-      const newProducts = response.data.items || [];
+      // Handle different response formats
+      let newProducts = [];
+      if (Array.isArray(response.data)) {
+        newProducts = response.data;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        newProducts = response.data.items;
+      } else if (response.data?.products && Array.isArray(response.data.products)) {
+        newProducts = response.data.products;
+      }
 
       if (reset) {
         setProductsState(newProducts);
@@ -351,7 +368,7 @@ const HomePage: React.FC = () => {
             onChange={(e) => setSelectedCity(e.target.value ? Number(e.target.value) : null)}
           >
             <MenuItem value="">Все города</MenuItem>
-            {cities.map((city) => (
+            {Array.isArray(cities) && cities.map((city) => (
               <MenuItem key={city.id} value={city.id}>
                 {city.name}
               </MenuItem>
@@ -360,7 +377,7 @@ const HomePage: React.FC = () => {
         </FormControl>
 
         {/* Market Filter (shown when city is selected and seller type is market) */}
-        {selectedCity && (sellerType === 'market' || !sellerType) && markets.length > 0 && (
+        {selectedCity && (sellerType === 'market' || !sellerType) && Array.isArray(markets) && markets.length > 0 && (
           <FormControl fullWidth size="small">
             <InputLabel>Рынок</InputLabel>
             <Select
@@ -411,7 +428,7 @@ const HomePage: React.FC = () => {
             }}
           >
             <MenuItem value="">Все категории</MenuItem>
-            {category1Options.map((cat) => (
+            {Array.isArray(category1Options) && category1Options.map((cat) => (
               <MenuItem key={cat.id} value={cat.id}>
                 {cat.name}
               </MenuItem>
@@ -420,7 +437,7 @@ const HomePage: React.FC = () => {
         </FormControl>
 
         {/* Category Level 2 */}
-        {selectedCategory1 && category2Options.length > 0 && (
+        {selectedCategory1 && Array.isArray(category2Options) && category2Options.length > 0 && (
           <FormControl fullWidth size="small">
             <InputLabel>Подкатегория</InputLabel>
             <Select
@@ -442,7 +459,7 @@ const HomePage: React.FC = () => {
         )}
 
         {/* Category Level 3 */}
-        {selectedCategory2 && category3Options.length > 0 && (
+        {selectedCategory2 && Array.isArray(category3Options) && category3Options.length > 0 && (
           <FormControl fullWidth size="small">
             <InputLabel>Раздел</InputLabel>
             <Select
@@ -564,7 +581,7 @@ const HomePage: React.FC = () => {
           ) : (
             <>
               <Grid container spacing={3}>
-                {products.map((product) => (
+                {Array.isArray(products) && products.map((product) => (
                   <Grid item xs={12} sm={6} md={4} key={product.id}>
                     {renderProductCard(product)}
                   </Grid>
