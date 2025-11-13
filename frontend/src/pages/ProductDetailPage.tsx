@@ -134,26 +134,35 @@ const ProductDetailPage: React.FC = () => {
   const loadReviews = async () => {
     try {
       const response = await reviewsAPI.getProductReviews(id!, { limit: 10, offset: 0 });
-      const reviewsData = response.data.items || response.data;
+      let reviewsData: Review[] = [];
+      const data = response.data.items || response.data;
+      if (Array.isArray(data)) {
+        reviewsData = data;
+      }
       setReviews(reviewsData);
 
       // Calculate average rating
-      if (reviewsData.length > 0) {
+      if (Array.isArray(reviewsData) && reviewsData.length > 0) {
         const sum = reviewsData.reduce((acc: number, review: Review) => acc + review.rating, 0);
         setAverageRating(sum / reviewsData.length);
         setTotalReviews(reviewsData.length);
       }
     } catch (error) {
       console.error('Error loading reviews:', error);
+      setReviews([]);
     }
   };
 
   const loadSimilarProducts = async () => {
     try {
       const response = await recommendationsAPI.getSimilarProducts(id!, 8);
-      setSimilarProducts(response.data.items || response.data);
+      const similarData: Product[] = response.data.items || response.data;
+      if (Array.isArray(similarData)) {
+        setSimilarProducts(similarData);
+      }
     } catch (error) {
       console.error('Error loading similar products:', error);
+      setSimilarProducts([]);
     }
   };
 
@@ -287,7 +296,7 @@ const ProductDetailPage: React.FC = () => {
             </Card>
 
             {/* Thumbnails */}
-            {product.images.length > 1 && (
+            {Array.isArray(product.images) && product.images.length > 1 && (
               <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto' }}>
                 {product.images.map((image, index) => (
                   <Box
@@ -480,7 +489,7 @@ const ProductDetailPage: React.FC = () => {
 
           {/* Reviews List */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {reviews.length === 0 ? (
+            {!Array.isArray(reviews) || reviews.length === 0 ? (
               <Typography variant="body1" color="text.secondary" align="center" sx={{ py: 4 }}>
                 Пока нет отзывов. Будьте первым!
               </Typography>
@@ -523,7 +532,7 @@ const ProductDetailPage: React.FC = () => {
         </Box>
 
         {/* Similar Products */}
-        {similarProducts.length > 0 && (
+        {Array.isArray(similarProducts) && similarProducts.length > 0 && (
           <Box sx={{ mt: 6 }}>
             <Typography variant="h5" gutterBottom fontWeight={600} sx={{ mb: 3 }}>
               Похожие товары
