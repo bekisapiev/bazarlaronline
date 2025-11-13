@@ -70,7 +70,9 @@ export const walletAPI = {
   getBalance: () => api.get('/wallet/balance'),
   topup: (amount: number) => api.post('/wallet/topup', { amount }),
   withdraw: (data: any) => api.post('/wallet/withdraw', data),
-  getTransactions: (limit: number, offset: number) => api.get('/wallet/transactions', { params: { limit, offset } }),
+  transfer: (data: any) => api.post('/wallet/transfer', data),
+  getTransactions: (params: any) => api.get('/wallet/transactions', { params }),
+  exportTransactions: (params: any) => api.get('/wallet/transactions/export', { params, responseType: 'blob' }),
 };
 
 export const chatAPI = {

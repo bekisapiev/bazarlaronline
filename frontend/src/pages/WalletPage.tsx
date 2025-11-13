@@ -134,7 +134,7 @@ const WalletPage: React.FC = () => {
     try {
       setSubmitting(true);
       setError('');
-      const response = await walletAPI.topUp({ amount });
+      const response = await walletAPI.topup(amount);
 
       if (response.data.payment_url) {
         // Redirect to payment gateway
