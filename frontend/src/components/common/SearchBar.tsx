@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Autocomplete,
   TextField,
@@ -11,7 +11,6 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { searchAPI } from '../../services/api';
-import { debounce } from 'lodash';
 
 interface Suggestion {
   id: string;
@@ -25,6 +24,7 @@ const SearchBar: React.FC = () => {
   const [options, setOptions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchSuggestions = async (query: string) => {
     if (!query || query.length < 2) {
@@ -64,15 +64,24 @@ const SearchBar: React.FC = () => {
     }
   };
 
-  // Debounce the API call
-  const debouncedFetch = useCallback(
-    debounce((query: string) => fetchSuggestions(query), 300),
-    []
-  );
-
   useEffect(() => {
-    debouncedFetch(inputValue);
-  }, [inputValue, debouncedFetch]);
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      fetchSuggestions(inputValue);
+    }, 300);
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [inputValue]);
 
   const handleSelect = (event: any, value: string | Suggestion | null) => {
     if (!value || typeof value === 'string') return;
