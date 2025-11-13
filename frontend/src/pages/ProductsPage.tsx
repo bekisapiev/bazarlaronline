@@ -97,9 +97,12 @@ const ProductsPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
+      // Handle different response formats
+      const categoriesData = Array.isArray(response.data) ? response.data : response.data?.categories || [];
+      setCategories(categoriesData);
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]); // Set empty array on error
     }
   };
 
@@ -119,10 +122,20 @@ const ProductsPage: React.FC = () => {
       if (priceRange[1] < 100000) params.max_price = priceRange[1];
 
       const response = await productsAPI.getProducts(params);
-      setProducts(response.data.items);
-      setTotalPages(response.data.total_pages);
+      // Handle different response formats
+      let productsData: Product[] = [];
+      if (Array.isArray(response.data)) {
+        productsData = response.data;
+      } else if (response.data?.items && Array.isArray(response.data.items)) {
+        productsData = response.data.items;
+      } else if (response.data?.products && Array.isArray(response.data.products)) {
+        productsData = response.data.products;
+      }
+      setProducts(productsData);
+      setTotalPages(response.data?.total_pages || 1);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки товаров');
+      setProducts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -190,7 +203,7 @@ const ProductsPage: React.FC = () => {
           onChange={(e) => handleFilterChange('category', e.target.value)}
         >
           <MenuItem value="">Все категории</MenuItem>
-          {categories.map((cat) => (
+          {Array.isArray(categories) && categories.map((cat) => (
             <MenuItem key={cat.id} value={cat.id}>
               {cat.name}
             </MenuItem>
@@ -417,7 +430,7 @@ const ProductsPage: React.FC = () => {
         {/* Active Filters */}
         {(categoryId || priceRange[0] > 0 || priceRange[1] < 100000) && (
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {categoryId && (
+            {categoryId && Array.isArray(categories) && (
               <Chip
                 label={`Категория: ${categories.find((c) => c.id === Number(categoryId))?.name}`}
                 onDelete={() => handleFilterChange('category', '')}
@@ -471,7 +484,7 @@ const ProductsPage: React.FC = () => {
               </Typography>
 
               <Grid container spacing={3}>
-                {products.map(renderProductCard)}
+                {Array.isArray(products) && products.map(renderProductCard)}
               </Grid>
 
               {/* Pagination */}
