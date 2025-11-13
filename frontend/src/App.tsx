@@ -19,6 +19,10 @@ import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
+import WalletPage from './pages/WalletPage';
+import TransactionsPage from './pages/TransactionsPage';
+import PartnerProductsPage from './pages/PartnerProductsPage';
+import DocumentsPage from './pages/DocumentsPage';
 import './App.css';
 
 function App() {
@@ -41,6 +45,10 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
+          <Route path="/wallet" element={<WalletPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/partner-products" element={<PartnerProductsPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
