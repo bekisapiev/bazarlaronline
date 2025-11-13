@@ -5,6 +5,8 @@ interface User {
   email: string;
   full_name?: string;
   tariff: 'free' | 'pro' | 'business';
+  role?: 'user' | 'admin';
+  referral_id?: string;
 }
 
 interface AuthState {

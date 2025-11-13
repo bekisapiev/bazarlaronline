@@ -11,7 +11,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { searchAPI } from '../../services/api';
-import debounce from 'lodash/debounce';
+import { debounce } from 'lodash';
 
 interface Suggestion {
   id: string;
@@ -74,8 +74,8 @@ const SearchBar: React.FC = () => {
     debouncedFetch(inputValue);
   }, [inputValue, debouncedFetch]);
 
-  const handleSelect = (event: any, value: Suggestion | null) => {
-    if (!value) return;
+  const handleSelect = (event: any, value: string | Suggestion | null) => {
+    if (!value || typeof value === 'string') return;
 
     if (value.type === 'product') {
       navigate(`/products/${value.id}`);

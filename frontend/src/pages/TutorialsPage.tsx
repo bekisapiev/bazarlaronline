@@ -15,12 +15,10 @@ import {
   Grid,
   Chip,
   Stack,
-  Divider,
 } from '@mui/material';
 import {
   ExpandMore as ExpandIcon,
   PlayCircleOutline as VideoIcon,
-  Article as ArticleIcon,
   Help as HelpIcon,
   Star as StarIcon,
 } from '@mui/icons-material';
@@ -397,7 +395,7 @@ const TutorialsPage: React.FC = () => {
               </Box>
 
               <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom">
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   Конкурентная цена
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
