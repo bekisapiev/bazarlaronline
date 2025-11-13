@@ -15,6 +15,8 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
+  Select,
+  FormControl,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -41,6 +43,7 @@ const Header: React.FC = () => {
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
+  const [language, setLanguage] = useState('ru');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -108,6 +111,19 @@ const Header: React.FC = () => {
             <Button color="inherit" onClick={() => navigate('/sellers')}>
               Продавцы
             </Button>
+
+            {/* Language Selector */}
+            <FormControl size="small" sx={{ minWidth: 60 }}>
+              <Select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                variant="outlined"
+                sx={{ fontSize: '0.875rem' }}
+              >
+                <MenuItem value="ru">RU</MenuItem>
+                <MenuItem value="kg">KG</MenuItem>
+              </Select>
+            </FormControl>
 
             {isAuthenticated ? (
               <>
