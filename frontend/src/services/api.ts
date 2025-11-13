@@ -54,6 +54,9 @@ export const productsAPI = {
   deleteProduct: (id: string) => api.delete(`/products/${id}`),
   promoteProduct: (id: string) => api.post(`/products/${id}/promote`),
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
+  getCities: () => api.get('/locations/cities'),
+  getMarkets: (params: any) => api.get('/locations/markets', { params }),
+  getSellers: (params: any) => api.get('/sellers/', { params }),
 };
 
 export const ordersAPI = {

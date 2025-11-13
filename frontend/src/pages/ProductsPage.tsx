@@ -40,7 +40,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { productsAPI, categoriesAPI } from '../services/api';
 import { toggleFavorite } from '../store/slices/favoritesSlice';
-import { addItem } from '../store/slices/cartSlice';
+import { addToCart } from '../store/slices/cartSlice';
 
 interface Product {
   id: string;
@@ -155,17 +155,18 @@ const ProductsPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    dispatch(toggleFavorite(productId));
+    dispatch(toggleFavorite({ id: productId }));
   };
 
   const handleAddToCart = (product: Product) => {
-    dispatch(addItem({
-      id: product.id,
-      title: product.title,
-      price: product.discount_price || product.price,
-      image: product.images?.[0] || '',
+    dispatch(addToCart({
       sellerId: product.seller.id,
-      quantity: 1,
+      item: {
+        productId: product.id,
+        quantity: 1,
+        price: product.price,
+        discountPrice: product.discount_price,
+      },
     }));
   };
 
