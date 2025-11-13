@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -38,10 +38,9 @@ import {
   Warehouse as WarehouseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { productsAPI } from '../services/api';
-import { setProducts, setLoading } from '../store/slices/productsSlice';
 
 interface Product {
   id: string;
@@ -84,8 +83,6 @@ const SELLER_TYPES = [
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   // Filters
   const [contentType, setContentType] = useState<'product' | 'service'>('product');
@@ -125,6 +122,7 @@ const HomePage: React.FC = () => {
     setPage(1);
     setHasMore(true);
     loadProducts(1, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentType, selectedCity, selectedMarket, selectedCategory1, selectedCategory2, selectedCategory3, sellerType]);
 
   // Infinite scroll setup
@@ -154,6 +152,7 @@ const HomePage: React.FC = () => {
     if (page > 1) {
       loadProducts(page, false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   // Load markets when city changes

@@ -15,12 +15,10 @@ import {
   Grid,
   Chip,
   Stack,
-  Divider,
 } from '@mui/material';
 import {
   ExpandMore as ExpandIcon,
   PlayCircleOutline as VideoIcon,
-  Article as ArticleIcon,
   Help as HelpIcon,
   Star as StarIcon,
 } from '@mui/icons-material';

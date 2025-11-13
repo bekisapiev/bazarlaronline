@@ -11,7 +11,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { searchAPI } from '../../services/api';
-import debounce from 'lodash/debounce';
+import { debounce } from 'lodash';
 
 interface Suggestion {
   id: string;
