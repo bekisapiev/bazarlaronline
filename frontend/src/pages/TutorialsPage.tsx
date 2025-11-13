@@ -397,7 +397,7 @@ const TutorialsPage: React.FC = () => {
               </Box>
 
               <Box>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom">
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                   Конкурентная цена
                 </Typography>
                 <Typography variant="body2" color="text.secondary">

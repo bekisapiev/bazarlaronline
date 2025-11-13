@@ -74,8 +74,8 @@ const SearchBar: React.FC = () => {
     debouncedFetch(inputValue);
   }, [inputValue, debouncedFetch]);
 
-  const handleSelect = (event: any, value: Suggestion | null) => {
-    if (!value) return;
+  const handleSelect = (event: any, value: string | Suggestion | null) => {
+    if (!value || typeof value === 'string') return;
 
     if (value.type === 'product') {
       navigate(`/products/${value.id}`);

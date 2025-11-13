@@ -186,7 +186,7 @@ const HomePage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await productsAPI.getCategories({ parent_id: null });
+      const response = await productsAPI.getCategories();
       setCategories(response.data);
     } catch (error) {
       console.error('Error loading categories:', error);
