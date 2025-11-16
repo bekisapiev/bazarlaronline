@@ -35,7 +35,7 @@ INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_a
 (6, NULL, 'Косметика', 'beauty', 1, '💄', 6, true),
 (7, NULL, 'Детские товары', 'kids', 1, '🧸', 7, true),
 (8, NULL, 'Спорт', 'sport', 1, '⚽', 8, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (slug) DO NOTHING;
 
 -- Категории уровня 2 (Одежда)
 INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
@@ -43,7 +43,7 @@ INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active)
 (12, 1, 'Женская одежда', 'women-clothing', 2, 2, true),
 (13, 1, 'Верхняя одежда', 'outerwear', 2, 3, true),
 (14, 1, 'Аксессуары', 'accessories', 2, 4, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (slug) DO NOTHING;
 
 -- Категории уровня 2 (Электроника)
 INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
@@ -51,7 +51,7 @@ INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active)
 (32, 3, 'Ноутбуки', 'laptops', 2, 2, true),
 (33, 3, 'Бытовая техника', 'appliances', 2, 3, true),
 (34, 3, 'Аудио', 'audio', 2, 4, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (slug) DO NOTHING;
 
 -- Категории уровня 3 (Смартфоны)
 INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
@@ -59,7 +59,7 @@ INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active)
 (312, 31, 'Samsung', 'samsung', 3, 2, true),
 (313, 31, 'Xiaomi', 'xiaomi', 3, 3, true),
 (314, 31, 'Другие бренды', 'other-phones', 3, 4, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (slug) DO NOTHING;
 
 -- Функция для генерации referral_id (12 символов, буквы и цифры)
 CREATE OR REPLACE FUNCTION generate_referral_id()
