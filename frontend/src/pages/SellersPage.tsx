@@ -48,6 +48,7 @@ interface Seller {
   rating: number;
   reviews_count: number;
   is_verified: boolean;
+  tariff?: string;
   city?: {
     id: number;
     name: string;
@@ -99,6 +100,7 @@ const SellersPage: React.FC = () => {
   const [categoryId, setCategoryId] = useState(searchParams.get('category') || '');
   const [minRating, setMinRating] = useState(Number(searchParams.get('rating')) || 0);
   const [verifiedOnly, setVerifiedOnly] = useState(searchParams.get('verified') === 'true');
+  const [tariffFilter, setTariffFilter] = useState(searchParams.get('tariff') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
 
@@ -112,7 +114,7 @@ const SellersPage: React.FC = () => {
   // Load sellers when filters change
   useEffect(() => {
     loadSellers();
-  }, [page, cityId, marketId, categoryId, minRating, verifiedOnly, sortBy]);
+  }, [page, cityId, marketId, categoryId, minRating, verifiedOnly, tariffFilter, sortBy]);
 
   const loadCities = async () => {
     try {
@@ -157,6 +159,7 @@ const SellersPage: React.FC = () => {
       if (categoryId) params.category_id = categoryId;
       if (minRating > 0) params.min_rating = minRating;
       if (verifiedOnly) params.verified_only = true;
+      if (tariffFilter) params.tariff = tariffFilter;
 
       const response = await productsAPI.getSellers(params);
       setSellers(response.data.items);
@@ -185,6 +188,7 @@ const SellersPage: React.FC = () => {
     if (filter === 'category') setCategoryId(value);
     if (filter === 'rating') setMinRating(value);
     if (filter === 'verified') setVerifiedOnly(value);
+    if (filter === 'tariff') setTariffFilter(value);
     if (filter === 'sort') setSortBy(value);
     updateURL();
   };
@@ -197,6 +201,7 @@ const SellersPage: React.FC = () => {
     if (categoryId) params.category = categoryId;
     if (minRating > 0) params.rating = minRating.toString();
     if (verifiedOnly) params.verified = 'true';
+    if (tariffFilter) params.tariff = tariffFilter;
     if (sortBy !== 'rating') params.sort = sortBy;
     if (page > 1) params.page = page.toString();
     setSearchParams(params);
@@ -288,6 +293,21 @@ const SellersPage: React.FC = () => {
         </Button>
       </FormControl>
 
+      {/* Tariff Filter */}
+      <Typography gutterBottom fontWeight={600}>Тарифы</Typography>
+      <FormControl fullWidth sx={{ mb: 3 }}>
+        <Select
+          value={tariffFilter}
+          onChange={(e) => handleFilterChange('tariff', e.target.value)}
+          displayEmpty
+        >
+          <MenuItem value="">Все тарифы</MenuItem>
+          <MenuItem value="pro,business">Pro и Business</MenuItem>
+          <MenuItem value="pro">Только Pro</MenuItem>
+          <MenuItem value="business">Только Business</MenuItem>
+        </Select>
+      </FormControl>
+
       <Button
         fullWidth
         variant="outlined"
@@ -297,6 +317,7 @@ const SellersPage: React.FC = () => {
           setCategoryId('');
           setMinRating(0);
           setVerifiedOnly(false);
+          setTariffFilter('');
           setPage(1);
           loadSellers();
         }}
@@ -363,14 +384,29 @@ const SellersPage: React.FC = () => {
           )}
 
           {/* Shop Name with Verified Badge */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
             <Typography variant="h6" component="div" noWrap sx={{ flexGrow: 1 }}>
               {seller.shop_name}
             </Typography>
             {seller.is_verified && (
-              <VerifiedIcon color="primary" sx={{ ml: 1 }} />
+              <VerifiedIcon color="primary" />
             )}
           </Box>
+
+          {/* Tariff Badge */}
+          {(seller.tariff === 'pro' || seller.tariff === 'business') && (
+            <Chip
+              label={seller.tariff === 'pro' ? 'PRO' : 'BUSINESS'}
+              size="small"
+              color={seller.tariff === 'pro' ? 'primary' : 'secondary'}
+              sx={{
+                fontWeight: 600,
+                mb: 1,
+                height: 20,
+                fontSize: '0.7rem'
+              }}
+            />
+          )}
 
           {/* Rating */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -499,7 +535,7 @@ const SellersPage: React.FC = () => {
         </Stack>
 
         {/* Active Filters */}
-        {(cityId || marketId || categoryId || minRating > 0 || verifiedOnly) && (
+        {(cityId || marketId || categoryId || minRating > 0 || verifiedOnly || tariffFilter) && (
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {cityId && (
               <Chip
@@ -531,6 +567,19 @@ const SellersPage: React.FC = () => {
                 icon={<VerifiedIcon />}
                 label="Проверенные"
                 onDelete={() => handleFilterChange('verified', false)}
+              />
+            )}
+            {tariffFilter && (
+              <Chip
+                label={
+                  tariffFilter === 'pro,business'
+                    ? 'Pro и Business'
+                    : tariffFilter === 'pro'
+                    ? 'Pro'
+                    : 'Business'
+                }
+                color="primary"
+                onDelete={() => handleFilterChange('tariff', '')}
               />
             )}
           </Box>
