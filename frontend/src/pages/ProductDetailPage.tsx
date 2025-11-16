@@ -58,7 +58,7 @@ interface Product {
     name: string;
     slug: string;
   };
-  seller: {
+  seller?: {
     id: string;
     full_name: string;
     avatar?: string;
@@ -402,31 +402,35 @@ const ProductDetailPage: React.FC = () => {
               <Divider sx={{ my: 3 }} />
 
               {/* Seller Info */}
-              <Typography variant="h6" gutterBottom fontWeight={600}>
-                Продавец
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
-                  <Store />
-                </Avatar>
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {product.seller.full_name}
+              {product.seller && (
+                <>
+                  <Typography variant="h6" gutterBottom fontWeight={600}>
+                    Продавец
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={product.seller.rating} size="small" readOnly />
-                    <Typography variant="body2" color="text.secondary">
-                      {product.seller.rating.toFixed(1)}
-                    </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
+                      <Store />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {product.seller.full_name}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={product.seller.rating} size="small" readOnly />
+                        <Typography variant="body2" color="text.secondary">
+                          {product.seller.rating.toFixed(1)}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Box>
-                </Box>
-              </Box>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(`/sellers/${product.seller.id}`)}
-              >
-                Посмотреть профиль продавца
-              </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate(`/sellers/${product.seller.id}`)}
+                  >
+                    Посмотреть профиль продавца
+                  </Button>
+                </>
+              )}
 
               {/* Location */}
               {product.location && (
