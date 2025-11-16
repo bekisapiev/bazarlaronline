@@ -126,7 +126,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller1_id, 'Модный стиль', 'Женская и мужская одежда высокого качества', NULL, 1, 'market', 1, 'Дордой, контейнер 456', 4.8, 127, true)
+    VALUES (gen_random_uuid(), seller1_id, 'Модный стиль', 'Женская и мужская одежда высокого качества', NULL, 1, 'market', 1, 'Дордой, контейнер 456', 4.8, 127, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 2: Магазин электроники
@@ -135,7 +135,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller2_id, 'TechnoShop', 'Смартфоны, ноутбуки, аксессуары', NULL, 1, 'boutique', NULL, 'ул. Чуй 156', 4.9, 245, true)
+    VALUES (gen_random_uuid(), seller2_id, 'TechnoShop', 'Смартфоны, ноутбуки, аксессуары', NULL, 1, 'boutique', NULL, 'ул. Чуй 156', 4.9, 245, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 3: Продукты питания
@@ -144,7 +144,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller3_id, 'Фермерские продукты', 'Свежие овощи, фрукты, молочные продукты', NULL, 1, 'market', 2, 'Ошский рынок, ряд 3', 4.5, 89, true)
+    VALUES (gen_random_uuid(), seller3_id, 'Фермерские продукты', 'Свежие овощи, фрукты, молочные продукты', NULL, 1, 'market', 2, 'Ошский рынок, ряд 3', 4.5, 89, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 4: Обувь
@@ -153,7 +153,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller4_id, 'Обувной мир', 'Турецкая и итальянская обувь', NULL, 1, 'shop', NULL, 'ТЦ Вефа, 2 этаж', 4.7, 156, true)
+    VALUES (gen_random_uuid(), seller4_id, 'Обувной мир', 'Турецкая и итальянская обувь', NULL, 1, 'shop', NULL, 'ТЦ Вефа, 2 этаж', 4.7, 156, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 5: Косметика
@@ -162,7 +162,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller5_id, 'BeautyKG', 'Корейская и европейская косметика', NULL, 1, 'office', NULL, 'ул. Токтогула 123, офис 45', 4.9, 312, true)
+    VALUES (gen_random_uuid(), seller5_id, 'BeautyKG', 'Корейская и европейская косметика', NULL, 1, 'office', NULL, 'ул. Токтогула 123, офис 45', 4.9, 312, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 6: Детские товары
@@ -171,7 +171,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller6_id, 'Детский рай', 'Игрушки, одежда, коляски', NULL, 1, 'shop', NULL, 'ТЦ Дордой Плаза', 4.6, 198, true)
+    VALUES (gen_random_uuid(), seller6_id, 'Детский рай', 'Игрушки, одежда, коляски', NULL, 1, 'shop', NULL, 'ТЦ Дордой Плаза', 4.6, 198, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 7: Спорттовары
@@ -180,7 +180,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller7_id, 'Спорт Лайф', 'Спортивная одежда и инвентарь', NULL, 1, 'mobile', NULL, 'Доставка по всему городу', 4.3, 67, false)
+    VALUES (gen_random_uuid(), seller7_id, 'Спорт Лайф', 'Спортивная одежда и инвентарь', NULL, 1, 'mobile', NULL, 'Доставка по всему городу', 4.3, 67, false)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 8: Товары для дома (Ош)
@@ -189,7 +189,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller8_id, 'Уют и комфорт', 'Текстиль, посуда, декор', NULL, 2, 'market', 6, 'Рынок Жайма, секция Б', 4.7, 134, true)
+    VALUES (gen_random_uuid(), seller8_id, 'Уют и комфорт', 'Текстиль, посуда, декор', NULL, 2, 'market', 6, 'Рынок Жайма, секция Б', 4.7, 134, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 9: Одежда (Ош)
@@ -198,7 +198,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller9_id, 'Silk Road Fashion', 'Традиционная и современная одежда', NULL, 2, 'boutique', NULL, 'ул. Ленина 78', 4.8, 201, true)
+    VALUES (gen_random_uuid(), seller9_id, 'Silk Road Fashion', 'Традиционная и современная одежда', NULL, 2, 'boutique', NULL, 'ул. Ленина 78', 4.8, 201, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 10: Электроника (Джалал-Абад)
@@ -207,7 +207,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (id, user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller10_id, 'Gadget Store', 'Гаджеты и аксессуары', NULL, 3, 'shop', NULL, 'Центральный рынок', 4.5, 92, true)
+    VALUES (gen_random_uuid(), seller10_id, 'Gadget Store', 'Гаджеты и аксессуары', NULL, 3, 'shop', NULL, 'Центральный рынок', 4.5, 92, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Тестовые товары для каждого продавца
