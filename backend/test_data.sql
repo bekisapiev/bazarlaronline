@@ -61,22 +61,38 @@ INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active)
 (314, 31, 'Другие бренды', 'other-phones', 3, 4, true)
 ON CONFLICT (id) DO NOTHING;
 
+-- Функция для генерации referral_id (12 символов, буквы и цифры)
+CREATE OR REPLACE FUNCTION generate_referral_id()
+RETURNS TEXT AS $$
+DECLARE
+    chars TEXT := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    result TEXT := '';
+    i INTEGER;
+BEGIN
+    FOR i IN 1..12 LOOP
+        result := result || substr(chars, floor(random() * length(chars) + 1)::integer, 1);
+    END LOOP;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Тестовый админ (замените email на свой)
 -- Пароль нужно будет установить через OAuth
-INSERT INTO users (id, email, full_name, role, tariff, created_at, is_banned)
+INSERT INTO users (id, email, full_name, role, tariff, referral_id, created_at, is_banned)
 VALUES (
     gen_random_uuid(),
     'admin@bazarlar.online',
     'Администратор',
     'admin',
     'business',
+    generate_referral_id(),
     NOW(),
     false
 )
 ON CONFLICT (email) DO NOTHING;
 
 -- Тестовый продавец
-INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
+INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
 VALUES (
     gen_random_uuid(),
     'seller@bazarlar.online',
@@ -84,6 +100,7 @@ VALUES (
     '+996555123456',
     'seller',
     'pro',
+    generate_referral_id(),
     NOW(),
     false
 )
@@ -104,8 +121,8 @@ DECLARE
     seller10_id UUID := gen_random_uuid();
 BEGIN
     -- Продавец 1: Магазин одежды на Дордое
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller1_id, 'seller1@test.com', 'Айгуль Асанова', '+996555111111', 'seller', 'pro', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller1_id, 'seller1@test.com', 'Айгуль Асанова', '+996555111111', 'seller', 'pro', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -113,8 +130,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 2: Магазин электроники
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller2_id, 'seller2@test.com', 'Тимур Бекмуратов', '+996555222222', 'seller', 'business', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller2_id, 'seller2@test.com', 'Тимур Бекмуратов', '+996555222222', 'seller', 'business', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -122,8 +139,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 3: Продукты питания
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller3_id, 'seller3@test.com', 'Нургуль Токтогулова', '+996555333333', 'seller', 'free', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller3_id, 'seller3@test.com', 'Нургуль Токтогулова', '+996555333333', 'seller', 'free', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -131,8 +148,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 4: Обувь
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller4_id, 'seller4@test.com', 'Эрлан Шаршеев', '+996555444444', 'seller', 'pro', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller4_id, 'seller4@test.com', 'Эрлан Шаршеев', '+996555444444', 'seller', 'pro', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -140,8 +157,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 5: Косметика
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller5_id, 'seller5@test.com', 'Жанара Исакова', '+996555555555', 'seller', 'business', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller5_id, 'seller5@test.com', 'Жанара Исакова', '+996555555555', 'seller', 'business', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -149,8 +166,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 6: Детские товары
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller6_id, 'seller6@test.com', 'Назира Абдиева', '+996555666666', 'seller', 'pro', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller6_id, 'seller6@test.com', 'Назира Абдиева', '+996555666666', 'seller', 'pro', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -158,8 +175,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 7: Спорттовары
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller7_id, 'seller7@test.com', 'Азамат Мураталиев', '+996555777777', 'seller', 'free', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller7_id, 'seller7@test.com', 'Азамат Мураталиев', '+996555777777', 'seller', 'free', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -167,8 +184,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 8: Товары для дома (Ош)
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller8_id, 'seller8@test.com', 'Гулнара Сыдыкова', '+996555888888', 'seller', 'pro', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller8_id, 'seller8@test.com', 'Гулнара Сыдыкова', '+996555888888', 'seller', 'pro', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -176,8 +193,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 9: Одежда (Ош)
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller9_id, 'seller9@test.com', 'Бактыгуль Жумабаева', '+996555999999', 'seller', 'business', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller9_id, 'seller9@test.com', 'Бактыгуль Жумабаева', '+996555999999', 'seller', 'business', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -185,8 +202,8 @@ BEGIN
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 10: Электроника (Джалал-Абад)
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
-    VALUES (seller10_id, 'seller10@test.com', 'Эмир Алиев', '+996555000000', 'seller', 'pro', NOW(), false)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (seller10_id, 'seller10@test.com', 'Эмир Алиев', '+996555000000', 'seller', 'pro', generate_referral_id(), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
