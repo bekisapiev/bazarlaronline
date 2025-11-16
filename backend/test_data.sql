@@ -11,18 +11,18 @@ INSERT INTO cities (id, name, slug) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Рынки в Бишкеке
-INSERT INTO markets (id, city_id, name, slug, address, latitude, longitude) VALUES
-(1, 1, 'Дордой', 'dordoy', 'ул. Шабдан Баатыра', 42.8924, 74.6340),
-(2, 1, 'Ошский рынок', 'oshskiy', 'ул. Киевская', 42.8746, 74.6122),
-(3, 1, 'Ортосайский рынок', 'ortosay', 'ул. Ахунбаева', 42.8544, 74.6206),
-(4, 1, 'Аламединский рынок', 'alamedinsky', 'ул. Ибраимова', 42.8489, 74.5899),
-(5, 1, 'Ак-Эмир', 'ak-emir', 'ул. Горького', 42.8704, 74.5946)
+INSERT INTO markets (id, city_id, name, address, latitude, longitude) VALUES
+(1, 1, 'Дордой', 'ул. Шабдан Баатыра', 42.8924, 74.6340),
+(2, 1, 'Ошский рынок', 'ул. Киевская', 42.8746, 74.6122),
+(3, 1, 'Ортосайский рынок', 'ул. Ахунбаева', 42.8544, 74.6206),
+(4, 1, 'Аламединский рынок', 'ул. Ибраимова', 42.8489, 74.5899),
+(5, 1, 'Ак-Эмир', 'ул. Горького', 42.8704, 74.5946)
 ON CONFLICT (id) DO NOTHING;
 
 -- Рынки в Оше
-INSERT INTO markets (id, city_id, name, slug, address) VALUES
-(6, 2, 'Жайма', 'jayma', 'Ошский базар'),
-(7, 2, 'Кара-Суу', 'kara-suu', 'Кара-Суйский рынок')
+INSERT INTO markets (id, city_id, name, address) VALUES
+(6, 2, 'Жайма', 'Ошский базар'),
+(7, 2, 'Кара-Суу', 'Кара-Суйский рынок')
 ON CONFLICT (id) DO NOTHING;
 
 -- Категории уровня 1
