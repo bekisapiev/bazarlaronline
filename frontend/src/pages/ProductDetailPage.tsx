@@ -425,7 +425,7 @@ const ProductDetailPage: React.FC = () => {
                   </Box>
                   <Button
                     variant="outlined"
-                    onClick={() => navigate(`/sellers/${product.seller.id}`)}
+                    onClick={() => navigate(`/sellers/${product.seller?.id}`)}
                   >
                     Посмотреть профиль продавца
                   </Button>
