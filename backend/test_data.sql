@@ -106,6 +106,56 @@ VALUES (
 )
 ON CONFLICT (email) DO NOTHING;
 
+-- Создаем seller_profiles для основных пользователей
+DO $$
+DECLARE
+    admin_user_id UUID;
+    seller_user_id UUID;
+BEGIN
+    -- Получаем ID админа
+    SELECT id INTO admin_user_id FROM users WHERE email = 'admin@bazarlar.online';
+
+    -- Получаем ID продавца
+    SELECT id INTO seller_user_id FROM users WHERE email = 'seller@bazarlar.online';
+
+    -- Создаем профиль для админа
+    IF admin_user_id IS NOT NULL THEN
+        INSERT INTO seller_profiles (id, user_id, shop_name, description, city_id, seller_type, address, rating, reviews_count, is_verified)
+        VALUES (
+            gen_random_uuid(),
+            admin_user_id,
+            'Premium Store',
+            'Магазин администратора с бизнес-тарифом',
+            1,
+            'shop',
+            'ул. Киевская 123, офис 1',
+            5.0,
+            500,
+            true
+        )
+        ON CONFLICT (user_id) DO NOTHING;
+    END IF;
+
+    -- Создаем профиль для тестового продавца
+    IF seller_user_id IS NOT NULL THEN
+        INSERT INTO seller_profiles (id, user_id, shop_name, description, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
+        VALUES (
+            gen_random_uuid(),
+            seller_user_id,
+            'Pro Seller Shop',
+            'Тестовый магазин продавца с PRO-тарифом',
+            1,
+            'market',
+            1,
+            'Дордой, контейнер 100',
+            4.9,
+            350,
+            true
+        )
+        ON CONFLICT (user_id) DO NOTHING;
+    END IF;
+END $$;
+
 -- Тестовые продавцы с разными профилями
 DO $$
 DECLARE
