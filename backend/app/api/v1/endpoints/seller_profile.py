@@ -94,8 +94,9 @@ async def get_sellers_catalog(
     market_id: Optional[int] = Query(None, description="Filter by market"),
     tariff: Optional[str] = Query(None, description="Filter by user tariff (pro, business)"),
     search: Optional[str] = Query(None, description="Search in shop names"),
-    limit: int = Query(30, le=100),
-    offset: int = 0,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(30, le=100, description="Items per page"),
+    sort_by: Optional[str] = Query("rating", description="Sort by field"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -103,6 +104,9 @@ async def get_sellers_catalog(
 
     Returns list of seller profiles with filters including tariff
     """
+    # Calculate offset from page and page_size
+    offset = (page - 1) * page_size
+
     # Join with User to get tariff information
     query = select(SellerProfile, User).join(User, SellerProfile.user_id == User.id)
 
@@ -153,8 +157,12 @@ async def get_sellers_catalog(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
 
+    # Calculate total pages
+    import math
+    total_pages = math.ceil(total / page_size) if total > 0 else 1
+
     # Pagination
-    query = query.limit(limit).offset(offset)
+    query = query.limit(page_size).offset(offset)
 
     result = await db.execute(query)
     rows = result.all()
@@ -179,9 +187,10 @@ async def get_sellers_catalog(
             for row in rows
         ],
         "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": (offset + limit) < total
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "has_more": page < total_pages
     }
 
 

@@ -56,7 +56,7 @@ export const productsAPI = {
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
   getCities: () => api.get('/locations/cities'),
   getMarkets: (params: any) => api.get('/locations/markets', { params }),
-  getSellers: (params: any) => api.get('/sellers/', { params }),
+  getSellers: (params: any) => api.get('/seller-profile/catalog', { params }),
 };
 
 export const ordersAPI = {
