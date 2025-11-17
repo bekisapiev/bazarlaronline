@@ -9,6 +9,9 @@ services:
       POSTGRES_DB: bazarlar_claude
       POSTGRES_USER: bazarlar_user
       POSTGRES_PASSWORD: bazarlar_pass
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ru_RU.UTF-8"
+      LC_ALL: ru_RU.UTF-8
+      LANG: ru_RU.UTF-8
     ports:
       - "5432:5432"
     volumes:
