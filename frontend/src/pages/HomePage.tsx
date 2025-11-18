@@ -166,27 +166,30 @@ const HomePage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(response.data);
+      setCities(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error loading cities:', error);
+      setCities([]);
     }
   };
 
   const loadMarkets = async (cityId: number) => {
     try {
       const response = await productsAPI.getMarkets({ city_id: cityId });
-      setMarkets(response.data);
+      setMarkets(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error loading markets:', error);
+      setMarkets([]);
     }
   };
 
   const loadCategories = async () => {
     try {
       const response = await productsAPI.getCategories();
-      setCategories(response.data);
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error loading categories:', error);
+      setCategories([]);
     }
   };
 
@@ -237,9 +240,9 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const category1Options = categories;
+  const category1Options = Array.isArray(categories) ? categories : [];
   const category2Options = selectedCategory1
-    ? categories.find((c) => c.id === selectedCategory1)?.children || []
+    ? category1Options.find((c) => c.id === selectedCategory1)?.children || []
     : [];
   const category3Options = selectedCategory2
     ? category2Options.find((c) => c.id === selectedCategory2)?.children || []
