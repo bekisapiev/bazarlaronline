@@ -105,10 +105,11 @@ const ProductsPage: React.FC = () => {
       if (priceRange[1] < 100000) params.max_price = priceRange[1];
 
       const response = await productsAPI.getProducts(params);
-      setProducts(response.data.items);
-      setTotalPages(response.data.total_pages);
+      setProducts(Array.isArray(response.data.items) ? response.data.items : []);
+      setTotalPages(response.data.total_pages || 1);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки товаров');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -123,9 +124,10 @@ const ProductsPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]);
     }
   };
 

@@ -105,9 +105,10 @@ const SellersPage: React.FC = () => {
   const loadMarkets = useCallback(async () => {
     try {
       const response = await productsAPI.getMarkets(cityId ? { city_id: cityId } : {});
-      setMarkets(response.data);
+      setMarkets(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load markets:', err);
+      setMarkets([]);
     }
   }, [cityId]);
 
@@ -129,10 +130,11 @@ const SellersPage: React.FC = () => {
       if (verifiedOnly) params.verified_only = true;
 
       const response = await productsAPI.getSellers(params);
-      setSellers(response.data.items);
-      setTotalPages(response.data.total_pages);
+      setSellers(Array.isArray(response.data.items) ? response.data.items : []);
+      setTotalPages(response.data.total_pages || 1);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки продавцов');
+      setSellers([]);
     } finally {
       setLoading(false);
     }
@@ -155,18 +157,20 @@ const SellersPage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(response.data);
+      setCities(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load cities:', err);
+      setCities([]);
     }
   };
 
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]);
     }
   };
 

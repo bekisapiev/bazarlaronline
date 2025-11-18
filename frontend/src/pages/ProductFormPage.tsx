@@ -153,9 +153,10 @@ const ProductFormPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategoryTree();
-      setCategories(response.data);
+      setCategories(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]);
     }
   };
 
