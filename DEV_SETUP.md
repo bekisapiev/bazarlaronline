@@ -119,7 +119,31 @@ npm start
 
 Frontend будет доступен на: http://localhost:3000
 
-## Шаг 4: (Опционально) Celery для фоновых задач
+## Шаг 4: Загрузить начальные данные в базу
+
+**ВАЖНО:** Если вы впервые запускаете проект, база данных будет пустой!
+
+Чтобы заполнить базу данных городами, рынками и категориями:
+
+```bash
+cd backend
+
+# Убедитесь, что venv активирован
+source venv/bin/activate  # Linux/macOS
+# venv\Scripts\activate    # Windows
+
+# Запустите seed скрипт
+python seed.py
+```
+
+Скрипт добавит:
+- 9 городов Кыргызстана (Бишкек, Ош, Джалал-Абад и др.)
+- 10 рынков
+- 28 категорий товаров и услуг
+
+**Подробная инструкция:** См. [DATABASE_SETUP.md](DATABASE_SETUP.md)
+
+## Шаг 5: (Опционально) Celery для фоновых задач
 
 Если нужны фоновые задачи (Celery), откройте **еще один терминал**:
 
@@ -183,6 +207,18 @@ redis-cli ping
 | API Docs | http://localhost:8000/api/docs | Swagger UI |
 
 ## Troubleshooting
+
+### Frontend показывает "Товары не найдены" или "Not Found"
+**Причина:** База данных пустая, нет городов/рынков/категорий.
+
+**Решение:** Загрузите начальные данные:
+```bash
+cd backend
+source venv/bin/activate  # или venv\Scripts\activate для Windows
+python seed.py
+```
+
+**Подробнее:** См. [DATABASE_SETUP.md](DATABASE_SETUP.md)
 
 ### Порт 5432 уже занят
 Если у вас локально установлен PostgreSQL:
