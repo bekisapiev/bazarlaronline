@@ -93,6 +93,7 @@ const PartnersPage: React.FC = () => {
       return;
     }
     loadPartnerData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, navigate]);
 
   const loadPartnerData = async () => {

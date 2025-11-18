@@ -143,12 +143,14 @@ const SellersPage: React.FC = () => {
     loadCities();
     loadMarkets();
     loadCategories();
-  }, [loadMarkets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load sellers when filters change
   useEffect(() => {
     loadSellers();
-  }, [loadSellers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, sortBy, search, cityId, marketId, categoryId, minRating, verifiedOnly]);
 
   const loadCities = async () => {
     try {

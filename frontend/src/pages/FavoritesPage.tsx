@@ -79,7 +79,8 @@ const FavoritesPage: React.FC = () => {
 
   useEffect(() => {
     loadFavorites(true);
-  }, [loadFavorites]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRemoveFavorite = async (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();

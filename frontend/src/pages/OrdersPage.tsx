@@ -110,6 +110,7 @@ const OrdersPage: React.FC = () => {
       return;
     }
     loadOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, navigate]);
 
   const loadOrders = async () => {
