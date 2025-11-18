@@ -70,7 +70,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Backend будет доступен на: http://localhost:8000
 
-API документация: http://localhost:8000/docs
+API документация: http://localhost:8000/api/docs
 
 ## Шаг 3: Настроить frontend
 
@@ -180,7 +180,7 @@ redis-cli ping
 | Redis | localhost:6379 | Кэш и очереди |
 | Backend API | http://localhost:8000 | FastAPI приложение |
 | Frontend | http://localhost:3000 | React приложение |
-| API Docs | http://localhost:8000/docs | Swagger UI |
+| API Docs | http://localhost:8000/api/docs | Swagger UI |
 
 ## Troubleshooting
 
