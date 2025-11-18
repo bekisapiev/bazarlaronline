@@ -87,13 +87,28 @@ npm install
 
 ### 3.2 Создать .env для frontend
 
+**Для Linux/macOS:**
 ```bash
 # В папке frontend создайте файл .env
-cat > .env << EOF
+cd frontend
+cp .env.example .env
+```
+
+**Для Windows (PowerShell):**
+```powershell
+# В папке frontend создайте файл .env
+cd frontend
+Copy-Item .env.example .env
+```
+
+**ИЛИ создайте файл вручную:**
+Создайте файл `.env` в папке `frontend` со следующим содержимым:
+```
 REACT_APP_API_URL=http://localhost:8000
 REACT_APP_SOCKET_URL=http://localhost:8000
-EOF
 ```
+
+**ВАЖНО:** После создания .env файла обязательно перезапустите dev-сервер (npm start), если он уже был запущен!
 
 ### 3.3 Запустить frontend
 
