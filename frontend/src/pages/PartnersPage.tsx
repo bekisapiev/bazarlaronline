@@ -29,7 +29,6 @@ import {
 } from '@mui/material';
 import {
   ContentCopy as CopyIcon,
-  Share as ShareIcon,
   TrendingUp as TrendingIcon,
   People as PeopleIcon,
   AccountBalance as WalletIcon,
@@ -38,7 +37,6 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Link as LinkIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -95,7 +93,7 @@ const PartnersPage: React.FC = () => {
       return;
     }
     loadPartnerData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   const loadPartnerData = async () => {
     setLoading(true);

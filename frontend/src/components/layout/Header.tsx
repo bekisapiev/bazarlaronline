@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -42,20 +42,20 @@ const Header: React.FC = () => {
 
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadUnreadCount();
-    }
-  }, [isAuthenticated]);
-
-  const loadUnreadCount = async () => {
+  const loadUnreadCount = useCallback(async () => {
     try {
       const response = await notificationsAPI.getUnreadCount();
       dispatch(setUnreadCount(response.data.unread_count));
     } catch (error) {
       console.error('Error loading unread count:', error);
     }
-  };
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadUnreadCount();
+    }
+  }, [isAuthenticated, loadUnreadCount]);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setProfileAnchor(event.currentTarget);

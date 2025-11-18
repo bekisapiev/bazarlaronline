@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
   Box,
   Grid,
-  Card,
-  CardContent,
   Button,
   TextField,
   Select,
@@ -34,8 +32,6 @@ import {
   Delete as DeleteIcon,
   CloudUpload as UploadIcon,
   Save as SaveIcon,
-  Close as CloseIcon,
-  Image as ImageIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -97,7 +93,6 @@ const ProductFormPage: React.FC = () => {
 
   // Image upload
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   // Characteristics
   const [newCharKey, setNewCharKey] = useState('');
@@ -108,23 +103,7 @@ const ProductFormPage: React.FC = () => {
     loadCategories();
   }, []);
 
-  // Load product if edit mode
-  useEffect(() => {
-    if (isEditMode && id) {
-      loadProduct(id);
-    }
-  }, [isEditMode, id]);
-
-  const loadCategories = async () => {
-    try {
-      const response = await categoriesAPI.getCategoryTree();
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-    }
-  };
-
-  const loadProduct = async (productId: string) => {
+  const loadProduct = useCallback(async (productId: string) => {
     setLoading(true);
     try {
       const response = await productsAPI.getProductById(productId);
@@ -159,6 +138,23 @@ const ProductFormPage: React.FC = () => {
       setError(err.response?.data?.detail || 'Ошибка загрузки товара');
     } finally {
       setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categories, id]);
+
+  // Load product if edit mode
+  useEffect(() => {
+    if (isEditMode && id) {
+      loadProduct(id);
+    }
+  }, [isEditMode, id, loadProduct]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getCategoryTree();
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
     }
   };
 

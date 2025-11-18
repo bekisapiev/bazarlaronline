@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -38,11 +38,7 @@ const FavoritesPage: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadFavorites(true);
-  }, []);
-
-  const loadFavorites = async (reset: boolean = false) => {
+  const loadFavorites = useCallback(async (reset: boolean = false) => {
     try {
       setError(null);
       if (reset) {
@@ -79,7 +75,11 @@ const FavoritesPage: React.FC = () => {
       dispatch(setLoading(false));
       setLoadingMore(false);
     }
-  };
+  }, [dispatch, favorites, page]);
+
+  useEffect(() => {
+    loadFavorites(true);
+  }, [loadFavorites]);
 
   const handleRemoveFavorite = async (productId: string, e: React.MouseEvent) => {
     e.stopPropagation();

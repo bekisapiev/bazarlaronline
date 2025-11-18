@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -102,46 +102,16 @@ const SellersPage: React.FC = () => {
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
 
-  // Load initial data
-  useEffect(() => {
-    loadCities();
-    loadMarkets();
-    loadCategories();
-  }, []);
-
-  // Load sellers when filters change
-  useEffect(() => {
-    loadSellers();
-  }, [page, cityId, marketId, categoryId, minRating, verifiedOnly, sortBy]);
-
-  const loadCities = async () => {
-    try {
-      const response = await productsAPI.getCities();
-      setCities(response.data);
-    } catch (err) {
-      console.error('Failed to load cities:', err);
-    }
-  };
-
-  const loadMarkets = async () => {
+  const loadMarkets = useCallback(async () => {
     try {
       const response = await productsAPI.getMarkets(cityId ? { city_id: cityId } : {});
       setMarkets(response.data);
     } catch (err) {
       console.error('Failed to load markets:', err);
     }
-  };
+  }, [cityId]);
 
-  const loadCategories = async () => {
-    try {
-      const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-    }
-  };
-
-  const loadSellers = async () => {
+  const loadSellers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -165,6 +135,36 @@ const SellersPage: React.FC = () => {
       setError(err.response?.data?.detail || 'Ошибка загрузки продавцов');
     } finally {
       setLoading(false);
+    }
+  }, [page, sortBy, search, cityId, marketId, categoryId, minRating, verifiedOnly]);
+
+  // Load initial data
+  useEffect(() => {
+    loadCities();
+    loadMarkets();
+    loadCategories();
+  }, [loadMarkets]);
+
+  // Load sellers when filters change
+  useEffect(() => {
+    loadSellers();
+  }, [loadSellers]);
+
+  const loadCities = async () => {
+    try {
+      const response = await productsAPI.getCities();
+      setCities(response.data);
+    } catch (err) {
+      console.error('Failed to load cities:', err);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getCategories({ parent_id: null });
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
     }
   };
 

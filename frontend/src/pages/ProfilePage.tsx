@@ -30,7 +30,6 @@ import {
   DialogActions,
   IconButton,
   CardMedia,
-  CardActions,
 } from '@mui/material';
 import {
   Person,
@@ -47,9 +46,7 @@ import {
   Remove,
   FavoriteBorder,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { RootState } from '../store';
 import {
   usersAPI,
   ordersAPI,
@@ -118,7 +115,6 @@ interface ViewHistoryItem {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
 
   const [currentTab, setCurrentTab] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -166,6 +162,7 @@ const ProfilePage: React.FC = () => {
     } else if (currentTab === 4 && viewHistory.length === 0) {
       loadViewHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTab]);
 
   const loadProfile = async () => {

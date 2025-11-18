@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -85,7 +85,7 @@ interface Review {
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -101,19 +101,7 @@ const ProductDetailPage: React.FC = () => {
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
 
-  useEffect(() => {
-    if (id) {
-      loadProduct();
-      loadReviews();
-      loadSimilarProducts();
-      if (isAuthenticated) {
-        checkFavoriteStatus();
-        recordView();
-      }
-    }
-  }, [id, isAuthenticated]);
-
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -129,9 +117,9 @@ const ProductDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     try {
       const response = await reviewsAPI.getProductReviews(id!, { limit: 10, offset: 0 });
       const reviewsData = response.data.items || response.data;
@@ -146,33 +134,45 @@ const ProductDetailPage: React.FC = () => {
     } catch (error) {
       console.error('Error loading reviews:', error);
     }
-  };
+  }, [id]);
 
-  const loadSimilarProducts = async () => {
+  const loadSimilarProducts = useCallback(async () => {
     try {
       const response = await recommendationsAPI.getSimilarProducts(id!, 8);
       setSimilarProducts(response.data.items || response.data);
     } catch (error) {
       console.error('Error loading similar products:', error);
     }
-  };
+  }, [id]);
 
-  const checkFavoriteStatus = async () => {
+  const checkFavoriteStatus = useCallback(async () => {
     try {
       const response = await favoritesAPI.checkFavorite(id!);
       setIsFavorite(response.data.is_favorite);
     } catch (error) {
       console.error('Error checking favorite status:', error);
     }
-  };
+  }, [id]);
 
-  const recordView = async () => {
+  const recordView = useCallback(async () => {
     try {
       await favoritesAPI.recordView(id!);
     } catch (error) {
       console.error('Error recording view:', error);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      loadProduct();
+      loadReviews();
+      loadSimilarProducts();
+      if (isAuthenticated) {
+        checkFavoriteStatus();
+        recordView();
+      }
+    }
+  }, [id, isAuthenticated, loadProduct, loadReviews, loadSimilarProducts, checkFavoriteStatus, recordView]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {

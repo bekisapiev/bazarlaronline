@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -89,21 +89,7 @@ const ProductsPage: React.FC = () => {
     loadCategories();
   }, []);
 
-  // Load products when filters change
-  useEffect(() => {
-    loadProducts();
-  }, [page, categoryId, sortBy, search]);
-
-  const loadCategories = async () => {
-    try {
-      const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Failed to load categories:', err);
-    }
-  };
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -125,6 +111,20 @@ const ProductsPage: React.FC = () => {
       setError(err.response?.data?.detail || 'Ошибка загрузки товаров');
     } finally {
       setLoading(false);
+    }
+  }, [page, sortBy, search, categoryId, priceRange]);
+
+  // Load products when filters change
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await categoriesAPI.getCategories({ parent_id: null });
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Failed to load categories:', err);
     }
   };
 
@@ -236,7 +236,6 @@ const ProductsPage: React.FC = () => {
 
   const renderProductCard = (product: Product) => {
     const isFavorite = favoriteIds.has(product.id);
-    const finalPrice = product.discount_price || product.price;
 
     return (
       <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>

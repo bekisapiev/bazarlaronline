@@ -38,8 +38,6 @@ import {
   Warehouse as WarehouseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import { productsAPI } from '../services/api';
 
 interface Product {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Button } from '@mui/material';
 import { Google } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
@@ -16,27 +16,7 @@ const GoogleLoginButton: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Load Google OAuth script
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      window.google.accounts.id.initialize({
-        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-        callback: handleCredentialResponse,
-      });
-    };
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  const handleCredentialResponse = async (response: any) => {
+  const handleCredentialResponse = useCallback(async (response: any) => {
     try {
       const token = response.credential;
 
@@ -57,7 +37,27 @@ const GoogleLoginButton: React.FC = () => {
       console.error('Google login failed:', error);
       alert('Ошибка входа. Попробуйте еще раз.');
     }
-  };
+  }, [dispatch, navigate]);
+
+  useEffect(() => {
+    // Load Google OAuth script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      window.google.accounts.id.initialize({
+        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+      });
+    };
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [handleCredentialResponse]);
 
   const handleGoogleLogin = () => {
     window.google.accounts.id.prompt();
