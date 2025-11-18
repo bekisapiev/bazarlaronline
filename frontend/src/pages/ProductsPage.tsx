@@ -117,7 +117,8 @@ const ProductsPage: React.FC = () => {
   // Load products when filters change
   useEffect(() => {
     loadProducts();
-  }, [loadProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, sortBy, search, categoryId, priceRange]);
 
   const loadCategories = async () => {
     try {

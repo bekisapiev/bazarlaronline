@@ -109,19 +109,22 @@ const SellerDashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (period) {
       loadSalesData();
     }
-  }, [period, loadSalesData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
   useEffect(() => {
     if (sortBy) {
       loadProductPerformance();
     }
-  }, [sortBy, loadProductPerformance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy]);
 
   const loadDashboard = async () => {
     try {

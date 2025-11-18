@@ -99,7 +99,8 @@ const NotificationsPage: React.FC = () => {
 
   useEffect(() => {
     loadNotifications(true);
-  }, [currentFilter, loadNotifications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFilter]);
 
   const handleMarkAsRead = async (notificationId: string, isRead: boolean) => {
     try {

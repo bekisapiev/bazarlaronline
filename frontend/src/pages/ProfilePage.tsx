@@ -163,7 +163,7 @@ const ProfilePage: React.FC = () => {
       loadViewHistory();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab]);
+  }, [currentTab, orders.length, transactions.length, favorites.length, viewHistory.length]);
 
   const loadProfile = async () => {
     try {

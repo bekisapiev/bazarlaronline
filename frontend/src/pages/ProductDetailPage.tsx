@@ -172,7 +172,8 @@ const ProductDetailPage: React.FC = () => {
         recordView();
       }
     }
-  }, [id, isAuthenticated, loadProduct, loadReviews, loadSimilarProducts, checkFavoriteStatus, recordView]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isAuthenticated]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {

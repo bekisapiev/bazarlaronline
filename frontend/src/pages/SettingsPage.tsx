@@ -96,7 +96,8 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     loadSettings();
-  }, [loadSettings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (settings) {

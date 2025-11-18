@@ -147,7 +147,8 @@ const ProductFormPage: React.FC = () => {
     if (isEditMode && id) {
       loadProduct(id);
     }
-  }, [isEditMode, id, loadProduct]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, id]);
 
   const loadCategories = async () => {
     try {
