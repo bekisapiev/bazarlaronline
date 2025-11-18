@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -25,8 +25,6 @@ import {
   Link,
   Chip,
   Menu,
-  Divider,
-  IconButton,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -37,13 +35,9 @@ import {
   NavigateNext,
   CloudDownload,
   ArrowUpward,
-  ArrowDownward,
-  MoreVert,
   Inventory,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import { analyticsAPI, exportAPI } from '../services/api';
 
 interface DashboardData {
@@ -80,7 +74,6 @@ interface SalesData {
 
 const SellerDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +89,24 @@ const SellerDashboardPage: React.FC = () => {
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
   const [exporting, setExporting] = useState(false);
 
+  const loadProductPerformance = useCallback(async () => {
+    try {
+      const response = await analyticsAPI.getProductPerformance(sortBy, 10);
+      setProductPerformance(response.data);
+    } catch (err: any) {
+      console.error('Error loading product performance:', err);
+    }
+  }, [sortBy]);
+
+  const loadSalesData = useCallback(async () => {
+    try {
+      const response = await analyticsAPI.getSalesByPeriod(period);
+      setSalesData(response.data);
+    } catch (err: any) {
+      console.error('Error loading sales data:', err);
+    }
+  }, [period]);
+
   useEffect(() => {
     loadDashboard();
   }, []);
@@ -104,13 +115,13 @@ const SellerDashboardPage: React.FC = () => {
     if (period) {
       loadSalesData();
     }
-  }, [period]);
+  }, [period, loadSalesData]);
 
   useEffect(() => {
     if (sortBy) {
       loadProductPerformance();
     }
-  }, [sortBy]);
+  }, [sortBy, loadProductPerformance]);
 
   const loadDashboard = async () => {
     try {
@@ -123,24 +134,6 @@ const SellerDashboardPage: React.FC = () => {
       setError(err.response?.data?.detail || 'Не удалось загрузить данные');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadProductPerformance = async () => {
-    try {
-      const response = await analyticsAPI.getProductPerformance(sortBy, 10);
-      setProductPerformance(response.data);
-    } catch (err: any) {
-      console.error('Error loading product performance:', err);
-    }
-  };
-
-  const loadSalesData = async () => {
-    try {
-      const response = await analyticsAPI.getSalesByPeriod(period);
-      setSalesData(response.data);
-    } catch (err: any) {
-      console.error('Error loading sales data:', err);
     }
   };
 

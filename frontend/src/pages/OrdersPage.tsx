@@ -35,9 +35,6 @@ import {
 } from '@mui/material';
 import {
   ShoppingBag as OrderIcon,
-  LocalShipping as ShippingIcon,
-  CheckCircle as CompleteIcon,
-  Cancel as CancelIcon,
   Info as InfoIcon,
   Phone as PhoneIcon,
   LocationOn as LocationIcon,
@@ -113,7 +110,7 @@ const OrdersPage: React.FC = () => {
       return;
     }
     loadOrders();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   const loadOrders = async () => {
     setLoading(true);

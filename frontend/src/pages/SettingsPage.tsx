@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -41,7 +41,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
-import { settingsAPI, exportAPI } from '../services/api';
+import { settingsAPI } from '../services/api';
 import {
   setSettings,
   updateSettings as updateSettingsAction,
@@ -81,9 +81,22 @@ const SettingsPage: React.FC = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [exportLoading, setExportLoading] = useState(false);
 
+  const loadSettings = useCallback(async () => {
+    try {
+      dispatch(setLoading(true));
+      const response = await settingsAPI.getSettings();
+      dispatch(setSettings(response.data));
+    } catch (err: any) {
+      console.error('Error loading settings:', err);
+      const errorMessage = err.response?.data?.detail || 'Не удалось загрузить настройки';
+      dispatch(setErrorAction(errorMessage));
+      setError(errorMessage);
+    }
+  }, [dispatch]);
+
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [loadSettings]);
 
   useEffect(() => {
     if (settings) {
@@ -96,19 +109,6 @@ const SettingsPage: React.FC = () => {
       setError(storeError);
     }
   }, [storeError]);
-
-  const loadSettings = async () => {
-    try {
-      dispatch(setLoading(true));
-      const response = await settingsAPI.getSettings();
-      dispatch(setSettings(response.data));
-    } catch (err: any) {
-      console.error('Error loading settings:', err);
-      const errorMessage = err.response?.data?.detail || 'Не удалось загрузить настройки';
-      dispatch(setErrorAction(errorMessage));
-      setError(errorMessage);
-    }
-  };
 
   const handleLanguageChange = (value: string) => {
     setLocalSettings({ ...localSettings, language: value });

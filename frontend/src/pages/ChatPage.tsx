@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Container,
   Typography,
   Box,
-  Grid,
   Paper,
   List,
   ListItem,
@@ -15,7 +14,6 @@ import {
   IconButton,
   Badge,
   Divider,
-  Chip,
   CircularProgress,
   Alert,
   InputAdornment,
@@ -29,7 +27,6 @@ import {
   Send as SendIcon,
   Search as SearchIcon,
   AttachFile as AttachIcon,
-  Image as ImageIcon,
   MoreVert as MoreIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -91,6 +88,46 @@ const ChatPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  const loadConversations = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await chatAPI.getConversations();
+      setConversations(response.data);
+
+      // If no chat selected but we have conversations, select the first one
+      if (!selectedChat && response.data.length > 0) {
+        setSelectedChat(response.data[0].id);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Ошибка загрузки чатов');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedChat]);
+
+  const loadMessages = useCallback(async (chatId: string, limit = 50, offset = 0) => {
+    setLoadingMessages(true);
+    setError('');
+    try {
+      const response = await chatAPI.getMessages(chatId, limit, offset);
+      setMessages(response.data);
+      scrollToBottom();
+
+      // Mark all messages as read
+      const unreadMessages = response.data.filter(
+        (msg: Message) => !msg.is_read && msg.sender_id !== user?.id
+      );
+      for (const msg of unreadMessages) {
+        await chatAPI.markMessageRead(msg.id);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Ошибка загрузки сообщений');
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, [user?.id]);
+
   // Initialize socket connection
   useEffect(() => {
     if (!isAuthenticated) {
@@ -133,61 +170,21 @@ const ChatPage: React.FC = () => {
     return () => {
       socketRef.current?.disconnect();
     };
-  }, [isAuthenticated, selectedChat]);
+  }, [isAuthenticated, selectedChat, loadConversations, navigate]);
 
   // Load conversations
   useEffect(() => {
     if (isAuthenticated) {
       loadConversations();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadConversations]);
 
   // Load messages when chat is selected
   useEffect(() => {
     if (selectedChat) {
       loadMessages(selectedChat);
     }
-  }, [selectedChat]);
-
-  const loadConversations = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const response = await chatAPI.getConversations();
-      setConversations(response.data);
-
-      // If no chat selected but we have conversations, select the first one
-      if (!selectedChat && response.data.length > 0) {
-        setSelectedChat(response.data[0].id);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки чатов');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadMessages = async (chatId: string, limit = 50, offset = 0) => {
-    setLoadingMessages(true);
-    setError('');
-    try {
-      const response = await chatAPI.getMessages(chatId, limit, offset);
-      setMessages(response.data);
-      scrollToBottom();
-
-      // Mark all messages as read
-      const unreadMessages = response.data.filter(
-        (msg: Message) => !msg.is_read && msg.sender_id !== user?.id
-      );
-      for (const msg of unreadMessages) {
-        await chatAPI.markMessageRead(msg.id);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки сообщений');
-    } finally {
-      setLoadingMessages(false);
-    }
-  };
+  }, [selectedChat, loadMessages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChat) return;

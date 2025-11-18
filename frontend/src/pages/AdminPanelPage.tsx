@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -34,7 +34,6 @@ import {
   Breadcrumbs,
   Link,
   Divider,
-  Badge,
 } from '@mui/material';
 import {
   Warning,
@@ -47,7 +46,6 @@ import {
   NavigateNext,
   Edit,
   Visibility,
-  Delete,
   TrendingUp,
   ShoppingCart,
   People,
@@ -56,7 +54,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { reportsAPI, productsAPI, usersAPI } from '../services/api';
+import { reportsAPI, productsAPI } from '../services/api';
 import api from '../services/api';
 
 interface TabPanelProps {
@@ -163,19 +161,7 @@ const AdminPanelPage: React.FC = () => {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    if (currentTab === 0) {
-      loadReports();
-    } else if (currentTab === 1) {
-      loadUsers();
-    } else if (currentTab === 2) {
-      loadProducts();
-    } else if (currentTab === 3) {
-      loadStats();
-    }
-  }, [currentTab, reportStatusFilter, productStatusFilter]);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       setReportsLoading(true);
       const response = await reportsAPI.getPendingReports({ status: reportStatusFilter });
@@ -186,9 +172,9 @@ const AdminPanelPage: React.FC = () => {
     } finally {
       setReportsLoading(false);
     }
-  };
+  }, [reportStatusFilter]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setUsersLoading(true);
       // Admin endpoint to get all users
@@ -200,9 +186,9 @@ const AdminPanelPage: React.FC = () => {
     } finally {
       setUsersLoading(false);
     }
-  };
+  }, []);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
       const response = await productsAPI.getProducts({ status: productStatusFilter });
@@ -213,9 +199,9 @@ const AdminPanelPage: React.FC = () => {
     } finally {
       setProductsLoading(false);
     }
-  };
+  }, [productStatusFilter]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const response = await api.get('/admin/stats');
@@ -235,7 +221,19 @@ const AdminPanelPage: React.FC = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (currentTab === 0) {
+      loadReports();
+    } else if (currentTab === 1) {
+      loadUsers();
+    } else if (currentTab === 2) {
+      loadProducts();
+    } else if (currentTab === 3) {
+      loadStats();
+    }
+  }, [currentTab, loadReports, loadUsers, loadProducts, loadStats]);
 
   const handleReportReview = async (approved: boolean) => {
     if (!selectedReport) return;

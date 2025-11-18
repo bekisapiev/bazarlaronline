@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Autocomplete,
   TextField,
@@ -26,7 +26,7 @@ const SearchBar: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fetchSuggestions = async (query: string) => {
+  const fetchSuggestions = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
       setOptions([]);
       return;
@@ -62,12 +62,12 @@ const SearchBar: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Debounce the API call
-  const debouncedFetch = useCallback(
-    debounce((query: string) => fetchSuggestions(query), 300),
-    []
+  const debouncedFetch = useMemo(
+    () => debounce((query: string) => fetchSuggestions(query), 300),
+    [fetchSuggestions]
   );
 
   useEffect(() => {

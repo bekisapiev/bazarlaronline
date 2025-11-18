@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -31,7 +31,6 @@ import {
   MarkEmailUnread,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
 import { notificationsAPI } from '../services/api';
 import {
@@ -43,13 +42,11 @@ import {
   setLoading,
   setHasMore,
 } from '../store/slices/notificationsSlice';
-import { Notification } from '../store/slices/notificationsSlice';
 
 type NotificationType = 'all' | 'order' | 'review' | 'moderation' | 'system' | 'wallet';
 
 const NotificationsPage: React.FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { items: notifications, loading, hasMore } = useSelector(
     (state: RootState) => state.notifications
   );
@@ -59,11 +56,7 @@ const NotificationsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    loadNotifications(true);
-  }, [currentFilter]);
-
-  const loadNotifications = async (reset: boolean = false) => {
+  const loadNotifications = useCallback(async (reset: boolean = false) => {
     try {
       setError(null);
       if (reset) {
@@ -102,7 +95,11 @@ const NotificationsPage: React.FC = () => {
       dispatch(setLoading(false));
       setLoadingMore(false);
     }
-  };
+  }, [currentFilter, page, dispatch]);
+
+  useEffect(() => {
+    loadNotifications(true);
+  }, [currentFilter, loadNotifications]);
 
   const handleMarkAsRead = async (notificationId: string, isRead: boolean) => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -64,21 +64,7 @@ const CartPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Load product details for cart items
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    if (items.length > 0) {
-      loadProductDetails();
-    } else {
-      setLoading(false);
-    }
-  }, [items, isAuthenticated]);
-
-  const loadProductDetails = async () => {
+  const loadProductDetails = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -100,7 +86,21 @@ const CartPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [items]);
+
+  // Load product details for cart items
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (items.length > 0) {
+      loadProductDetails();
+    } else {
+      setLoading(false);
+    }
+  }, [items, isAuthenticated, loadProductDetails, navigate]);
 
   const handleRemoveItem = (productId: string) => {
     dispatch(removeFromCart(productId));
