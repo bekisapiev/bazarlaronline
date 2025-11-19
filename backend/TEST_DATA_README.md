@@ -6,13 +6,15 @@
 
 ## Что включено
 
-### Справочные данные:
+### test_data.sql - Базовые данные:
+
+#### Справочные данные:
 - **5 городов**: Бишкек, Ош, Джалал-Абад, Каракол, Токмок
 - **7 рынков**: Дордой, Ошский рынок, Ортосайский, Аламединский, Ак-Эмир, Жайма, Кара-Суу
 - **8 категорий уровня 1**: Одежда, Обувь, Электроника, Продукты питания, Товары для дома, Косметика, Детские товары, Спорт
 - **Подкатегории** для одежды и электроники (2-й и 3-й уровни)
 
-### Пользователи:
+#### Пользователи:
 - **1 администратор**: admin@bazarlar.online (тариф: business)
 - **1 базовый продавец**: seller@bazarlar.online (тариф: pro)
 - **10 тестовых продавцов** с различными профилями:
@@ -27,7 +29,7 @@
   9. Бактыгуль Жумабаева - "Silk Road Fashion" (одежда, Ош)
   10. Эмир Алиев - "Gadget Store" (электроника, Джалал-Абад)
 
-### Товары и услуги:
+#### Товары и услуги:
 **~40 товаров** в различных категориях:
 - Одежда: футболки, платья, джинсы, куртки, шарфы
 - Электроника: iPhone 15 Pro, Samsung Galaxy S24, Xiaomi, MacBook Pro, AirPods
@@ -38,6 +40,30 @@
 - Спорттовары: гантели, коврики для йоги, скакалки
 - Товары для дома: постельное белье, полотенца, шторы
 
+### test_data_orders_reviews.sql - Покупатели, заказы и отзывы:
+
+#### Покупатели:
+**8 тестовых покупателей**:
+  1. Айнура Садыкова - buyer1@test.com
+  2. Бекзат Алиев - buyer2@test.com
+  3. Гульнара Осмонова - buyer3@test.com
+  4. Данияр Токтосунов - buyer4@test.com
+  5. Елена Ким - buyer5@test.com
+  6. Жамиля Бакирова - buyer6@test.com
+  7. Замир Султанов - buyer7@test.com
+  8. Ильяс Мамбетов - buyer8@test.com
+
+#### Заказы:
+**20 заказов** с различными статусами:
+- 15 завершенных заказов (completed) - с отзывами
+- 2 заказа в обработке (processing)
+- 3 новых заказа (pending)
+
+#### Отзывы:
+**15 отзывов** от покупателей с рейтингами от 7 до 10 баллов
+- Разнообразные комментарии на русском языке
+- Покрывают разных продавцов и категории товаров
+
 ### Типы продавцов:
 - **market** - продавец на рынке (4 продавца)
 - **boutique** - бутик (2 продавца)
@@ -47,24 +73,27 @@
 
 ## Как загрузить данные
 
-### Вариант 1: Автоматический (рекомендуется)
+### Вариант 1: Полная загрузка всех данных (рекомендуется)
 
-Используйте готовый скрипт:
-
-```bash
-cd backend
-chmod +x load_test_data.sh
-./load_test_data.sh
-```
-
-### Вариант 2: Через Docker Compose
+Загрузите базовые данные и дополнительные данные (заказы, отзывы):
 
 ```bash
 # Убедитесь, что контейнеры запущены
 docker compose up -d
 
-# Выполните скрипт
+# Загрузите базовые данные
 docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/test_data.sql
+
+# Загрузите данные о покупателях, заказах и отзывах
+docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/test_data_orders_reviews.sql
+```
+
+### Вариант 2: Используйте готовый скрипт
+
+```bash
+cd backend
+chmod +x load_test_data.sh
+./load_test_data.sh
 ```
 
 ### Вариант 3: Через прямое подключение к PostgreSQL
@@ -73,13 +102,13 @@ docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < back
 
 ```bash
 psql -U bazarlar_user -d bazarlar_claude -f backend/test_data.sql
+psql -U bazarlar_user -d bazarlar_claude -f backend/test_data_orders_reviews.sql
 ```
 
-### Вариант 4: Через Docker exec интерактивно
+### Вариант 4: Только базовые данные (без заказов и отзывов)
 
 ```bash
-docker exec -it bazarlar_postgres bash
-psql -U bazarlar_user -d bazarlar_claude -f /docker-entrypoint-initdb.d/test_data.sql
+docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/test_data.sql
 ```
 
 ## Проверка данных
@@ -91,12 +120,21 @@ psql -U bazarlar_user -d bazarlar_claude -f /docker-entrypoint-initdb.d/test_dat
 docker exec -it bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude
 
 # Выполните SQL запросы:
-SELECT COUNT(*) FROM cities;           -- Должно быть 5
-SELECT COUNT(*) FROM markets;          -- Должно быть 7
-SELECT COUNT(*) FROM categories;       -- Должно быть много
-SELECT COUNT(*) FROM users WHERE role='seller';  -- Должно быть 11
-SELECT COUNT(*) FROM seller_profiles;  -- Должно быть 11
-SELECT COUNT(*) FROM products;         -- Должно быть ~40
+SELECT COUNT(*) FROM cities;                      -- Должно быть 5
+SELECT COUNT(*) FROM markets;                     -- Должно быть 7
+SELECT COUNT(*) FROM categories;                  -- Должно быть много
+SELECT COUNT(*) FROM users WHERE role='seller';   -- Должно быть 11
+SELECT COUNT(*) FROM users WHERE role='user';     -- Должно быть 8 (покупатели)
+SELECT COUNT(*) FROM seller_profiles;             -- Должно быть 11
+SELECT COUNT(*) FROM products;                    -- Должно быть ~40
+SELECT COUNT(*) FROM orders;                      -- Должно быть 20
+SELECT COUNT(*) FROM reviews;                     -- Должно быть 15
+
+# Проверить статусы заказов:
+SELECT status, COUNT(*) FROM orders GROUP BY status;
+
+# Проверить средний рейтинг отзывов:
+SELECT AVG(rating) as avg_rating, MIN(rating) as min_rating, MAX(rating) as max_rating FROM reviews;
 ```
 
 ## Данные для входа (после настройки OAuth)
@@ -105,6 +143,7 @@ SELECT COUNT(*) FROM products;         -- Должно быть ~40
 - **Администратор**: admin@bazarlar.online
 - **Продавец**: seller@bazarlar.online
 - **Тестовые продавцы**: seller1@test.com - seller10@test.com
+- **Тестовые покупатели**: buyer1@test.com - buyer8@test.com
 
 ## Примечания
 
@@ -158,12 +197,17 @@ TRUNCATE TABLE products, seller_profiles, users, categories, markets, cities CAS
 
 ## Дополнительные скрипты
 
+### Уже реализовано:
+- ✅ **test_data.sql** - Базовые данные (города, рынки, категории, продавцы, товары)
+- ✅ **test_data_orders_reviews.sql** - Покупатели, заказы и отзывы
+
+### Возможные дополнения:
 Для разработки и тестирования могут понадобиться дополнительные данные:
-- Отзывы (reviews)
-- Заказы (orders)
 - Сообщения в чатах (messages)
 - Транзакции (transactions)
 - Купоны (coupons)
+- История просмотров (view_history)
+- Избранное (favorites)
 
 Эти данные можно добавить позже по необходимости.
 
@@ -178,4 +222,5 @@ TRUNCATE TABLE products, seller_profiles, users, categories, markets, cities CAS
 
 ---
 **Создано**: 2025-11-16
-**Версия**: 1.0
+**Обновлено**: 2025-11-19 (добавлены покупатели, заказы и отзывы)
+**Версия**: 1.1
