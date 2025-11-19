@@ -261,7 +261,7 @@ async def seed_sellers(db: AsyncSession):
         await db.flush()  # Get user ID
 
         # Create wallet for user
-        wallet = Wallet(user_id=user.id, balance=0)
+        wallet = Wallet(user_id=user.id, main_balance=0, referral_balance=0)
         db.add(wallet)
 
         # Get city
