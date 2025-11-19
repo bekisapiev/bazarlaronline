@@ -99,6 +99,10 @@ export const usersAPI = {
 export const sellerProfileAPI = {
   createProfile: (data: any) => api.post('/seller-profile/', data),
   updateProfile: (data: any) => api.put('/seller-profile/', data),
+  getSellerDetails: (sellerId: string, includeProducts: boolean = true) =>
+    api.get(`/seller-profile/${sellerId}`, {
+      params: { include_products: includeProducts, products_limit: 12 }
+    }),
 };
 
 export const notificationsAPI = {
