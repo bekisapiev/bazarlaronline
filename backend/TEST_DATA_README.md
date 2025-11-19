@@ -65,21 +65,17 @@ docker exec -it bazarlar_backend alembic upgrade head
 
 ## Как загрузить данные
 
-### Вариант 1: Через Docker (рекомендуется)
+**ВАЖНО:** Запускайте скрипт только через `psql` с перенаправлением ввода, **НЕ через DBeaver**!
 
 ```bash
-# Убедитесь, что контейнеры запущены
+# 1. Убедитесь, что контейнеры запущены
 docker compose up -d
 
-# Загрузите тестовые данные
+# 2. Загрузите тестовые данные
 docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
 ```
 
-### Вариант 2: Через прямое подключение к PostgreSQL
-
-```bash
-psql -U bazarlar_user -d bazarlar_claude -f backend/create_test_data.sql
-```
+Скрипт выполнится как одна транзакция и покажет прогресс в реальном времени.
 
 ## Вывод при выполнении
 

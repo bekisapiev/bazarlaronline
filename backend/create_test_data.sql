@@ -4,7 +4,10 @@
 -- Создание: продавцов, товаров, покупателей, заказов и отзывов
 -- Справочники (города, рынки, категории) должны быть созданы заранее через миграции
 --
--- Запуск: docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
+-- ЗАПУСК ТОЛЬКО ЧЕРЕЗ PSQL:
+-- docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
+--
+-- НЕ ЗАПУСКАТЬ через DBeaver или другие GUI инструменты!
 -- =====================================================================
 
 BEGIN;
