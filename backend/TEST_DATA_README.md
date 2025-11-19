@@ -2,9 +2,11 @@
 
 ## Описание
 
-Файл `test_data.sql` содержит тестовые данные для развертывания и тестирования платформы Bazarlar Online.
+Полный набор тестовых данных для развертывания и тестирования платформы Bazarlar Online в едином SQL файле.
 
 ## Что включено
+
+**create_test_data.sql** - единый скрипт со всеми тестовыми данными:
 
 ### Справочные данные:
 - **5 городов**: Бишкек, Ош, Джалал-Абад, Каракол, Токмок
@@ -26,8 +28,9 @@
   8. Гулнара Сыдыкова - "Уют и комфорт" (товары для дома, Ош)
   9. Бактыгуль Жумабаева - "Silk Road Fashion" (одежда, Ош)
   10. Эмир Алиев - "Gadget Store" (электроника, Джалал-Абад)
+- **8 тестовых покупателей**: Айнура, Бекзат, Гульнара, Данияр, Елена, Жамиля, Замир, Ильяс
 
-### Товары и услуги:
+### Товары:
 **~40 товаров** в различных категориях:
 - Одежда: футболки, платья, джинсы, куртки, шарфы
 - Электроника: iPhone 15 Pro, Samsung Galaxy S24, Xiaomi, MacBook Pro, AirPods
@@ -38,6 +41,15 @@
 - Спорттовары: гантели, коврики для йоги, скакалки
 - Товары для дома: постельное белье, полотенца, шторы
 
+### Заказы и отзывы:
+- **20 заказов** с различными статусами:
+  - 15 завершенных заказов (completed) - с отзывами
+  - 2 заказа в обработке (processing)
+  - 3 новых заказа (pending)
+- **15 отзывов** от покупателей с рейтингами от 7 до 10 баллов
+  - Разнообразные комментарии на русском языке
+  - Покрывают разных продавцов и категории товаров
+
 ### Типы продавцов:
 - **market** - продавец на рынке (4 продавца)
 - **boutique** - бутик (2 продавца)
@@ -47,56 +59,67 @@
 
 ## Как загрузить данные
 
-### Вариант 1: Автоматический (рекомендуется)
+### Вариант 1: Один скрипт (рекомендуется)
 
-Используйте готовый скрипт:
-
-```bash
-cd backend
-chmod +x load_test_data.sh
-./load_test_data.sh
-```
-
-### Вариант 2: Через Docker Compose
+Загрузите все тестовые данные одной командой:
 
 ```bash
 # Убедитесь, что контейнеры запущены
 docker compose up -d
 
-# Выполните скрипт
-docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/test_data.sql
+# Загрузите все тестовые данные
+docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
 ```
 
-### Вариант 3: Через прямое подключение к PostgreSQL
+### Вариант 2: Через прямое подключение к PostgreSQL
 
 Если у вас есть прямой доступ к PostgreSQL:
 
 ```bash
-psql -U bazarlar_user -d bazarlar_claude -f backend/test_data.sql
-```
-
-### Вариант 4: Через Docker exec интерактивно
-
-```bash
-docker exec -it bazarlar_postgres bash
-psql -U bazarlar_user -d bazarlar_claude -f /docker-entrypoint-initdb.d/test_data.sql
+psql -U bazarlar_user -d bazarlar_claude -f backend/create_test_data.sql
 ```
 
 ## Проверка данных
 
-После загрузки проверьте данные:
+После загрузки скрипт автоматически выведет статистику:
+
+```
+========================================
+ТЕСТОВЫЕ ДАННЫЕ УСПЕШНО СОЗДАНЫ!
+========================================
+Городов: 5
+Рынков: 7
+Категорий: 18
+Продавцов: 11
+Товаров: ~40
+Покупателей: 8
+Заказов: 20
+Отзывов: 15
+========================================
+```
+
+Дополнительная проверка:
 
 ```bash
 # Подключитесь к базе данных
 docker exec -it bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude
 
 # Выполните SQL запросы:
-SELECT COUNT(*) FROM cities;           -- Должно быть 5
-SELECT COUNT(*) FROM markets;          -- Должно быть 7
-SELECT COUNT(*) FROM categories;       -- Должно быть много
-SELECT COUNT(*) FROM users WHERE role='seller';  -- Должно быть 11
-SELECT COUNT(*) FROM seller_profiles;  -- Должно быть 11
-SELECT COUNT(*) FROM products;         -- Должно быть ~40
+SELECT COUNT(*) FROM cities;                      -- Должно быть 5
+SELECT COUNT(*) FROM markets;                     -- Должно быть 7
+SELECT COUNT(*) FROM categories;                  -- Должно быть 18
+SELECT COUNT(*) FROM users WHERE role='seller';   -- Должно быть 11
+SELECT COUNT(*) FROM users WHERE role='user';     -- Должно быть 8 (покупатели)
+SELECT COUNT(*) FROM seller_profiles;             -- Должно быть 11
+SELECT COUNT(*) FROM products;                    -- Должно быть ~40
+SELECT COUNT(*) FROM orders;                      -- Должно быть 20
+SELECT COUNT(*) FROM reviews;                     -- Должно быть 15
+
+# Проверить статусы заказов:
+SELECT status, COUNT(*) FROM orders GROUP BY status;
+
+# Проверить средний рейтинг отзывов:
+SELECT AVG(rating) as avg_rating, MIN(rating) as min_rating, MAX(rating) as max_rating FROM reviews;
 ```
 
 ## Данные для входа (после настройки OAuth)
@@ -105,6 +128,7 @@ SELECT COUNT(*) FROM products;         -- Должно быть ~40
 - **Администратор**: admin@bazarlar.online
 - **Продавец**: seller@bazarlar.online
 - **Тестовые продавцы**: seller1@test.com - seller10@test.com
+- **Тестовые покупатели**: buyer1@test.com - buyer8@test.com
 
 ## Примечания
 
@@ -114,6 +138,8 @@ SELECT COUNT(*) FROM products;         -- Должно быть ~40
 4. **Рейтинги** - у продавцов есть тестовые рейтинги и количество отзывов
 5. **Статусы товаров** - все товары в статусе 'active'
 6. **Просмотры** - у товаров есть тестовые счетчики просмотров
+7. **Диагностика** - скрипт выводит сообщения о прогрессе выполнения
+8. **Итоговая статистика** - в конце скрипт показывает количество созданных записей
 
 ## Структура тестовых данных
 
@@ -143,6 +169,15 @@ SELECT COUNT(*) FROM products;         -- Должно быть ~40
     ├── Ноутбуки
     ├── Бытовая техника
     └── Аудио
+
+Пользователи
+├── Администраторы (1)
+├── Продавцы (11)
+│   ├── С профилями продавцов
+│   └── С товарами (~40)
+└── Покупатели (8)
+    ├── С заказами (20)
+    └── С отзывами (15)
 ```
 
 ## Сброс данных
@@ -156,14 +191,20 @@ TRUNCATE TABLE products, seller_profiles, users, categories, markets, cities CAS
 
 Затем снова запустите скрипт загрузки.
 
-## Дополнительные скрипты
+## Старые скрипты (устарели)
+
+Следующие файлы больше не нужны, так как все данные объединены в `create_test_data.sql`:
+- ~~test_data.sql~~ - устарел, используйте create_test_data.sql
+- ~~test_data_orders_reviews.sql~~ - устарел, используйте create_test_data.sql
+
+## Возможные дополнения
 
 Для разработки и тестирования могут понадобиться дополнительные данные:
-- Отзывы (reviews)
-- Заказы (orders)
 - Сообщения в чатах (messages)
 - Транзакции (transactions)
 - Купоны (coupons)
+- История просмотров (view_history)
+- Избранное (favorites)
 
 Эти данные можно добавить позже по необходимости.
 
@@ -175,7 +216,9 @@ TRUNCATE TABLE products, seller_profiles, users, categories, markets, cities CAS
 2. Проверьте логи: `docker logs bazarlar_postgres`
 3. Проверьте подключение: `docker exec -it bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude -c "SELECT version();"`
 4. Убедитесь, что таблицы созданы (через миграции Alembic)
+5. Проверьте вывод скрипта - он должен показывать прогресс создания данных
 
 ---
 **Создано**: 2025-11-16
-**Версия**: 1.0
+**Обновлено**: 2025-11-19 (объединены все данные в один скрипт)
+**Версия**: 2.0
