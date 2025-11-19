@@ -106,7 +106,7 @@ const FavoritesPage: React.FC = () => {
   };
 
   const handleProductClick = (productId: string) => {
-    navigate(`/products/${productId}`);
+    navigate(`/product/${productId}`);
   };
 
   const handleLoadMore = () => {
@@ -167,9 +167,9 @@ const FavoritesPage: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/')}
           >
-            Смотреть товары
+            На главную
           </Button>
         </Box>
       ) : (
