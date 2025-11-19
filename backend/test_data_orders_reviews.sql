@@ -56,16 +56,16 @@ DECLARE
 
 BEGIN
     -- Создаем покупателей
-    INSERT INTO users (id, email, full_name, phone, role, tariff, created_at, is_banned)
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
     VALUES
-    (buyer1_id, 'buyer1@test.com', 'Айнура Садыкова', '+996700111111', 'user', 'free', NOW() - INTERVAL '3 months', false),
-    (buyer2_id, 'buyer2@test.com', 'Бекзат Алиев', '+996700222222', 'user', 'free', NOW() - INTERVAL '2 months', false),
-    (buyer3_id, 'buyer3@test.com', 'Гульнара Осмонова', '+996700333333', 'user', 'free', NOW() - INTERVAL '1 month', false),
-    (buyer4_id, 'buyer4@test.com', 'Данияр Токтосунов', '+996700444444', 'user', 'free', NOW() - INTERVAL '20 days', false),
-    (buyer5_id, 'buyer5@test.com', 'Елена Ким', '+996700555555', 'user', 'free', NOW() - INTERVAL '15 days', false),
-    (buyer6_id, 'buyer6@test.com', 'Жамиля Бакирова', '+996700666666', 'user', 'free', NOW() - INTERVAL '10 days', false),
-    (buyer7_id, 'buyer7@test.com', 'Замир Султанов', '+996700777777', 'user', 'free', NOW() - INTERVAL '5 days', false),
-    (buyer8_id, 'buyer8@test.com', 'Ильяс Мамбетов', '+996700888888', 'user', 'free', NOW() - INTERVAL '2 days', false)
+    (buyer1_id, 'buyer1@test.com', 'Айнура Садыкова', '+996700111111', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '3 months', false),
+    (buyer2_id, 'buyer2@test.com', 'Бекзат Алиев', '+996700222222', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '2 months', false),
+    (buyer3_id, 'buyer3@test.com', 'Гульнара Осмонова', '+996700333333', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '1 month', false),
+    (buyer4_id, 'buyer4@test.com', 'Данияр Токтосунов', '+996700444444', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '20 days', false),
+    (buyer5_id, 'buyer5@test.com', 'Елена Ким', '+996700555555', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '15 days', false),
+    (buyer6_id, 'buyer6@test.com', 'Жамиля Бакирова', '+996700666666', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '10 days', false),
+    (buyer7_id, 'buyer7@test.com', 'Замир Султанов', '+996700777777', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '5 days', false),
+    (buyer8_id, 'buyer8@test.com', 'Ильяс Мамбетов', '+996700888888', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '2 days', false)
     ON CONFLICT (email) DO NOTHING;
 
     -- Получаем ID продавцов из существующих данных
