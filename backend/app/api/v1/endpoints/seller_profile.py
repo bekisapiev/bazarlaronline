@@ -5,16 +5,36 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 from app.database.session import get_db
 from app.models.user import User, SellerProfile
-from app.models.product import Product
+from app.models.product import Product, Category
 from app.core.dependencies import get_current_active_user
 from app.schemas.user import SellerProfileUpdate, SellerProfileResponse
 
 router = APIRouter()
+
+
+async def get_category_with_children_ids(category_id: int, db: AsyncSession) -> List[int]:
+    """
+    Recursively get all category IDs including the parent and all its children
+    """
+    category_ids = [category_id]
+
+    # Get all children of this category
+    result = await db.execute(
+        select(Category).where(Category.parent_id == category_id)
+    )
+    children = result.scalars().all()
+
+    # Recursively get children of children
+    for child in children:
+        child_ids = await get_category_with_children_ids(child.id, db)
+        category_ids.extend(child_ids)
+
+    return category_ids
 
 
 @router.post("/", response_model=SellerProfileResponse)
@@ -109,6 +129,11 @@ async def get_sellers_catalog(
         selectinload(SellerProfile.category)
     )
 
+    # Get category IDs with children if category filter is applied
+    category_ids = None
+    if category_id:
+        category_ids = await get_category_with_children_ids(category_id, db)
+
     # Apply filters
     if city_id:
         query = query.where(SellerProfile.city_id == city_id)
@@ -116,8 +141,8 @@ async def get_sellers_catalog(
     if seller_type:
         query = query.where(SellerProfile.seller_type == seller_type)
 
-    if category_id:
-        query = query.where(SellerProfile.category_id == category_id)
+    if category_ids:
+        query = query.where(SellerProfile.category_id.in_(category_ids))
 
     if market_id:
         query = query.where(SellerProfile.market_id == market_id)
@@ -138,8 +163,8 @@ async def get_sellers_catalog(
         count_query = count_query.where(SellerProfile.city_id == city_id)
     if seller_type:
         count_query = count_query.where(SellerProfile.seller_type == seller_type)
-    if category_id:
-        count_query = count_query.where(SellerProfile.category_id == category_id)
+    if category_ids:
+        count_query = count_query.where(SellerProfile.category_id.in_(category_ids))
     if market_id:
         count_query = count_query.where(SellerProfile.market_id == market_id)
     if search:

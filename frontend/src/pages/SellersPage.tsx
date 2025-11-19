@@ -106,7 +106,8 @@ const SellersPage: React.FC = () => {
   const loadMarkets = useCallback(async () => {
     try {
       const response = await productsAPI.getMarkets(cityId ? { city_id: cityId } : {});
-      setMarkets(Array.isArray(response.data) ? response.data : []);
+      const markets = response.data.items || [];
+      setMarkets(Array.isArray(markets) ? markets : []);
     } catch (err) {
       console.error('Failed to load markets:', err);
       setMarkets([]);
@@ -160,7 +161,8 @@ const SellersPage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(Array.isArray(response.data) ? response.data : []);
+      const cities = response.data.items || [];
+      setCities(Array.isArray(cities) ? cities : []);
     } catch (err) {
       console.error('Failed to load cities:', err);
       setCities([]);
@@ -170,7 +172,8 @@ const SellersPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(Array.isArray(response.data) ? response.data : []);
+      const categories = response.data.items || [];
+      setCategories(Array.isArray(categories) ? categories : []);
     } catch (err) {
       console.error('Failed to load categories:', err);
       setCategories([]);
