@@ -4,6 +4,7 @@ Seller Profile Endpoints
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
+from sqlalchemy.orm import selectinload
 from typing import Optional
 from uuid import UUID
 
@@ -102,7 +103,11 @@ async def get_sellers_catalog(
 
     Returns list of seller profiles with filters
     """
-    query = select(SellerProfile)
+    query = select(SellerProfile).options(
+        selectinload(SellerProfile.city),
+        selectinload(SellerProfile.market),
+        selectinload(SellerProfile.category)
+    )
 
     # Apply filters
     if city_id:
@@ -157,12 +162,14 @@ async def get_sellers_catalog(
                 "shop_name": s.shop_name,
                 "description": s.description,
                 "logo_url": s.logo_url,
-                "city_id": s.city_id,
+                "banner_url": s.banner_url,
                 "seller_type": s.seller_type,
-                "category_id": s.category_id,
                 "rating": float(s.rating),
                 "reviews_count": s.reviews_count,
-                "is_verified": s.is_verified
+                "is_verified": s.is_verified,
+                "city": {"id": s.city.id, "name": s.city.name} if s.city else None,
+                "market": {"id": s.market.id, "name": s.market.name} if s.market else None,
+                "category": {"id": s.category.id, "name": s.category.name} if s.category else None
             }
             for s in sellers
         ],
@@ -351,92 +358,6 @@ async def update_seller_profile(
         created_at=seller_profile.created_at
     )
 
-
-@router.get("/catalog")
-async def get_sellers_catalog(
-    city_id: Optional[int] = Query(None, description="Filter by city"),
-    seller_type: Optional[str] = Query(None, description="Filter by seller type"),
-    category_id: Optional[int] = Query(None, description="Filter by category"),
-    market_id: Optional[int] = Query(None, description="Filter by market"),
-    search: Optional[str] = Query(None, description="Search in shop names"),
-    limit: int = Query(30, le=100),
-    offset: int = 0,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get catalog of all sellers
-
-    Returns list of seller profiles with filters
-    """
-    query = select(SellerProfile)
-
-    # Apply filters
-    if city_id:
-        query = query.where(SellerProfile.city_id == city_id)
-
-    if seller_type:
-        query = query.where(SellerProfile.seller_type == seller_type)
-
-    if category_id:
-        query = query.where(SellerProfile.category_id == category_id)
-
-    if market_id:
-        query = query.where(SellerProfile.market_id == market_id)
-
-    if search:
-        query = query.where(SellerProfile.shop_name.ilike(f"%{search}%"))
-
-    # Order by rating desc, then by reviews count
-    query = query.order_by(
-        desc(SellerProfile.rating),
-        desc(SellerProfile.reviews_count),
-        desc(SellerProfile.created_at)
-    )
-
-    # Count total before pagination
-    count_query = select(func.count()).select_from(SellerProfile)
-    if city_id:
-        count_query = count_query.where(SellerProfile.city_id == city_id)
-    if seller_type:
-        count_query = count_query.where(SellerProfile.seller_type == seller_type)
-    if category_id:
-        count_query = count_query.where(SellerProfile.category_id == category_id)
-    if market_id:
-        count_query = count_query.where(SellerProfile.market_id == market_id)
-    if search:
-        count_query = count_query.where(SellerProfile.shop_name.ilike(f"%{search}%"))
-
-    count_result = await db.execute(count_query)
-    total = count_result.scalar()
-
-    # Pagination
-    query = query.limit(limit).offset(offset)
-
-    result = await db.execute(query)
-    sellers = result.scalars().all()
-
-    return {
-        "items": [
-            {
-                "id": str(s.id),
-                "user_id": str(s.user_id),
-                "shop_name": s.shop_name,
-                "description": s.description,
-                "logo_url": s.logo_url,
-                "city_id": s.city_id,
-                "seller_type": s.seller_type,
-                "category_id": s.category_id,
-                "rating": float(s.rating),
-                "reviews_count": s.reviews_count,
-                "is_verified": s.is_verified
-            }
-            for s in sellers
-        ],
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": (offset + limit) < total
-    }
 
 
 @router.get("/{seller_id}")

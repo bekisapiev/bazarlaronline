@@ -131,7 +131,9 @@ const SellersPage: React.FC = () => {
 
       const response = await productsAPI.getSellers(params);
       setSellers(Array.isArray(response.data.items) ? response.data.items : []);
-      setTotalPages(response.data.total_pages || 1);
+      // Calculate total_pages from total and page_size
+      const totalPages = response.data.total ? Math.ceil(response.data.total / (params.page_size || 24)) : 1;
+      setTotalPages(totalPages);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки продавцов');
       setSellers([]);

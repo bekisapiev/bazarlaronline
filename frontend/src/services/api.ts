@@ -56,7 +56,15 @@ export const productsAPI = {
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
   getCities: () => api.get('/locations/cities'),
   getMarkets: (params: any) => api.get('/locations/markets', { params }),
-  getSellers: (params: any) => api.get('/sellers/', { params }),
+  getSellers: (params: any) => {
+    // Convert page/page_size to limit/offset for API
+    const { page, page_size, ...otherParams } = params;
+    const limit = page_size || 24;
+    const offset = page ? (page - 1) * limit : 0;
+    return api.get('/seller-profile/catalog', {
+      params: { ...otherParams, limit, offset }
+    });
+  },
 };
 
 export const ordersAPI = {
