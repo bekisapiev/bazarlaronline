@@ -166,7 +166,8 @@ const HomePage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(Array.isArray(response.data) ? response.data : []);
+      const cities = response.data.items || [];
+      setCities(Array.isArray(cities) ? cities : []);
     } catch (error) {
       console.error('Error loading cities:', error);
       setCities([]);
@@ -176,7 +177,8 @@ const HomePage: React.FC = () => {
   const loadMarkets = async (cityId: number) => {
     try {
       const response = await productsAPI.getMarkets({ city_id: cityId });
-      setMarkets(Array.isArray(response.data) ? response.data : []);
+      const markets = response.data.items || [];
+      setMarkets(Array.isArray(markets) ? markets : []);
     } catch (error) {
       console.error('Error loading markets:', error);
       setMarkets([]);
