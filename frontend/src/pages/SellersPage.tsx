@@ -147,10 +147,20 @@ const SellersPage: React.FC = () => {
   // Load initial data
   useEffect(() => {
     loadCities();
-    loadMarkets();
     loadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load markets when city changes
+  useEffect(() => {
+    if (cityId) {
+      loadMarkets();
+    } else {
+      setMarkets([]);
+      setMarketId('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cityId]);
 
   // Load sellers when filters change
   useEffect(() => {
@@ -191,7 +201,6 @@ const SellersPage: React.FC = () => {
     if (filter === 'city') {
       setCityId(value);
       setMarketId(''); // Reset market when city changes
-      if (value) loadMarkets();
     }
     if (filter === 'market') setMarketId(value);
     if (filter === 'category') setCategoryId(value);
