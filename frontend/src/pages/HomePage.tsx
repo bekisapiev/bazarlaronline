@@ -38,7 +38,7 @@ import {
   Warehouse as WarehouseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { productsAPI } from '../services/api';
+import { productsAPI, categoriesAPI } from '../services/api';
 
 interface Product {
   id: string;
@@ -185,8 +185,9 @@ const HomePage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await productsAPI.getCategories();
-      setCategories(Array.isArray(response.data) ? response.data : []);
+      const response = await categoriesAPI.getCategoryTree();
+      const tree = response.data.tree || [];
+      setCategories(Array.isArray(tree) ? tree : []);
     } catch (error) {
       console.error('Error loading categories:', error);
       setCategories([]);
@@ -273,7 +274,7 @@ const HomePage: React.FC = () => {
         cursor: 'pointer',
         '&:hover': { boxShadow: 6, transform: 'translateY(-4px)', transition: 'all 0.3s' },
       }}
-      onClick={() => navigate(`/products/${product.id}`)}
+      onClick={() => navigate(`/product/${product.id}`)}
     >
       {product.is_promoted && (
         <Chip
