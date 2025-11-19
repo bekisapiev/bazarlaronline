@@ -35,6 +35,26 @@ PROMOTION_PRICES = {
 }
 
 
+async def get_category_with_children_ids(category_id: int, db: AsyncSession) -> List[int]:
+    """
+    Recursively get all category IDs including the parent and all its children
+    """
+    category_ids = [category_id]
+
+    # Get all children of this category
+    result = await db.execute(
+        select(Category).where(Category.parent_id == category_id)
+    )
+    children = result.scalars().all()
+
+    # Recursively get children of children
+    for child in children:
+        child_ids = await get_category_with_children_ids(child.id, db)
+        category_ids.extend(child_ids)
+
+    return category_ids
+
+
 @router.get("/")
 async def get_products(
     category_id: Optional[int] = Query(None, description="Filter by category"),
@@ -68,9 +88,14 @@ async def get_products(
     else:
         query = select(Product).where(Product.status == "active")
 
-    # Apply filters
+    # Get category IDs with children if category filter is applied
+    category_ids = None
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        category_ids = await get_category_with_children_ids(category_id, db)
+
+    # Apply filters
+    if category_ids:
+        query = query.where(Product.category_id.in_(category_ids))
 
     if search:
         query = query.where(Product.title.ilike(f"%{search}%"))
@@ -104,8 +129,9 @@ async def get_products(
         )
     count_query = count_query.where(Product.status == "active")
 
-    if category_id:
-        count_query = count_query.where(Product.category_id == category_id)
+    if category_ids:
+        # Use the same category IDs as above
+        count_query = count_query.where(Product.category_id.in_(category_ids))
     if search:
         count_query = count_query.where(Product.title.ilike(f"%{search}%"))
     if min_price is not None:
