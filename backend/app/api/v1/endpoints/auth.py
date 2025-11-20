@@ -15,7 +15,9 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     UserResponse,
     TelegramAuthRequest,
-    TelegramVerifyRequest
+    TelegramVerifyRequest,
+    TelegramLoginWidgetRequest,
+    TelegramWebAppRequest
 )
 from app.services.google_auth import google_auth_service
 from app.services.telegram_bot import telegram_bot_service
@@ -304,6 +306,151 @@ async def telegram_verify(
 
     await db.commit()
     await db.refresh(user)
+
+    # Create JWT tokens
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
+
+
+@router.post("/telegram/widget", response_model=TokenResponse)
+async def telegram_widget_auth(
+    request: TelegramLoginWidgetRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Authenticate user with Telegram Login Widget
+
+    This endpoint:
+    1. Verifies data signature from Telegram Login Widget
+    2. Creates user if doesn't exist (registration)
+    3. Creates wallet for new users
+    4. Returns JWT access and refresh tokens
+
+    Telegram Login Widget: https://core.telegram.org/widgets/login
+    """
+    # Convert request to dict for verification
+    auth_data = request.model_dump()
+
+    # Verify data signature
+    if not telegram_bot_service.verify_telegram_login_widget(auth_data):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Telegram authentication data"
+        )
+
+    telegram_id = auth_data['id']
+
+    # Check if user exists by telegram_id
+    result = await db.execute(
+        select(User).where(User.telegram_id == telegram_id)
+    )
+    user = result.scalar_one_or_none()
+
+    # Create full name from first_name and last_name
+    full_name = auth_data['first_name']
+    if auth_data.get('last_name'):
+        full_name += f" {auth_data['last_name']}"
+
+    if not user:
+        # Create new user
+        user = User(
+            telegram_id=telegram_id,
+            telegram_username=auth_data.get('username'),
+            full_name=full_name,
+            email=f"telegram_{telegram_id}@bazarlar.online"  # Generate email from telegram_id
+        )
+        db.add(user)
+        await db.flush()
+
+        # Create wallet for new user
+        wallet = Wallet(user_id=user.id)
+        db.add(wallet)
+
+        await db.commit()
+        await db.refresh(user)
+    else:
+        # Update existing user info
+        user.telegram_username = auth_data.get('username') or user.telegram_username
+        if not user.full_name:
+            user.full_name = full_name
+        await db.commit()
+
+    # Create JWT tokens
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
+
+
+@router.post("/telegram/webapp", response_model=TokenResponse)
+async def telegram_webapp_auth(
+    request: TelegramWebAppRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Authenticate user with Telegram WebApp
+
+    This endpoint:
+    1. Verifies initData from Telegram WebApp
+    2. Creates user if doesn't exist (registration)
+    3. Creates wallet for new users
+    4. Returns JWT access and refresh tokens
+
+    Telegram WebApp: https://core.telegram.org/bots/webapps
+    """
+    # Verify and parse WebApp init data
+    user_data = telegram_bot_service.verify_telegram_webapp_data(request.init_data)
+
+    if not user_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Telegram WebApp data"
+        )
+
+    telegram_id = user_data['telegram_id']
+
+    # Check if user exists by telegram_id
+    result = await db.execute(
+        select(User).where(User.telegram_id == telegram_id)
+    )
+    user = result.scalar_one_or_none()
+
+    # Create full name
+    full_name = user_data['first_name']
+    if user_data.get('last_name'):
+        full_name += f" {user_data['last_name']}"
+
+    if not user:
+        # Create new user
+        user = User(
+            telegram_id=telegram_id,
+            telegram_username=user_data.get('username'),
+            full_name=full_name,
+            email=f"telegram_{telegram_id}@bazarlar.online"
+        )
+        db.add(user)
+        await db.flush()
+
+        # Create wallet for new user
+        wallet = Wallet(user_id=user.id)
+        db.add(wallet)
+
+        await db.commit()
+        await db.refresh(user)
+    else:
+        # Update existing user info
+        user.telegram_username = user_data.get('username') or user.telegram_username
+        if not user.full_name:
+            user.full_name = full_name
+        await db.commit()
 
     # Create JWT tokens
     access_token = create_access_token(data={"sub": str(user.id)})

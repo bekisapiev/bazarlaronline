@@ -38,6 +38,22 @@ class TelegramVerifyRequest(BaseModel):
     full_name: Optional[str] = None
 
 
+class TelegramLoginWidgetRequest(BaseModel):
+    """Telegram Login Widget authentication data"""
+    id: str  # Telegram user ID
+    first_name: str
+    last_name: Optional[str] = None
+    username: Optional[str] = None
+    photo_url: Optional[str] = None
+    auth_date: str  # Unix timestamp
+    hash: str  # Hash for verification
+
+
+class TelegramWebAppRequest(BaseModel):
+    """Telegram WebApp authentication"""
+    init_data: str  # Telegram WebApp initData string
+
+
 class UserResponse(BaseModel):
     """User response"""
     id: str
