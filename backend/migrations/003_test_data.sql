@@ -537,6 +537,22 @@ DECLARE
     service_seller4_id UUID := gen_random_uuid();
 
     service1_id UUID := gen_random_uuid();
+    service2_id UUID := gen_random_uuid();
+    service3_id UUID := gen_random_uuid();
+    service4_id UUID := gen_random_uuid();
+    service5_id UUID := gen_random_uuid();
+    service6_id UUID := gen_random_uuid();
+    service7_id UUID := gen_random_uuid();
+    service8_id UUID := gen_random_uuid();
+BEGIN
+    RAISE NOTICE 'Создание продавцов услуг...';
+
+    -- Продавец услуг 1: Парикмахер
+    INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
+    VALUES (service_seller1_id, 'hairdresser@test.com', 'Айжан Токтомушева', '+996555111222', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    ON CONFLICT (email) DO NOTHING RETURNING id INTO service_seller1_id;
+
+    IF service_seller1_id IS NULL THEN
         SELECT id INTO service_seller1_id FROM users WHERE email = 'hairdresser@test.com';
     END IF;
 
