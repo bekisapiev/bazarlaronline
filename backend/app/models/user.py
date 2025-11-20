@@ -24,10 +24,14 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
     google_id = Column(String(255), unique=True, nullable=True, index=True)
+    telegram_id = Column(String(255), unique=True, nullable=True, index=True)
+    telegram_username = Column(String(255), nullable=True)
     referral_id = Column(String(20), unique=True, nullable=False, default=generate_referral_id, index=True)
     referred_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     full_name = Column(String(255), nullable=True)
-    phone = Column(String(20), nullable=True)
+    phone = Column(String(20), nullable=True, index=True)
+    phone_verification_code = Column(String(10), nullable=True)
+    phone_verification_expires_at = Column(DateTime, nullable=True)
     role = Column(String(50), default="user")  # user, moderator, admin, cashier
     tariff = Column(String(20), default="free")  # free, pro, business
     tariff_expires_at = Column(DateTime, nullable=True)

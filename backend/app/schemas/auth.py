@@ -23,11 +23,29 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class TelegramAuthRequest(BaseModel):
+    """Telegram auth - request verification code"""
+    telegram_id: str
+    phone: str
+
+
+class TelegramVerifyRequest(BaseModel):
+    """Telegram auth - verify code and login/register"""
+    telegram_id: str
+    phone: str
+    code: str
+    telegram_username: Optional[str] = None
+    full_name: Optional[str] = None
+
+
 class UserResponse(BaseModel):
     """User response"""
     id: str
     email: EmailStr
     full_name: Optional[str] = None
+    phone: Optional[str] = None
+    telegram_id: Optional[str] = None
+    telegram_username: Optional[str] = None
     referral_id: str
     tariff: str
     role: str

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:3000/auth/callback"
 
+    # Telegram Bot
+    TELEGRAM_BOT_TOKEN: str = ""
+
     # Google Cloud Vision
     GOOGLE_CLOUD_PROJECT_ID: str = ""
     GOOGLE_APPLICATION_CREDENTIALS: str = ""
