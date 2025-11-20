@@ -163,7 +163,7 @@ BEGIN
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller10_id, 'product', 'Gadget Store', 'Гаджеты и аксессуары', 3, 3, 'shop', NULL, 'Центральный рынок', 4.5, 92, true)
+    VALUES (seller10_id, 'Gadget Store', 'Гаджеты и аксессуары', 3, 3, 'shop', NULL, 'Центральный рынок', 4.5, 92, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     RAISE NOTICE '✓ Создано 10 продавцов с профилями';
