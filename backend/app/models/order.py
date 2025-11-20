@@ -15,7 +15,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_number = Column(String(20), unique=True, nullable=False, index=True)
+    order_number = Column(String(30), unique=True, nullable=False, index=True)
     buyer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     seller_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     items = Column(JSONB, nullable=False)  # [{product_id, quantity, price, discount_price}]

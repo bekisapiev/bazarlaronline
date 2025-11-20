@@ -205,7 +205,7 @@ END $$;
 -- Таблица: orders (Заказы товаров)
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_number VARCHAR(20) UNIQUE NOT NULL,
+    order_number VARCHAR(30) UNIQUE NOT NULL,
     buyer_id UUID NOT NULL REFERENCES users(id),
     seller_id UUID NOT NULL REFERENCES users(id),
     items JSONB NOT NULL,
