@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = "../.env"  # .env файл в корне проекта (на уровень выше backend/)
         case_sensitive = True
+        extra = "ignore"  # Игнорировать дополнительные поля из .env
 
 
 settings = Settings()
