@@ -78,88 +78,88 @@ BEGIN
 
     -- Продавец 1: Магазин одежды на Дордое
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller1_id, 'product', 'seller1@test.com', 'Айгуль Асанова', '+996555111111', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller1_id, 'seller1@test.com', 'Айгуль Асанова', '+996555111111', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller1_id, 'product', 'Модный стиль', 'Женская и мужская одежда высокого качества', 1, 1, 'market', 1, 'Дордой, контейнер 456', 4.8, 127, true)
+    VALUES (seller1_id, 'Модный стиль', 'Женская и мужская одежда высокого качества', 1, 1, 'market', 1, 'Дордой, контейнер 456', 4.8, 127, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 2: Магазин электроники
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller2_id, 'product', 'seller2@test.com', 'Тимур Бекмуратов', '+996555222222', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller2_id, 'seller2@test.com', 'Тимур Бекмуратов', '+996555222222', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller2_id, 'product', 'TechnoShop', 'Смартфоны, ноутбуки, аксессуары', 3, 1, 'boutique', NULL, 'ул. Чуй 156', 4.9, 245, true)
+    VALUES (seller2_id, 'TechnoShop', 'Смартфоны, ноутбуки, аксессуары', 3, 1, 'boutique', NULL, 'ул. Чуй 156', 4.9, 245, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 3: Продукты питания
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller3_id, 'product', 'seller3@test.com', 'Нургуль Токтогулова', '+996555333333', 'seller', 'free', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller3_id, 'seller3@test.com', 'Нургуль Токтогулова', '+996555333333', 'seller', 'free', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller3_id, 'product', 'Фермерские продукты', 'Свежие овощи, фрукты, молочные продукты', 4, 1, 'market', 2, 'Ошский рынок, ряд 3', 4.5, 89, true)
+    VALUES (seller3_id, 'Фермерские продукты', 'Свежие овощи, фрукты, молочные продукты', 4, 1, 'market', 2, 'Ошский рынок, ряд 3', 4.5, 89, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 4: Обувь
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller4_id, 'product', 'seller4@test.com', 'Эрлан Шаршеев', '+996555444444', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller4_id, 'seller4@test.com', 'Эрлан Шаршеев', '+996555444444', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller4_id, 'product', 'Обувной мир', 'Турецкая и итальянская обувь', 2, 1, 'shop', NULL, 'ТЦ Вефа, 2 этаж', 4.7, 156, true)
+    VALUES (seller4_id, 'Обувной мир', 'Турецкая и итальянская обувь', 2, 1, 'shop', NULL, 'ТЦ Вефа, 2 этаж', 4.7, 156, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 5: Косметика
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller5_id, 'product', 'seller5@test.com', 'Жанара Исакова', '+996555555555', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller5_id, 'seller5@test.com', 'Жанара Исакова', '+996555555555', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller5_id, 'product', 'BeautyKG', 'Корейская и европейская косметика', 6, 1, 'office', NULL, 'ул. Токтогула 123, офис 45', 4.9, 312, true)
+    VALUES (seller5_id, 'BeautyKG', 'Корейская и европейская косметика', 6, 1, 'office', NULL, 'ул. Токтогула 123, офис 45', 4.9, 312, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 6: Детские товары
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller6_id, 'product', 'seller6@test.com', 'Назира Абдиева', '+996555666666', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller6_id, 'seller6@test.com', 'Назира Абдиева', '+996555666666', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller6_id, 'product', 'Детский рай', 'Игрушки, одежда, коляски', 7, 1, 'shop', NULL, 'ТЦ Дордой Плаза', 4.6, 198, true)
+    VALUES (seller6_id, 'Детский рай', 'Игрушки, одежда, коляски', 7, 1, 'shop', NULL, 'ТЦ Дордой Плаза', 4.6, 198, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 7: Спорттовары
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller7_id, 'product', 'seller7@test.com', 'Азамат Мураталиев', '+996555777777', 'seller', 'free', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller7_id, 'seller7@test.com', 'Азамат Мураталиев', '+996555777777', 'seller', 'free', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller7_id, 'product', 'Спорт Лайф', 'Спортивная одежда и инвентарь', 8, 1, 'mobile', NULL, 'Доставка по всему городу', 4.3, 67, false)
+    VALUES (seller7_id, 'Спорт Лайф', 'Спортивная одежда и инвентарь', 8, 1, 'mobile', NULL, 'Доставка по всему городу', 4.3, 67, false)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 8: Товары для дома (Ош)
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller8_id, 'product', 'seller8@test.com', 'Гулнара Сыдыкова', '+996555888888', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller8_id, 'seller8@test.com', 'Гулнара Сыдыкова', '+996555888888', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller8_id, 'product', 'Уют и комфорт', 'Текстиль, посуда, декор', 5, 2, 'market', 6, 'Рынок Жайма, секция Б', 4.7, 134, true)
+    VALUES (seller8_id, 'Уют и комфорт', 'Текстиль, посуда, декор', 5, 2, 'market', 6, 'Рынок Жайма, секция Б', 4.7, 134, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 9: Одежда (Ош)
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller9_id, 'product', 'seller9@test.com', 'Бактыгуль Жумабаева', '+996555999999', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller9_id, 'seller9@test.com', 'Бактыгуль Жумабаева', '+996555999999', 'seller', 'business', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
-    VALUES (seller9_id, 'product', 'Silk Road Fashion', 'Традиционная и современная одежда', 1, 2, 'boutique', NULL, 'ул. Ленина 78', 4.8, 201, true)
+    VALUES (seller9_id, 'Silk Road Fashion', 'Традиционная и современная одежда', 1, 2, 'boutique', NULL, 'ул. Ленина 78', 4.8, 201, true)
     ON CONFLICT (user_id) DO NOTHING;
 
     -- Продавец 10: Электроника (Джалал-Абад)
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
-    VALUES (seller10_id, 'product', 'seller10@test.com', 'Эмир Алиев', '+996555000000', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
+    VALUES (seller10_id, 'seller10@test.com', 'Эмир Алиев', '+996555000000', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
     ON CONFLICT (email) DO NOTHING;
 
     INSERT INTO seller_profiles (user_id, shop_name, description, category_id, city_id, seller_type, market_id, address, rating, reviews_count, is_verified)
@@ -351,7 +351,7 @@ BEGIN
         NOW() - INTERVAL '45 days', NOW() - INTERVAL '42 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller1_id, 'product', buyer1_id, order1_id, 9, 'Отличное качество! Футболки очень приятные на ощупь, размер соответствует. Продавец быстро ответил на вопросы. Рекомендую!', NOW() - INTERVAL '40 days')
+    VALUES (seller1_id, buyer1_id, order1_id, 9, 'Отличное качество! Футболки очень приятные на ощупь, размер соответствует. Продавец быстро ответил на вопросы. Рекомендую!', NOW() - INTERVAL '40 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 2
@@ -362,7 +362,7 @@ BEGIN
         NOW() - INTERVAL '35 days', NOW() - INTERVAL '33 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller2_id, 'product', buyer1_id, order2_id, 10, 'Телефон в идеальном состоянии! Все как описано, запечатанный, оригинал. Доставка быстрая, продавец очень вежливый. Спасибо большое!', NOW() - INTERVAL '30 days')
+    VALUES (seller2_id, buyer1_id, order2_id, 10, 'Телефон в идеальном состоянии! Все как описано, запечатанный, оригинал. Доставка быстрая, продавец очень вежливый. Спасибо большое!', NOW() - INTERVAL '30 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 3
@@ -373,7 +373,7 @@ BEGIN
         NOW() - INTERVAL '28 days', NOW() - INTERVAL '26 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller4_id, 'product', buyer2_id, order3_id, 8, 'Кроссовки хорошие, удобные. Размер подошел. Доставка заняла чуть больше времени, чем обещали, но в целом все отлично.', NOW() - INTERVAL '24 days')
+    VALUES (seller4_id, buyer2_id, order3_id, 8, 'Кроссовки хорошие, удобные. Размер подошел. Доставка заняла чуть больше времени, чем обещали, но в целом все отлично.', NOW() - INTERVAL '24 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 4
@@ -384,7 +384,7 @@ BEGIN
         NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller5_id, 'product', buyer3_id, order4_id, 10, 'Превосходно! Тональный крем оригинальный, подошел идеально. Упаковка красивая, есть чек. Продавец профессионал!', NOW() - INTERVAL '18 days')
+    VALUES (seller5_id, buyer3_id, order4_id, 10, 'Превосходно! Тональный крем оригинальный, подошел идеально. Упаковка красивая, есть чек. Продавец профессионал!', NOW() - INTERVAL '18 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 5
@@ -395,7 +395,7 @@ BEGIN
         NOW() - INTERVAL '18 days', NOW() - INTERVAL '16 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller6_id, 'product', buyer4_id, order5_id, 9, 'Ребенок в восторге! Конструктор оригинальный LEGO, все детали на месте. Упаковка целая. Спасибо!', NOW() - INTERVAL '14 days')
+    VALUES (seller6_id, buyer4_id, order5_id, 9, 'Ребенок в восторге! Конструктор оригинальный LEGO, все детали на месте. Упаковка целая. Спасибо!', NOW() - INTERVAL '14 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 6
@@ -404,7 +404,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller1_id, 'product', buyer5_id, order6_id, 7, 'Товар нормальный, но доставка задержалась на 2 дня. В остальном претензий нет.', NOW() - INTERVAL '11 days')
+    VALUES (seller1_id, buyer5_id, order6_id, 7, 'Товар нормальный, но доставка задержалась на 2 дня. В остальном претензий нет.', NOW() - INTERVAL '11 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 7
@@ -413,7 +413,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller3_id, 'product', buyer6_id, order7_id, 10, 'Молоко и яйца всегда свежие! Покупаю постоянно. Очень довольна качеством!', NOW() - INTERVAL '10 days')
+    VALUES (seller3_id, buyer6_id, order7_id, 10, 'Молоко и яйца всегда свежие! Покупаю постоянно. Очень довольна качеством!', NOW() - INTERVAL '10 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 8
@@ -422,7 +422,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller7_id, 'product', buyer7_id, order8_id, 8, 'Коврик для йоги отличный, не скользит. Доставка быстрая. Рекомендую!', NOW() - INTERVAL '7 days')
+    VALUES (seller7_id, buyer7_id, order8_id, 8, 'Коврик для йоги отличный, не скользит. Доставка быстрая. Рекомендую!', NOW() - INTERVAL '7 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 9
@@ -431,7 +431,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller8_id, 'product', buyer8_id, order9_id, 9, 'Постельное белье высокого качества, сатин приятный. Упаковка хорошая. Спасибо!', NOW() - INTERVAL '4 days')
+    VALUES (seller8_id, buyer8_id, order9_id, 9, 'Постельное белье высокого качества, сатин приятный. Упаковка хорошая. Спасибо!', NOW() - INTERVAL '4 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 10
@@ -440,7 +440,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller2_id, 'product', buyer2_id, order10_id, 10, 'AirPods супер! Звук чистый, шумоподавление работает отлично. Продавец топ!', NOW() - INTERVAL '3 days')
+    VALUES (seller2_id, buyer2_id, order10_id, 10, 'AirPods супер! Звук чистый, шумоподавление работает отлично. Продавец топ!', NOW() - INTERVAL '3 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 11
@@ -449,7 +449,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller9_id, 'product', buyer3_id, order11_id, 9, 'Красивое национальное платье! Качество отличное, вышивка аккуратная. Очень довольна покупкой!', NOW() - INTERVAL '2 days')
+    VALUES (seller9_id, buyer3_id, order11_id, 9, 'Красивое национальное платье! Качество отличное, вышивка аккуратная. Очень довольна покупкой!', NOW() - INTERVAL '2 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 12
@@ -458,7 +458,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller4_id, 'product', buyer1_id, order12_id, 8, 'Туфли удобные, каблук устойчивый. Размер соответствует. Хорошая покупка!', NOW() - INTERVAL '1 day')
+    VALUES (seller4_id, buyer1_id, order12_id, 8, 'Туфли удобные, каблук устойчивый. Размер соответствует. Хорошая покупка!', NOW() - INTERVAL '1 day')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 13
@@ -467,7 +467,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller10_id, 'product', buyer5_id, order13_id, 7, 'Powerbank работает хорошо, заряжает быстро. Но корпус немного поцарапан был.', NOW() - INTERVAL '12 hours')
+    VALUES (seller10_id, buyer5_id, order13_id, 7, 'Powerbank работает хорошо, заряжает быстро. Но корпус немного поцарапан был.', NOW() - INTERVAL '12 hours')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 14
@@ -476,7 +476,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller5_id, 'product', buyer6_id, order14_id, 10, 'Маски супер! Кожа стала мягкая и увлажненная. Беру уже не первый раз!', NOW() - INTERVAL '3 hours')
+    VALUES (seller5_id, buyer6_id, order14_id, 10, 'Маски супер! Кожа стала мягкая и увлажненная. Беру уже не первый раз!', NOW() - INTERVAL '3 hours')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказ 15
@@ -485,7 +485,7 @@ BEGIN
     ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
-    VALUES (seller6_id, 'product', buyer7_id, order15_id, 9, 'Комбинезон теплый, качественный. Ребенку в самый раз. Спасибо за быструю доставку!', NOW() - INTERVAL '1 hour')
+    VALUES (seller6_id, buyer7_id, order15_id, 9, 'Комбинезон теплый, качественный. Ребенку в самый раз. Спасибо за быструю доставку!', NOW() - INTERVAL '1 hour')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
 
     -- Заказы в процессе (без отзывов)
