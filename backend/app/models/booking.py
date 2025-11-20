@@ -38,6 +38,7 @@ class Booking(Base):
     service = relationship("Product", foreign_keys=[service_id], backref="bookings")
     seller = relationship("User", foreign_keys=[seller_id], backref="bookings_as_seller")
     buyer = relationship("User", foreign_keys=[buyer_id], backref="bookings_as_buyer")
+    review = relationship("Review", back_populates="booking", uselist=False)
 
     # Constraints
     __table_args__ = (
