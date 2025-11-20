@@ -380,7 +380,7 @@ BEGIN
     INSERT INTO orders (order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES ('ORD-20250130-Q7R8S9T0', buyer4_id, seller3_id,
         jsonb_build_array(jsonb_build_object('product_id', product3_id, 'quantity', 5, 'price', 80)),
-        400.00, 'г. Бишкек, мкр. Джал 15-67', '+996700444444', 'completed', 'completed',
+        400.00, 'г. Бишкек, мкр. Джал 15-67', '+996700444444', 'wallet', 'completed',
         NOW() - INTERVAL '12 days', NOW() - INTERVAL '10 days')
     ON CONFLICT (order_number) DO NOTHING;
 
