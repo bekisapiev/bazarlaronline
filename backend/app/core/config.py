@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://bazarlar_user:bazarlar_pass@localhost:5432/bazarlar_claude"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:123456@localhost:5433/bazarlar_claude"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     ]
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # .env файл в корне проекта (на уровень выше backend/)
         case_sensitive = True
 
 
