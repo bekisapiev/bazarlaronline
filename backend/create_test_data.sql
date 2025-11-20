@@ -1,78 +1,29 @@
 -- =====================================================================
--- Полный набор тестовых данных для Bazarlar Online
+-- Тестовые данные для Bazarlar Online
 -- =====================================================================
--- Включает: города, рынки, категории, продавцов, товары, покупателей, заказы и отзывы
--- Запуск: docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
+-- Создание: продавцов, товаров, покупателей, заказов и отзывов
+-- Справочники (города, рынки, категории) должны быть созданы заранее через миграции
+--
+-- ЗАПУСК ТОЛЬКО ЧЕРЕЗ PSQL:
+-- docker exec -i bazarlar_postgres psql -U bazarlar_user -d bazarlar_claude < backend/create_test_data.sql
+--
+-- НЕ ЗАПУСКАТЬ через DBeaver или другие GUI инструменты!
 -- =====================================================================
 
 BEGIN;
 
 -- =====================================================================
--- СПРАВОЧНЫЕ ДАННЫЕ
+-- Вывод заголовка
 -- =====================================================================
-
--- Города
-INSERT INTO cities (id, name, slug) VALUES
-(1, 'Бишкек', 'bishkek'),
-(2, 'Ош', 'osh'),
-(3, 'Джалал-Абад', 'jalal-abad'),
-(4, 'Каракол', 'karakol'),
-(5, 'Токмок', 'tokmok')
-ON CONFLICT (id) DO NOTHING;
-
--- Рынки в Бишкеке
-INSERT INTO markets (id, city_id, name, slug, address, latitude, longitude) VALUES
-(1, 1, 'Дордой', 'dordoy', 'ул. Шабдан Баатыра', 42.8924, 74.6340),
-(2, 1, 'Ошский рынок', 'oshskiy', 'ул. Киевская', 42.8746, 74.6122),
-(3, 1, 'Ортосайский рынок', 'ortosay', 'ул. Ахунбаева', 42.8544, 74.6206),
-(4, 1, 'Аламединский рынок', 'alamedinsky', 'ул. Ибраимова', 42.8489, 74.5899),
-(5, 1, 'Ак-Эмир', 'ak-emir', 'ул. Горького', 42.8704, 74.5946)
-ON CONFLICT (id) DO NOTHING;
-
--- Рынки в Оше
-INSERT INTO markets (id, city_id, name, slug, address) VALUES
-(6, 2, 'Жайма', 'jayma', 'Ошский базар'),
-(7, 2, 'Кара-Суу', 'kara-suu', 'Кара-Суйский рынок')
-ON CONFLICT (id) DO NOTHING;
-
--- Категории уровня 1
-INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_active) VALUES
-(1, NULL, 'Одежда', 'clothing', 1, '👕', 1, true),
-(2, NULL, 'Обувь', 'shoes', 1, '👟', 2, true),
-(3, NULL, 'Электроника', 'electronics', 1, '📱', 3, true),
-(4, NULL, 'Продукты питания', 'food', 1, '🍎', 4, true),
-(5, NULL, 'Товары для дома', 'home', 1, '🏠', 5, true),
-(6, NULL, 'Косметика', 'beauty', 1, '💄', 6, true),
-(7, NULL, 'Детские товары', 'kids', 1, '🧸', 7, true),
-(8, NULL, 'Спорт', 'sport', 1, '⚽', 8, true)
-ON CONFLICT (id) DO NOTHING;
-
--- Категории уровня 2 (Одежда)
-INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
-(11, 1, 'Мужская одежда', 'men-clothing', 2, 1, true),
-(12, 1, 'Женская одежда', 'women-clothing', 2, 2, true),
-(13, 1, 'Верхняя одежда', 'outerwear', 2, 3, true),
-(14, 1, 'Аксессуары', 'accessories', 2, 4, true)
-ON CONFLICT (id) DO NOTHING;
-
--- Категории уровня 2 (Электроника)
-INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
-(31, 3, 'Смартфоны', 'smartphones', 2, 1, true),
-(32, 3, 'Ноутбуки', 'laptops', 2, 2, true),
-(33, 3, 'Бытовая техника', 'appliances', 2, 3, true),
-(34, 3, 'Аудио', 'audio', 2, 4, true)
-ON CONFLICT (id) DO NOTHING;
-
--- Категории уровня 3 (Смартфоны)
-INSERT INTO categories (id, parent_id, name, slug, level, sort_order, is_active) VALUES
-(311, 31, 'iPhone', 'iphone', 3, 1, true),
-(312, 31, 'Samsung', 'samsung', 3, 2, true),
-(313, 31, 'Xiaomi', 'xiaomi', 3, 3, true),
-(314, 31, 'Другие бренды', 'other-phones', 3, 4, true)
-ON CONFLICT (id) DO NOTHING;
+DO $$
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'СОЗДАНИЕ ТЕСТОВЫХ ДАННЫХ';
+    RAISE NOTICE '========================================';
+END $$;
 
 -- =====================================================================
--- ПОЛЬЗОВАТЕЛИ: Администраторы и базовые продавцы
+-- АДМИНИСТРАТОР И БАЗОВЫЙ ПРОДАВЕЦ
 -- =====================================================================
 
 -- Тестовый админ
@@ -105,7 +56,7 @@ VALUES (
 ON CONFLICT (email) DO NOTHING;
 
 -- =====================================================================
--- ПРОДАВЦЫ И ТОВАРЫ
+-- ПРОДАВЦЫ, ТОВАРЫ И УСЛУГИ
 -- =====================================================================
 
 DO $$
@@ -122,6 +73,9 @@ DECLARE
     seller10_id UUID := gen_random_uuid();
 
 BEGIN
+    RAISE NOTICE '✓ Создан администратор и базовый продавец';
+    RAISE NOTICE 'Создание продавцов и их товаров...';
+
     -- Продавец 1: Магазин одежды на Дордое
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
     VALUES (seller1_id, 'seller1@test.com', 'Айгуль Асанова', '+996555111111', 'seller', 'pro', upper(substr(md5(random()::text), 1, 12)), NOW(), false)
@@ -212,6 +166,14 @@ BEGIN
     VALUES (seller10_id, 'Gadget Store', 'Гаджеты и аксессуары', 3, 3, 'shop', NULL, 'Центральный рынок', 4.5, 92, true)
     ON CONFLICT (user_id) DO NOTHING;
 
+    RAISE NOTICE '✓ Создано 10 продавцов с профилями';
+
+    -- =====================================================================
+    -- ТОВАРЫ И УСЛУГИ
+    -- =====================================================================
+
+    RAISE NOTICE 'Создание товаров и услуг...';
+
     -- Товары продавца 1 (Одежда)
     INSERT INTO products (seller_id, title, description, category_id, price, discount_price, delivery_type, delivery_methods, characteristics, images, status, views_count, created_at)
     VALUES
@@ -285,8 +247,7 @@ BEGIN
     (seller10_id, 'Наушники JBL Tune 500', 'Накладные наушники с отличным звуком', 34, 2500, 2199, 'paid', '["taxi", "express"]', '[{"name":"Цвет","value":"Черный, Белый"},{"name":"Тип","value":"Проводные"}]', '["https://placehold.co/600x400/000000/FFF?text=JBL+Headphones"]', 'active', 234, NOW()),
     (seller10_id, 'Powerbank 20000mAh', 'Внешний аккумулятор быстрая зарядка', 34, 1800, 1499, 'paid', '["taxi", "express"]', '[{"name":"Емкость","value":"20000mAh"},{"name":"Порты","value":"USB-C, USB-A"}]', '["https://placehold.co/600x400/4169E1/FFF?text=Powerbank"]', 'active', 312, NOW());
 
-    RAISE NOTICE '✓ Создано 10 продавцов и их профили';
-    RAISE NOTICE '✓ Создано ~40 товаров';
+    RAISE NOTICE '✓ Создано ~40 товаров и услуг';
 
 END $$;
 
@@ -344,9 +305,9 @@ DECLARE
     order20_id UUID := gen_random_uuid();
 
 BEGIN
-    -- Создаем покупателей
-    RAISE NOTICE 'Создание тестовых покупателей...';
+    RAISE NOTICE 'Создание покупателей...';
 
+    -- Создаем покупателей
     INSERT INTO users (id, email, full_name, phone, role, tariff, referral_id, created_at, is_banned)
     VALUES
     (buyer1_id, 'buyer1@test.com', 'Айнура Садыкова', '+996700111111', 'user', 'free', upper(substr(md5(random()::text), 1, 12)), NOW() - INTERVAL '3 months', false),
@@ -382,14 +343,12 @@ BEGIN
 
     RAISE NOTICE 'Создание заказов и отзывов...';
 
-    -- Заказ 1: buyer1 покупает у seller1
+    -- Заказ 1
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
-    VALUES (
-        order1_id, 'ORD-20250115-A1B2C3D4', buyer1_id, seller1_id,
+    VALUES (order1_id, 'ORD-20250115-A1B2C3D4', buyer1_id, seller1_id,
         jsonb_build_array(jsonb_build_object('product_id', product1_id, 'quantity', 2, 'price', 1200, 'discount_price', 999)),
         1998.00, 'г. Бишкек, ул. Киевская 45, кв. 12', '+996700111111', 'wallet', 'completed',
-        NOW() - INTERVAL '45 days', NOW() - INTERVAL '42 days'
-    ) ON CONFLICT (order_number) DO NOTHING;
+        NOW() - INTERVAL '45 days', NOW() - INTERVAL '42 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller1_id, buyer1_id, order1_id, 9, 'Отличное качество! Футболки очень приятные на ощупь, размер соответствует. Продавец быстро ответил на вопросы. Рекомендую!', NOW() - INTERVAL '40 days')
@@ -400,8 +359,7 @@ BEGIN
     VALUES (order2_id, 'ORD-20250120-E5F6G7H8', buyer1_id, seller2_id,
         jsonb_build_array(jsonb_build_object('product_id', product2_id, 'quantity', 1, 'price', 85000, 'discount_price', 82000)),
         82000.00, 'г. Бишкек, ул. Киевская 45, кв. 12', '+996700111111', 'mbank', 'completed',
-        NOW() - INTERVAL '35 days', NOW() - INTERVAL '33 days')
-    ON CONFLICT (order_number) DO NOTHING;
+        NOW() - INTERVAL '35 days', NOW() - INTERVAL '33 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller2_id, buyer1_id, order2_id, 10, 'Телефон в идеальном состоянии! Все как описано, запечатанный, оригинал. Доставка быстрая, продавец очень вежливый. Спасибо большое!', NOW() - INTERVAL '30 days')
@@ -412,8 +370,7 @@ BEGIN
     VALUES (order3_id, 'ORD-20250125-I9J0K1L2', buyer2_id, seller4_id,
         jsonb_build_array(jsonb_build_object('product_id', product3_id, 'quantity', 1, 'price', 6500, 'discount_price', 5999)),
         5999.00, 'г. Бишкек, мкр. Асанбай 12-34', '+996700222222', 'wallet', 'completed',
-        NOW() - INTERVAL '28 days', NOW() - INTERVAL '26 days')
-    ON CONFLICT (order_number) DO NOTHING;
+        NOW() - INTERVAL '28 days', NOW() - INTERVAL '26 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller4_id, buyer2_id, order3_id, 8, 'Кроссовки хорошие, удобные. Размер подошел. Доставка заняла чуть больше времени, чем обещали, но в целом все отлично.', NOW() - INTERVAL '24 days')
@@ -424,8 +381,7 @@ BEGIN
     VALUES (order4_id, 'ORD-20250128-M3N4O5P6', buyer3_id, seller5_id,
         jsonb_build_array(jsonb_build_object('product_id', product4_id, 'quantity', 1, 'price', 3500, 'discount_price', 3199)),
         3199.00, 'г. Бишкек, ул. Манаса 102', '+996700333333', 'wallet', 'completed',
-        NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days')
-    ON CONFLICT (order_number) DO NOTHING;
+        NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller5_id, buyer3_id, order4_id, 10, 'Превосходно! Тональный крем оригинальный, подошел идеально. Упаковка красивая, есть чек. Продавец профессионал!', NOW() - INTERVAL '18 days')
@@ -436,8 +392,7 @@ BEGIN
     VALUES (order5_id, 'ORD-20250130-Q7R8S9T0', buyer4_id, seller6_id,
         jsonb_build_array(jsonb_build_object('product_id', product5_id, 'quantity', 1, 'price', 3500, 'discount_price', 2999)),
         2999.00, 'г. Бишкек, мкр. Джал 15-67', '+996700444444', 'mbank', 'completed',
-        NOW() - INTERVAL '18 days', NOW() - INTERVAL '16 days')
-    ON CONFLICT (order_number) DO NOTHING;
+        NOW() - INTERVAL '18 days', NOW() - INTERVAL '16 days') ON CONFLICT (order_number) DO NOTHING;
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller6_id, buyer4_id, order5_id, 9, 'Ребенок в восторге! Конструктор оригинальный LEGO, все детали на месте. Упаковка целая. Спасибо!', NOW() - INTERVAL '14 days')
@@ -548,26 +503,18 @@ BEGIN
 
 END $$;
 
-COMMIT;
-
 -- =====================================================================
 -- ИТОГОВАЯ СТАТИСТИКА
 -- =====================================================================
 
 DO $$
 DECLARE
-    cities_count INT;
-    markets_count INT;
-    categories_count INT;
     sellers_count INT;
     products_count INT;
     buyers_count INT;
     orders_count INT;
     reviews_count INT;
 BEGIN
-    SELECT COUNT(*) INTO cities_count FROM cities;
-    SELECT COUNT(*) INTO markets_count FROM markets;
-    SELECT COUNT(*) INTO categories_count FROM categories;
     SELECT COUNT(*) INTO sellers_count FROM users WHERE role = 'seller';
     SELECT COUNT(*) INTO products_count FROM products;
     SELECT COUNT(*) INTO buyers_count FROM users WHERE role = 'user';
@@ -578,9 +525,6 @@ BEGIN
     RAISE NOTICE '========================================';
     RAISE NOTICE 'ТЕСТОВЫЕ ДАННЫЕ УСПЕШНО СОЗДАНЫ!';
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'Городов: %', cities_count;
-    RAISE NOTICE 'Рынков: %', markets_count;
-    RAISE NOTICE 'Категорий: %', categories_count;
     RAISE NOTICE 'Продавцов: %', sellers_count;
     RAISE NOTICE 'Товаров: %', products_count;
     RAISE NOTICE 'Покупателей: %', buyers_count;
@@ -588,3 +532,5 @@ BEGIN
     RAISE NOTICE 'Отзывов: %', reviews_count;
     RAISE NOTICE '========================================';
 END $$;
+
+COMMIT;

@@ -4,6 +4,7 @@ Database Models
 from app.models.user import User, SellerProfile
 from app.models.product import Product, Category
 from app.models.order import Order
+from app.models.booking import Booking
 from app.models.wallet import Wallet, Transaction, WithdrawalRequest
 from app.models.chat import Chat, Message
 from app.models.review import Review
@@ -20,6 +21,7 @@ __all__ = [
     "Product",
     "Category",
     "Order",
+    "Booking",
     "Wallet",
     "Transaction",
     "WithdrawalRequest",
