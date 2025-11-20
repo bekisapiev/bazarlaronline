@@ -380,6 +380,8 @@ BEGIN
         1998.00, 'г. Бишкек, ул. Киевская 45, кв. 12', '+996700111111', 'wallet', 'completed',
         NOW() - INTERVAL '45 days', NOW() - INTERVAL '42 days') ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order1_id FROM orders WHERE order_number = 'ORD-20250115-A1B2C3D4';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller1_id, buyer1_id, order1_id, 9, 'Отличное качество! Футболки очень приятные на ощупь, размер соответствует. Продавец быстро ответил на вопросы. Рекомендую!', NOW() - INTERVAL '40 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -390,6 +392,8 @@ BEGIN
         jsonb_build_array(jsonb_build_object('product_id', product2_id, 'quantity', 1, 'price', 85000, 'discount_price', 82000)),
         82000.00, 'г. Бишкек, ул. Киевская 45, кв. 12', '+996700111111', 'mbank', 'completed',
         NOW() - INTERVAL '35 days', NOW() - INTERVAL '33 days') ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order2_id FROM orders WHERE order_number = 'ORD-20250120-E5F6G7H8';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller2_id, buyer1_id, order2_id, 10, 'Телефон в идеальном состоянии! Все как описано, запечатанный, оригинал. Доставка быстрая, продавец очень вежливый. Спасибо большое!', NOW() - INTERVAL '30 days')
@@ -402,6 +406,8 @@ BEGIN
         5999.00, 'г. Бишкек, мкр. Асанбай 12-34', '+996700222222', 'wallet', 'completed',
         NOW() - INTERVAL '28 days', NOW() - INTERVAL '26 days') ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order3_id FROM orders WHERE order_number = 'ORD-20250125-I9J0K1L2';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller4_id, buyer2_id, order3_id, 8, 'Кроссовки хорошие, удобные. Размер подошел. Доставка заняла чуть больше времени, чем обещали, но в целом все отлично.', NOW() - INTERVAL '24 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -412,6 +418,8 @@ BEGIN
         jsonb_build_array(jsonb_build_object('product_id', product4_id, 'quantity', 1, 'price', 3500, 'discount_price', 3199)),
         3199.00, 'г. Бишкек, ул. Манаса 102', '+996700333333', 'wallet', 'completed',
         NOW() - INTERVAL '22 days', NOW() - INTERVAL '20 days') ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order4_id FROM orders WHERE order_number = 'ORD-20250128-M3N4O5P6';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller5_id, buyer3_id, order4_id, 10, 'Превосходно! Тональный крем оригинальный, подошел идеально. Упаковка красивая, есть чек. Продавец профессионал!', NOW() - INTERVAL '18 days')
@@ -424,6 +432,8 @@ BEGIN
         2999.00, 'г. Бишкек, мкр. Джал 15-67', '+996700444444', 'mbank', 'completed',
         NOW() - INTERVAL '18 days', NOW() - INTERVAL '16 days') ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order5_id FROM orders WHERE order_number = 'ORD-20250130-Q7R8S9T0';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller6_id, buyer4_id, order5_id, 9, 'Ребенок в восторге! Конструктор оригинальный LEGO, все детали на месте. Упаковка целая. Спасибо!', NOW() - INTERVAL '14 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -432,6 +442,8 @@ BEGIN
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES (order6_id, 'ORD-20250202-U1V2W3X4', buyer5_id, seller1_id, '[]'::jsonb, 4500.00, 'г. Бишкек, ул. Боконбаева 200', '+996700555555', 'wallet', 'completed', NOW() - INTERVAL '15 days', NOW() - INTERVAL '13 days')
     ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order6_id FROM orders WHERE order_number = 'ORD-20250202-U1V2W3X4';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller1_id, buyer5_id, order6_id, 7, 'Товар нормальный, но доставка задержалась на 2 дня. В остальном претензий нет.', NOW() - INTERVAL '11 days')
@@ -442,6 +454,8 @@ BEGIN
     VALUES (order7_id, 'ORD-20250205-Y5Z6A7B8', buyer6_id, seller3_id, '[]'::jsonb, 450.00, 'г. Бишкек, мкр. Кок-Жар 5-12', '+996700666666', 'wallet', 'completed', NOW() - INTERVAL '12 days', NOW() - INTERVAL '11 days')
     ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order7_id FROM orders WHERE order_number = 'ORD-20250205-Y5Z6A7B8';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller3_id, buyer6_id, order7_id, 10, 'Молоко и яйца всегда свежие! Покупаю постоянно. Очень довольна качеством!', NOW() - INTERVAL '10 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -450,6 +464,8 @@ BEGIN
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES (order8_id, 'ORD-20250207-C9D0E1F2', buyer7_id, seller7_id, '[]'::jsonb, 1998.00, 'г. Бишкек, ул. Ибраимова 45', '+996700777777', 'mbank', 'completed', NOW() - INTERVAL '9 days', NOW() - INTERVAL '8 days')
     ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order8_id FROM orders WHERE order_number = 'ORD-20250207-C9D0E1F2';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller7_id, buyer7_id, order8_id, 8, 'Коврик для йоги отличный, не скользит. Доставка быстрая. Рекомендую!', NOW() - INTERVAL '7 days')
@@ -460,6 +476,8 @@ BEGIN
     VALUES (order9_id, 'ORD-20250209-G3H4I5J6', buyer8_id, seller8_id, '[]'::jsonb, 2199.00, 'г. Ош, ул. Ленина 123', '+996700888888', 'wallet', 'completed', NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days')
     ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order9_id FROM orders WHERE order_number = 'ORD-20250209-G3H4I5J6';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller8_id, buyer8_id, order9_id, 9, 'Постельное белье высокого качества, сатин приятный. Упаковка хорошая. Спасибо!', NOW() - INTERVAL '4 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -468,6 +486,8 @@ BEGIN
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES (order10_id, 'ORD-20250210-K7L8M9N0', buyer2_id, seller2_id, '[]'::jsonb, 16999.00, 'г. Бишкек, мкр. Асанбай 12-34', '+996700222222', 'wallet', 'completed', NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days')
     ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order10_id FROM orders WHERE order_number = 'ORD-20250210-K7L8M9N0';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller2_id, buyer2_id, order10_id, 10, 'AirPods супер! Звук чистый, шумоподавление работает отлично. Продавец топ!', NOW() - INTERVAL '3 days')
@@ -478,6 +498,8 @@ BEGIN
     VALUES (order11_id, 'ORD-20250212-O1P2Q3R4', buyer3_id, seller9_id, '[]'::jsonb, 4500.00, 'г. Ош, микрорайон 5, дом 12', '+996700333333', 'mbank', 'completed', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days')
     ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order11_id FROM orders WHERE order_number = 'ORD-20250212-O1P2Q3R4';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller9_id, buyer3_id, order11_id, 9, 'Красивое национальное платье! Качество отличное, вышивка аккуратная. Очень довольна покупкой!', NOW() - INTERVAL '2 days')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -486,6 +508,8 @@ BEGIN
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES (order12_id, 'ORD-20250213-S5T6U7V8', buyer1_id, seller4_id, '[]'::jsonb, 2999.00, 'г. Бишкек, ул. Киевская 45, кв. 12', '+996700111111', 'wallet', 'completed', NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 days')
     ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order12_id FROM orders WHERE order_number = 'ORD-20250213-S5T6U7V8';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller4_id, buyer1_id, order12_id, 8, 'Туфли удобные, каблук устойчивый. Размер соответствует. Хорошая покупка!', NOW() - INTERVAL '1 day')
@@ -496,6 +520,8 @@ BEGIN
     VALUES (order13_id, 'ORD-20250214-W9X0Y1Z2', buyer5_id, seller10_id, '[]'::jsonb, 1499.00, 'г. Джалал-Абад, ул. Эркиндик 56', '+996700555555', 'wallet', 'completed', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day')
     ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order13_id FROM orders WHERE order_number = 'ORD-20250214-W9X0Y1Z2';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller10_id, buyer5_id, order13_id, 7, 'Powerbank работает хорошо, заряжает быстро. Но корпус немного поцарапан был.', NOW() - INTERVAL '12 hours')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -505,6 +531,8 @@ BEGIN
     VALUES (order14_id, 'ORD-20250215-A3B4C5D6', buyer6_id, seller5_id, '[]'::jsonb, 699.00, 'г. Бишкек, мкр. Кок-Жар 5-12', '+996700666666', 'mbank', 'completed', NOW() - INTERVAL '1 day', NOW() - INTERVAL '6 hours')
     ON CONFLICT (order_number) DO NOTHING;
 
+    SELECT id INTO order14_id FROM orders WHERE order_number = 'ORD-20250215-A3B4C5D6';
+
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller5_id, buyer6_id, order14_id, 10, 'Маски супер! Кожа стала мягкая и увлажненная. Беру уже не первый раз!', NOW() - INTERVAL '3 hours')
     ON CONFLICT (order_id, buyer_id) DO NOTHING;
@@ -513,6 +541,8 @@ BEGIN
     INSERT INTO orders (id, order_number, buyer_id, seller_id, items, total_amount, delivery_address, phone_number, payment_method, status, created_at, updated_at)
     VALUES (order15_id, 'ORD-20250216-E7F8G9H0', buyer7_id, seller6_id, '[]'::jsonb, 3999.00, 'г. Бишкек, ул. Ибраимова 45', '+996700777777', 'wallet', 'completed', NOW() - INTERVAL '12 hours', NOW() - INTERVAL '2 hours')
     ON CONFLICT (order_number) DO NOTHING;
+
+    SELECT id INTO order15_id FROM orders WHERE order_number = 'ORD-20250216-E7F8G9H0';
 
     INSERT INTO reviews (seller_id, buyer_id, order_id, rating, comment, created_at)
     VALUES (seller6_id, buyer7_id, order15_id, 9, 'Комбинезон теплый, качественный. Ребенку в самый раз. Спасибо за быструю доставку!', NOW() - INTERVAL '1 hour')
@@ -527,6 +557,13 @@ BEGIN
     (order19_id, 'ORD-20250218-U3V4W5X6', buyer3_id, seller7_id, '[]'::jsonb, 499.00, 'г. Бишкек, ул. Манаса 102', '+996700333333', 'wallet', 'pending', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'),
     (order20_id, 'ORD-20250218-Y7Z8A9B0', buyer5_id, seller8_id, '[]'::jsonb, 2999.00, 'г. Ош, ул. Курманжан Датка 78', '+996700555555', 'mbank', 'pending', NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes')
     ON CONFLICT (order_number) DO NOTHING;
+
+    -- Получаем ID заказов без отзывов
+    SELECT id INTO order16_id FROM orders WHERE order_number = 'ORD-20250217-I1J2K3L4';
+    SELECT id INTO order17_id FROM orders WHERE order_number = 'ORD-20250217-M5N6O7P8';
+    SELECT id INTO order18_id FROM orders WHERE order_number = 'ORD-20250218-Q9R0S1T2';
+    SELECT id INTO order19_id FROM orders WHERE order_number = 'ORD-20250218-U3V4W5X6';
+    SELECT id INTO order20_id FROM orders WHERE order_number = 'ORD-20250218-Y7Z8A9B0';
 
     RAISE NOTICE '✓ Создано 20 заказов';
     RAISE NOTICE '✓ Создано 15 отзывов';
