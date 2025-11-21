@@ -407,27 +407,29 @@ const ProductDetailPage: React.FC = () => {
                 Продавец
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
+                <Avatar src={product.seller?.avatar} sx={{ width: 56, height: 56 }}>
                   <Store />
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle1" fontWeight={600}>
-                    {product.seller.full_name}
+                    {product.seller?.full_name || 'Неизвестный продавец'}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={product.seller.rating} size="small" readOnly />
+                    <Rating value={product.seller?.rating || 0} size="small" readOnly />
                     <Typography variant="body2" color="text.secondary">
-                      {product.seller.rating.toFixed(1)}
+                      {product.seller?.rating ? product.seller.rating.toFixed(1) : '0.0'}
                     </Typography>
                   </Box>
                 </Box>
               </Box>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(`/sellers/${product.seller.id}`)}
-              >
-                Посмотреть профиль продавца
-              </Button>
+              {product.seller?.id && (
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate(`/sellers/${product.seller.id}`)}
+                >
+                  Посмотреть профиль продавца
+                </Button>
+              )}
 
               {/* Location */}
               {product.location && (
@@ -490,11 +492,13 @@ const ProductDetailPage: React.FC = () => {
                 <Card key={review.id}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'start', gap: 2 }}>
-                      <Avatar src={review.user.avatar}>{review.user.full_name[0]}</Avatar>
+                      <Avatar src={review.user?.avatar}>
+                        {review.user?.full_name?.[0] || 'U'}
+                      </Avatar>
                       <Box sx={{ flexGrow: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="subtitle1" fontWeight={600}>
-                            {review.user.full_name}
+                            {review.user?.full_name || 'Аноним'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {new Date(review.created_at).toLocaleDateString('ru-RU')}
