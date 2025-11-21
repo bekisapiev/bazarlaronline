@@ -153,11 +153,12 @@ const ProductFormPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategoryTree();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
+      // Backend returns {tree: [...]}
+      if (response.data && Array.isArray(response.data.tree)) {
+        setCategories(response.data.tree);
+      } else if (Array.isArray(response.data)) {
+        // Fallback: if data is array directly
         setCategories(response.data);
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
       } else {
         console.warn('Unexpected categories data format:', response.data);
         setCategories([]);

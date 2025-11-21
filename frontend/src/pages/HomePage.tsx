@@ -166,12 +166,12 @@ const HomePage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
+      // Backend returns {items: [...], total: ...}
+      if (response.data && Array.isArray(response.data.items)) {
+        setCities(response.data.items);
+      } else if (Array.isArray(response.data)) {
+        // Fallback: if data is array directly
         setCities(response.data);
-      } else if (response.data && Array.isArray(response.data.cities)) {
-        // If data is wrapped in an object with 'cities' property
-        setCities(response.data.cities);
       } else {
         console.warn('Unexpected cities data format:', response.data);
         setCities([]);
@@ -185,11 +185,12 @@ const HomePage: React.FC = () => {
   const loadMarkets = async (cityId: number) => {
     try {
       const response = await productsAPI.getMarkets({ city_id: cityId });
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
+      // Backend returns {items: [...], total: ...}
+      if (response.data && Array.isArray(response.data.items)) {
+        setMarkets(response.data.items);
+      } else if (Array.isArray(response.data)) {
+        // Fallback: if data is array directly
         setMarkets(response.data);
-      } else if (response.data && Array.isArray(response.data.markets)) {
-        setMarkets(response.data.markets);
       } else {
         console.warn('Unexpected markets data format:', response.data);
         setMarkets([]);
@@ -203,11 +204,12 @@ const HomePage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await productsAPI.getCategories();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
+      // Backend returns {items: [...], total: ...}
+      if (response.data && Array.isArray(response.data.items)) {
+        setCategories(response.data.items);
+      } else if (Array.isArray(response.data)) {
+        // Fallback: if data is array directly
         setCategories(response.data);
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
       } else {
         console.warn('Unexpected categories data format:', response.data);
         setCategories([]);

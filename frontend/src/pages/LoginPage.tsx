@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
-import { Container, Box, Typography, Paper, Divider, Tabs, Tab } from '@mui/material';
-import { Google, Telegram, PhoneAndroid } from '@mui/icons-material';
+import React from 'react';
+import { Container, Box, Typography, Paper, Divider } from '@mui/material';
+import { Telegram } from '@mui/icons-material';
 import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 import TelegramLoginWidget from '../components/auth/TelegramLoginWidget';
-import TelegramCodeAuth from '../components/auth/TelegramCodeAuth';
 
 const LoginPage: React.FC = () => {
-  const [authMethod, setAuthMethod] = useState<'widget' | 'code'>('widget');
-
   const telegramBotUsername = process.env.REACT_APP_TELEGRAM_BOT_USERNAME || 'bazarlar_online_bot';
 
   return (
@@ -30,8 +27,26 @@ const LoginPage: React.FC = () => {
             </Typography>
           </Box>
 
-          {/* Google Login */}
-          <GoogleLoginButton />
+          {/* Telegram Login - Primary Method */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+              <Telegram sx={{ mr: 1, color: '#0088cc', fontSize: 28 }} />
+              <Typography variant="h6" color="#0088cc">
+                Быстрый вход через Telegram
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 3 }}>
+              Один клик - и вы уже на платформе. Никаких паролей и длинных форм!
+            </Typography>
+            <TelegramLoginWidget
+              botUsername={telegramBotUsername}
+              buttonSize="large"
+              requestAccess="write"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+              Нажмите кнопку выше для входа
+            </Typography>
+          </Box>
 
           {/* Divider */}
           <Box sx={{ my: 3, display: 'flex', alignItems: 'center' }}>
@@ -42,67 +57,18 @@ const LoginPage: React.FC = () => {
             <Divider sx={{ flex: 1 }} />
           </Box>
 
-          {/* Telegram Auth Methods Tabs */}
-          <Box sx={{ mb: 2 }}>
-            <Tabs
-              value={authMethod}
-              onChange={(_, newValue) => setAuthMethod(newValue)}
-              variant="fullWidth"
-              sx={{
-                borderBottom: 1,
-                borderColor: 'divider',
-                '& .MuiTab-root': {
-                  minHeight: 48,
-                },
-              }}
-            >
-              <Tab
-                icon={<Telegram />}
-                iconPosition="start"
-                label="Telegram кнопка"
-                value="widget"
-                sx={{ textTransform: 'none' }}
-              />
-              <Tab
-                icon={<PhoneAndroid />}
-                iconPosition="start"
-                label="Код в Telegram"
-                value="code"
-                sx={{ textTransform: 'none' }}
-              />
-            </Tabs>
-          </Box>
-
-          {/* Telegram Login Widget */}
-          {authMethod === 'widget' && (
-            <Box sx={{ mt: 3 }}>
-              <TelegramLoginWidget
-                botUsername={telegramBotUsername}
-                buttonSize="large"
-                requestAccess="write"
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
-                Нажмите кнопку выше, чтобы войти через Telegram
-              </Typography>
-            </Box>
-          )}
-
-          {/* Telegram Code Auth */}
-          {authMethod === 'code' && (
-            <Box sx={{ mt: 3 }}>
-              <TelegramCodeAuth />
-            </Box>
-          )}
+          {/* Google Login - Alternative Method */}
+          <GoogleLoginButton />
 
           {/* Terms */}
           <Box sx={{ mt: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
               Входя на сайт, вы соглашаетесь с{' '}
-              <a href="/terms" style={{ color: '#FF6B35' }}>
+              <a href="/terms" style={{ color: '#FF6B35', textDecoration: 'none' }}>
                 условиями использования
               </a>{' '}
               и{' '}
-              <a href="/privacy" style={{ color: '#FF6B35' }}>
+              <a href="/privacy" style={{ color: '#FF6B35', textDecoration: 'none' }}>
                 политикой конфиденциальности
               </a>
             </Typography>
