@@ -123,9 +123,18 @@ const ProductsPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories({ parent_id: null });
-      setCategories(response.data);
+      // Ensure response.data is an array
+      if (Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        setCategories(response.data.categories);
+      } else {
+        console.warn('Unexpected categories data format:', response.data);
+        setCategories([]);
+      }
     } catch (err) {
       console.error('Failed to load categories:', err);
+      setCategories([]); // Set to empty array on error
     }
   };
 
