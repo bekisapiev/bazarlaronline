@@ -260,7 +260,7 @@ const TariffsPage: React.FC = () => {
       {/* Additional Info */}
       <Box sx={{ mt: 6, textAlign: 'center' }}>
         <Typography variant="body1" color="text.secondary" gutterBottom>
-          Все цены указаны в тенге (₸). НДС не облагается.
+          Все цены указаны в сомах (с). НДС не облагается.
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Есть вопросы?{' '}
