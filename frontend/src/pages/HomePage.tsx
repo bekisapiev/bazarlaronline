@@ -166,27 +166,55 @@ const HomePage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      setCities(response.data);
+      // Ensure response.data is an array
+      if (Array.isArray(response.data)) {
+        setCities(response.data);
+      } else if (response.data && Array.isArray(response.data.cities)) {
+        // If data is wrapped in an object with 'cities' property
+        setCities(response.data.cities);
+      } else {
+        console.warn('Unexpected cities data format:', response.data);
+        setCities([]);
+      }
     } catch (error) {
       console.error('Error loading cities:', error);
+      setCities([]); // Set to empty array on error
     }
   };
 
   const loadMarkets = async (cityId: number) => {
     try {
       const response = await productsAPI.getMarkets({ city_id: cityId });
-      setMarkets(response.data);
+      // Ensure response.data is an array
+      if (Array.isArray(response.data)) {
+        setMarkets(response.data);
+      } else if (response.data && Array.isArray(response.data.markets)) {
+        setMarkets(response.data.markets);
+      } else {
+        console.warn('Unexpected markets data format:', response.data);
+        setMarkets([]);
+      }
     } catch (error) {
       console.error('Error loading markets:', error);
+      setMarkets([]); // Set to empty array on error
     }
   };
 
   const loadCategories = async () => {
     try {
       const response = await productsAPI.getCategories();
-      setCategories(response.data);
+      // Ensure response.data is an array
+      if (Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        setCategories(response.data.categories);
+      } else {
+        console.warn('Unexpected categories data format:', response.data);
+        setCategories([]);
+      }
     } catch (error) {
       console.error('Error loading categories:', error);
+      setCategories([]); // Set to empty array on error
     }
   };
 
