@@ -3,7 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductFormPage from './pages/ProductFormPage';
 import SellersPage from './pages/SellersPage';
@@ -19,6 +18,11 @@ import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
+import TariffsPage from './pages/TariffsPage';
+import AboutPage from './pages/AboutPage';
+import ContactsPage from './pages/ContactsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import './App.css';
 
 function App() {
@@ -29,7 +33,6 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/products/new" element={<ProductFormPage />} />
           <Route path="/products/:id/edit" element={<ProductFormPage />} />
@@ -41,6 +44,11 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
+          <Route path="/tariffs" element={<TariffsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
