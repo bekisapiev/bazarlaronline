@@ -29,6 +29,7 @@ class User(Base):
     telegram_username = Column(String(255), nullable=True)
     referral_id = Column(String(20), unique=True, nullable=False, default=generate_referral_id, index=True)
     referred_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    referral_expires_at = Column(DateTime, nullable=True)  # Когда заканчивается реферальная программа (1 год)
     full_name = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True, index=True)
     phone_verification_code = Column(String(10), nullable=True)

@@ -35,16 +35,16 @@ class WithdrawalRequest(BaseModel):
     """Withdrawal request"""
     amount: Decimal
     method: str = "mbank"
-    account_number: str
-    account_name: str
+    mbank_phone: Optional[str] = None  # Номер телефона MBank
+    account_number: Optional[str] = None
+    account_name: Optional[str] = None
 
     class Config:
         json_schema_extra = {
             "example": {
-                "amount": 5000.00,
+                "amount": 1000.00,
                 "method": "mbank",
-                "account_number": "+996555123456",
-                "account_name": "Иван Иванов"
+                "mbank_phone": "+996555123456"
             }
         }
 

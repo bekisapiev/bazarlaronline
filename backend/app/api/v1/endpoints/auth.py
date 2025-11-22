@@ -528,11 +528,23 @@ async def register_with_email(
     # Hash password
     password_hash = hash_password(request.password)
 
+    # Check referral code if provided
+    referrer_id = None
+    if request.ref_code:
+        referrer_result = await db.execute(
+            select(User).where(User.referral_id == request.ref_code)
+        )
+        referrer = referrer_result.scalar_one_or_none()
+        if referrer:
+            referrer_id = referrer.id
+
     # Create new user
     user = User(
         email=request.email,
         password_hash=password_hash,
-        full_name=request.full_name
+        full_name=request.full_name,
+        referred_by=referrer_id,
+        referral_expires_at=datetime.utcnow() + timedelta(days=365) if referrer_id else None
     )
     db.add(user)
     await db.flush()  # Flush to get user.id

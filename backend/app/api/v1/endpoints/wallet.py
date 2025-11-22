@@ -8,7 +8,7 @@ from decimal import Decimal
 from datetime import datetime
 
 from app.database.session import get_db
-from app.models.wallet import Wallet, Transaction, WithdrawalRequest as WithdrawalRequestModel
+from app.models.wallet import Wallet, Transaction, WithdrawalRequest as WithdrawalRequestModel, ReferralEarning
 from app.models.user import User
 from app.core.dependencies import get_current_active_user
 from app.core.config import settings
@@ -70,6 +70,12 @@ async def topup_wallet(
             detail="Minimum top-up amount is 100 KGS"
         )
 
+    # Get user with referrer info
+    user_result = await db.execute(
+        select(User).where(User.id == current_user.id)
+    )
+    user = user_result.scalar_one()
+
     # Get wallet
     result = await db.execute(
         select(Wallet).where(Wallet.user_id == current_user.id)
@@ -81,6 +87,9 @@ async def topup_wallet(
         db.add(wallet)
         await db.flush()
 
+    # Add to main balance
+    wallet.main_balance += Decimal(str(request.amount))
+
     # Create transaction record
     transaction = Transaction(
         user_id=current_user.id,
@@ -88,16 +97,53 @@ async def topup_wallet(
         amount=request.amount,
         balance_type="main",
         description="Пополнение баланса",
-        status="pending"  # Will be "completed" after payment confirmation
+        status="completed"
     )
     db.add(transaction)
-    await db.commit()
+    await db.flush()  # Flush to get transaction.id
 
-    # TODO: Integrate MBank payment gateway here
-    # payment_url = create_mbank_payment(request.amount, transaction.id)
+    # Check if user has active referrer and give 20% bonus
+    if user.referred_by and user.referral_expires_at and user.referral_expires_at > datetime.utcnow():
+        bonus_amount = Decimal(str(request.amount)) * Decimal('0.20')  # 20%
+
+        # Get referrer wallet
+        referrer_wallet_result = await db.execute(
+            select(Wallet).where(Wallet.user_id == user.referred_by)
+        )
+        referrer_wallet = referrer_wallet_result.scalar_one_or_none()
+
+        if referrer_wallet:
+            # Add to referrer's referral balance
+            referrer_wallet.referral_balance += bonus_amount
+
+            # Create referral earning record
+            earning = ReferralEarning(
+                referrer_id=user.referred_by,
+                referee_id=current_user.id,
+                transaction_id=transaction.id,
+                topup_amount=Decimal(str(request.amount)),
+                earning_amount=bonus_amount,
+                status="completed"
+            )
+            db.add(earning)
+
+            # Create transaction for referrer
+            referrer_transaction = Transaction(
+                user_id=user.referred_by,
+                type="referral",
+                amount=bonus_amount,
+                balance_type="referral",
+                description=f"Реферальный бонус от пополнения пользователя",
+                reference_id=transaction.id,
+                status="completed"
+            )
+            db.add(referrer_transaction)
+
+    await db.commit()
+    await db.refresh(wallet)
 
     return {
-        "message": "Top-up initiated",
+        "message": "Balance topped up successfully",
         "transaction_id": str(transaction.id),
         "amount": float(request.amount),
         "status": "pending",
@@ -114,12 +160,19 @@ async def withdraw_funds(
     """
     Request withdrawal of referral balance
 
-    Minimum withdrawal amount: 3000 KGS
+    Minimum withdrawal amount: 1000 KGS
+    Can only withdraw from referral balance
     """
-    if request.amount < settings.MIN_WITHDRAWAL_AMOUNT:
+    if request.amount < 1000:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Minimum withdrawal amount is {settings.MIN_WITHDRAWAL_AMOUNT} KGS"
+            detail="Minimum withdrawal amount is 1000 KGS"
+        )
+
+    if not request.mbank_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="MBank phone number is required"
         )
 
     # Get wallet
@@ -134,16 +187,34 @@ async def withdraw_funds(
             detail="Insufficient referral balance"
         )
 
+    # Deduct from referral balance
+    wallet.referral_balance -= Decimal(str(request.amount))
+
     # Create withdrawal request
     withdrawal = WithdrawalRequestModel(
         user_id=current_user.id,
         amount=request.amount,
         method=request.method,
+        mbank_phone=request.mbank_phone,
         account_number=request.account_number,
         account_name=request.account_name,
+        balance_type="referral",
         status="pending"
     )
     db.add(withdrawal)
+
+    # Create transaction
+    transaction = Transaction(
+        user_id=current_user.id,
+        type="withdrawal",
+        amount=request.amount,
+        balance_type="referral",
+        description=f"Вывод средств на MBank {request.mbank_phone}",
+        reference_id=withdrawal.id,
+        status="pending"
+    )
+    db.add(transaction)
+
     await db.commit()
     await db.refresh(withdrawal)
 
@@ -152,11 +223,79 @@ async def withdraw_funds(
         user_id=str(withdrawal.user_id),
         amount=withdrawal.amount,
         method=withdrawal.method,
-        account_number=withdrawal.account_number,
-        account_name=withdrawal.account_name,
+        account_number=withdrawal.account_number or "",
+        account_name=withdrawal.account_name or "",
         status=withdrawal.status,
         created_at=withdrawal.created_at
     )
+
+
+@router.post("/transfer")
+async def transfer_between_balances(
+    amount: Decimal,
+    from_balance: str,  # "referral" or "main"
+    to_balance: str,    # "referral" or "main"
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Transfer funds between main and referral balances
+    Only referral -> main is allowed
+    """
+    if from_balance != "referral" or to_balance != "main":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only transfers from referral to main balance are allowed"
+        )
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Amount must be greater than 0"
+        )
+
+    # Get wallet
+    result = await db.execute(
+        select(Wallet).where(Wallet.user_id == current_user.id)
+    )
+    wallet = result.scalar_one_or_none()
+
+    if not wallet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Wallet not found"
+        )
+
+    if wallet.referral_balance < amount:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Insufficient referral balance"
+        )
+
+    # Transfer
+    wallet.referral_balance -= amount
+    wallet.main_balance += amount
+
+    # Create transaction
+    transaction = Transaction(
+        user_id=current_user.id,
+        type="transfer",
+        amount=amount,
+        balance_type="main",
+        description=f"Перевод с реферального баланса на основной",
+        status="completed"
+    )
+    db.add(transaction)
+
+    await db.commit()
+    await db.refresh(wallet)
+
+    return {
+        "message": "Transfer completed successfully",
+        "amount": float(amount),
+        "main_balance": float(wallet.main_balance),
+        "referral_balance": float(wallet.referral_balance)
+    }
 
 
 @router.get("/transactions")

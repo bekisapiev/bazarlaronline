@@ -58,8 +58,10 @@ class WithdrawalRequest(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     method = Column(String(20), default="mbank")
-    account_number = Column(String(50), nullable=False)
-    account_name = Column(String(255), nullable=False)
+    mbank_phone = Column(String(20), nullable=True)  # Номер телефона MBank
+    account_number = Column(String(50), nullable=True)
+    account_name = Column(String(255), nullable=True)
+    balance_type = Column(String(20), default="referral")  # main, referral
     status = Column(String(20), default="pending")  # pending, processing, approved, rejected
     processed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     processed_at = Column(DateTime, nullable=True)
@@ -72,3 +74,24 @@ class WithdrawalRequest(Base):
 
     def __repr__(self):
         return f"<WithdrawalRequest {self.amount} {self.status}>"
+
+
+class ReferralEarning(Base):
+    """Referral Earning model - tracks referral bonuses"""
+    __tablename__ = "referral_earnings"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    referrer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Кто получает бонус
+    referee_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)  # Кто пополнил
+    transaction_id = Column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=True)  # Транзакция пополнения
+    topup_amount = Column(Numeric(10, 2), nullable=False)  # Сумма пополнения реферала
+    earning_amount = Column(Numeric(10, 2), nullable=False)  # Начисленный бонус (20%)
+    status = Column(String(20), default="completed")  # pending, completed, failed
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    referrer = relationship("User", foreign_keys=[referrer_id])
+    referee = relationship("User", foreign_keys=[referee_id])
+
+    def __repr__(self):
+        return f"<ReferralEarning referrer={self.referrer_id} amount={self.earning_amount}>"

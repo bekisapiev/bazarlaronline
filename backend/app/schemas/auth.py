@@ -59,6 +59,7 @@ class EmailRegisterRequest(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+    ref_code: Optional[str] = None  # Реферальный код
 
 
 class EmailLoginRequest(BaseModel):
