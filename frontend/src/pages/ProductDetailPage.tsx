@@ -34,6 +34,7 @@ import {
   Share,
   NavigateNext,
   Star,
+  EventAvailable,
 } from '@mui/icons-material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -44,6 +45,8 @@ import {
   reviewsAPI,
   recommendationsAPI,
 } from '../services/api';
+import OrderModal from '../components/modals/OrderModal';
+import ServiceBookingModal from '../components/modals/ServiceBookingModal';
 
 interface Product {
   id: string;
@@ -66,6 +69,7 @@ interface Product {
   };
   location?: string;
   is_promoted: boolean;
+  is_service: boolean;
   created_at: string;
 }
 
@@ -100,6 +104,8 @@ const ProductDetailPage: React.FC = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
 
   const loadProduct = useCallback(async () => {
     try {
@@ -369,11 +375,11 @@ const ProductDetailPage: React.FC = () => {
                 <Button
                   variant="contained"
                   size="large"
-                  startIcon={<ShoppingCart />}
-                  onClick={handleAddToCart}
+                  startIcon={product.is_service ? <EventAvailable /> : <ShoppingCart />}
+                  onClick={() => product.is_service ? setBookingModalOpen(true) : setOrderModalOpen(true)}
                   sx={{ flexGrow: 1 }}
                 >
-                  Добавить в корзину
+                  {product.is_service ? 'Записаться' : 'Заказать'}
                 </Button>
                 <IconButton
                   onClick={toggleFavorite}
@@ -633,6 +639,44 @@ const ProductDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Order Modal */}
+      {product && !product.is_service && (
+        <OrderModal
+          open={orderModalOpen}
+          onClose={() => setOrderModalOpen(false)}
+          product={{
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            discount_price: product.discount_price,
+            image: product.images?.[0],
+          }}
+          onOrderSuccess={(orderId) => {
+            console.log('Order created:', orderId);
+            // TODO: Navigate to order confirmation page or show success message
+          }}
+        />
+      )}
+
+      {/* Service Booking Modal */}
+      {product && product.is_service && (
+        <ServiceBookingModal
+          open={bookingModalOpen}
+          onClose={() => setBookingModalOpen(false)}
+          service={{
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            discount_price: product.discount_price,
+            image: product.images?.[0],
+          }}
+          onBookingSuccess={(bookingId) => {
+            console.log('Booking created:', bookingId);
+            // TODO: Navigate to booking confirmation page or show success message
+          }}
+        />
+      )}
     </Container>
   );
 };

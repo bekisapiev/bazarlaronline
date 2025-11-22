@@ -203,10 +203,10 @@ const HomePage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await productsAPI.getCategories();
-      // Backend returns {items: [...], total: ...}
-      if (response.data && Array.isArray(response.data.items)) {
-        setCategories(response.data.items);
+      const response = await productsAPI.getCategoryTree();
+      // Backend returns {tree: [...]} for category tree
+      if (response.data && Array.isArray(response.data.tree)) {
+        setCategories(response.data.tree);
       } else if (Array.isArray(response.data)) {
         // Fallback: if data is array directly
         setCategories(response.data);
@@ -387,8 +387,35 @@ const HomePage: React.FC = () => {
           </Select>
         </FormControl>
 
-        {/* Market Filter (shown when city is selected and seller type is market) */}
-        {selectedCity && (sellerType === 'market' || !sellerType) && markets.length > 0 && (
+        {/* Seller Type */}
+        <FormControl fullWidth size="small">
+          <InputLabel>Тип продавца</InputLabel>
+          <Select
+            value={sellerType || ''}
+            label="Тип продавца"
+            onChange={(e) => {
+              const newType = e.target.value || null;
+              setSellerType(newType);
+              // Reset market when changing seller type
+              if (newType !== 'market') {
+                setSelectedMarket(null);
+              }
+            }}
+          >
+            <MenuItem value="">Все типы</MenuItem>
+            {SELLER_TYPES.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {type.icon}
+                  {type.label}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Market Filter (shown only when seller type is 'market') */}
+        {selectedCity && sellerType === 'market' && markets.length > 0 && (
           <FormControl fullWidth size="small">
             <InputLabel>Рынок</InputLabel>
             <Select
@@ -405,26 +432,6 @@ const HomePage: React.FC = () => {
             </Select>
           </FormControl>
         )}
-
-        {/* Seller Type */}
-        <FormControl fullWidth size="small">
-          <InputLabel>Тип продавца</InputLabel>
-          <Select
-            value={sellerType || ''}
-            label="Тип продавца"
-            onChange={(e) => setSellerType(e.target.value || null)}
-          >
-            <MenuItem value="">Все типы</MenuItem>
-            {SELLER_TYPES.map((type) => (
-              <MenuItem key={type.value} value={type.value}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {type.icon}
-                  {type.label}
-                </Box>
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
 
         {/* Category Level 1 */}
         <FormControl fullWidth size="small">
