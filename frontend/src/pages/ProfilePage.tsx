@@ -903,7 +903,7 @@ const ProfilePage: React.FC = () => {
                       Для оплаты услуг платформы
                     </Typography>
                     <Typography variant="h3" fontWeight={600} color="primary" sx={{ my: 2 }}>
-                      {(mainBalance ?? 0).toFixed(2)} сом
+                      {Number(mainBalance ?? 0).toFixed(2)} сом
                     </Typography>
                     <Button
                       variant="contained"
@@ -932,7 +932,7 @@ const ProfilePage: React.FC = () => {
                       Можно вывести или перевести
                     </Typography>
                     <Typography variant="h3" fontWeight={600} color="success.main" sx={{ my: 2 }}>
-                      {(referralBalance ?? 0).toFixed(2)} сом
+                      {Number(referralBalance ?? 0).toFixed(2)} сом
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
@@ -1006,7 +1006,7 @@ const ProfilePage: React.FC = () => {
                             }}
                           >
                             {transaction.type === 'topup' ? '+' : '-'}
-                            {(transaction.amount ?? 0).toFixed(2)} сом
+                            {Number(transaction.amount ?? 0).toFixed(2)} сом
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -1210,7 +1210,7 @@ const ProfilePage: React.FC = () => {
         <DialogTitle>Вывести средства на MBank</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Доступно на реферальном балансе: {(referralBalance ?? 0).toFixed(2)} сом
+            Доступно на реферальном балансе: {Number(referralBalance ?? 0).toFixed(2)} сом
           </Typography>
           <TextField
             autoFocus
@@ -1238,7 +1238,7 @@ const ProfilePage: React.FC = () => {
         <DialogTitle>Перевести на основной баланс</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Доступно на реферальном балансе: {(referralBalance ?? 0).toFixed(2)} сом
+            Доступно на реферальном балансе: {Number(referralBalance ?? 0).toFixed(2)} сом
           </Typography>
           <TextField
             autoFocus
