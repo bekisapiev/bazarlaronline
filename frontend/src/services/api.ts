@@ -121,6 +121,8 @@ export const usersAPI = {
   updateCurrentUser: (data: any) => api.put('/users/me', data),
   getUserById: (id: string) => api.get(`/users/${id}`),
   getSellerProfile: (userId: string) => api.get(`/users/${userId}/seller-profile`),
+  getReferralLink: () => api.get('/users/me/referral-link'),
+  getReferralStats: () => api.get('/users/me/referral-stats'),
 };
 
 export const sellerProfileAPI = {

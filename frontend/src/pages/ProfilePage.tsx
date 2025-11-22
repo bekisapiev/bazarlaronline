@@ -158,6 +158,7 @@ const ProfilePage: React.FC = () => {
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [mbankPhone, setMbankPhone] = useState('');
 
   // Favorites tab state
   const [favorites, setFavorites] = useState<any[]>([]);
@@ -379,15 +380,24 @@ const ProfilePage: React.FC = () => {
         setError('Введите корректную сумму');
         return;
       }
+      if (amount < 1000) {
+        setError('Минимальная сумма вывода — 1000 сом');
+        return;
+      }
       if (amount > referralBalance) {
         setError('Недостаточно средств на реферальном балансе');
         return;
       }
+      if (!mbankPhone) {
+        setError('Введите номер телефона MBank');
+        return;
+      }
       setLoading(true);
-      await walletAPI.withdraw({ amount });
+      await walletAPI.withdraw({ amount, mbank_phone: mbankPhone });
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
-      setSuccess('Средства успешно выведены на MBank');
+      setMbankPhone('');
+      setSuccess('Заявка на вывод средств создана');
       loadWallet();
     } catch (err: any) {
       console.error('Error withdrawing from wallet:', err);
@@ -1220,9 +1230,20 @@ const ProfilePage: React.FC = () => {
             fullWidth
             value={withdrawAmount}
             onChange={(e) => setWithdrawAmount(e.target.value)}
+            sx={{ mb: 2 }}
+            helperText="Минимальная сумма вывода: 1000 сом"
+          />
+          <TextField
+            margin="dense"
+            label="Номер телефона MBank"
+            type="tel"
+            fullWidth
+            value={mbankPhone}
+            onChange={(e) => setMbankPhone(e.target.value)}
+            placeholder="+996555123456"
           />
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-            Средства будут переведены на ваш счет MBank
+            Средства будут переведены на указанный номер телефона MBank
           </Typography>
         </DialogContent>
         <DialogActions>
