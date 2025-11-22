@@ -45,8 +45,6 @@ const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({
 
   const handleTelegramResponse = useCallback(async (user: TelegramUser) => {
     try {
-      console.log('Telegram auth response:', user);
-
       // Send data to backend
       const result = await authAPI.telegramWidget(user);
 
@@ -61,7 +59,6 @@ const TelegramLoginWidget: React.FC<TelegramLoginWidgetProps> = ({
       // Redirect to home
       navigate('/');
     } catch (error: any) {
-      console.error('Telegram login failed:', error);
       const errorMessage = error.response?.data?.detail || 'Ошибка входа через Telegram';
       alert(errorMessage);
     }

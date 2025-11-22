@@ -173,11 +173,9 @@ const HomePage: React.FC = () => {
         // If data is wrapped in an object with 'cities' property
         setCities(response.data.cities);
       } else {
-        console.warn('Unexpected cities data format:', response.data);
         setCities([]);
       }
     } catch (error) {
-      console.error('Error loading cities:', error);
       setCities([]); // Set to empty array on error
     }
   };
@@ -191,11 +189,9 @@ const HomePage: React.FC = () => {
       } else if (response.data && Array.isArray(response.data.markets)) {
         setMarkets(response.data.markets);
       } else {
-        console.warn('Unexpected markets data format:', response.data);
         setMarkets([]);
       }
     } catch (error) {
-      console.error('Error loading markets:', error);
       setMarkets([]); // Set to empty array on error
     }
   };
@@ -209,11 +205,9 @@ const HomePage: React.FC = () => {
       } else if (response.data && Array.isArray(response.data.categories)) {
         setCategories(response.data.categories);
       } else {
-        console.warn('Unexpected categories data format:', response.data);
         setCategories([]);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
       setCategories([]); // Set to empty array on error
     }
   };
@@ -249,7 +243,6 @@ const HomePage: React.FC = () => {
 
       setHasMore(newProducts.length === 30);
     } catch (error: any) {
-      console.error('Error loading products:', error);
       setError('Ошибка загрузки товаров');
     } finally {
       setLoadingState(false);

@@ -118,7 +118,8 @@ const OrdersPage: React.FC = () => {
     setError('');
     try {
       const response = await ordersAPI.getOrders();
-      const orders = response.data;
+      // Handle both array and object with items
+      const orders = Array.isArray(response.data) ? response.data : (response.data.items || []);
 
       // Split orders into received (seller) and placed (buyer)
       // This logic depends on your backend implementation

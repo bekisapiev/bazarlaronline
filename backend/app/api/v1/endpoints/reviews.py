@@ -147,9 +147,15 @@ async def get_seller_reviews(
             detail="Seller not found"
         )
 
-    # Get reviews
+    # Get reviews with buyer and order info using JOINs to avoid N+1 queries
+    from sqlalchemy.orm import selectinload
+
     result = await db.execute(
         select(Review)
+        .options(
+            selectinload(Review.buyer),
+            selectinload(Review.order)
+        )
         .where(Review.seller_id == seller_id)
         .order_by(desc(Review.created_at))
         .limit(limit)
@@ -157,34 +163,21 @@ async def get_seller_reviews(
     )
     reviews = result.scalars().all()
 
-    # Get buyer info and order info for each review
-    reviews_with_info = []
-    for review in reviews:
-        # Get buyer info
-        buyer_result = await db.execute(
-            select(User).where(User.id == review.buyer_id)
+    # Build response with loaded relationships
+    reviews_with_info = [
+        ReviewResponse(
+            id=str(review.id),
+            seller_id=str(review.seller_id),
+            buyer_id=str(review.buyer_id),
+            order_id=str(review.order_id),
+            rating=review.rating,
+            comment=review.comment,
+            created_at=review.created_at,
+            buyer_name=review.buyer.full_name if review.buyer else None,
+            order_number=review.order.order_number if review.order else None
         )
-        buyer = buyer_result.scalar_one_or_none()
-
-        # Get order info
-        order_result = await db.execute(
-            select(Order).where(Order.id == review.order_id)
-        )
-        order = order_result.scalar_one_or_none()
-
-        reviews_with_info.append(
-            ReviewResponse(
-                id=str(review.id),
-                seller_id=str(review.seller_id),
-                buyer_id=str(review.buyer_id),
-                order_id=str(review.order_id),
-                rating=review.rating,
-                comment=review.comment,
-                created_at=review.created_at,
-                buyer_name=buyer.full_name if buyer else None,
-                order_number=order.order_number if order else None
-            )
-        )
+        for review in reviews
+    ]
 
     # Count total
     count_result = await db.execute(
@@ -265,8 +258,15 @@ async def get_my_reviews(
     """
     Get reviews written by current user
     """
+    # Get reviews with seller and order info using selectinload to avoid N+1 queries
+    from sqlalchemy.orm import selectinload
+
     result = await db.execute(
         select(Review)
+        .options(
+            selectinload(Review.seller),
+            selectinload(Review.order)
+        )
         .where(Review.buyer_id == current_user.id)
         .order_by(desc(Review.created_at))
         .limit(limit)
@@ -274,31 +274,20 @@ async def get_my_reviews(
     )
     reviews = result.scalars().all()
 
-    # Get seller info and order info for each review
-    reviews_with_info = []
-    for review in reviews:
-        # Get seller info
-        seller_result = await db.execute(
-            select(User).where(User.id == review.seller_id)
-        )
-        seller = seller_result.scalar_one_or_none()
-
-        # Get order info
-        order_result = await db.execute(
-            select(Order).where(Order.id == review.order_id)
-        )
-        order = order_result.scalar_one_or_none()
-
-        reviews_with_info.append({
+    # Build response with loaded relationships
+    reviews_with_info = [
+        {
             "id": str(review.id),
             "seller_id": str(review.seller_id),
-            "seller_name": seller.full_name if seller else None,
+            "seller_name": review.seller.full_name if review.seller else None,
             "order_id": str(review.order_id),
-            "order_number": order.order_number if order else None,
+            "order_number": review.order.order_number if review.order else None,
             "rating": review.rating,
             "comment": review.comment,
             "created_at": review.created_at
-        })
+        }
+        for review in reviews
+    ]
 
     # Count total
     count_result = await db.execute(
