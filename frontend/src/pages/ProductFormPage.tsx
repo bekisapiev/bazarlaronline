@@ -64,6 +64,8 @@ interface ProductFormData {
   delivery_available: boolean;
   characteristics: Record<string, string>;
   partner_percentage?: number;
+  is_referral_enabled?: boolean;
+  referral_commission_percent?: number;
 }
 
 const ProductFormPage: React.FC = () => {
@@ -143,6 +145,8 @@ const ProductFormPage: React.FC = () => {
         delivery_available: product.delivery_type === 'paid',
         characteristics: characteristicsObject,
         partner_percentage: product.partner_percent,
+        is_referral_enabled: product.is_referral_enabled || false,
+        referral_commission_percent: product.referral_commission_percent,
       });
 
       // Set category hierarchy
@@ -319,6 +323,14 @@ const ProductFormPage: React.FC = () => {
       errors.discount_price = 'Цена со скидкой должна быть меньше обычной цены';
     }
 
+    if (formData.is_referral_enabled) {
+      if (!formData.referral_commission_percent) {
+        errors.referral_commission_percent = 'Укажите процент комиссии';
+      } else if (formData.referral_commission_percent < 1 || formData.referral_commission_percent > 50) {
+        errors.referral_commission_percent = 'Процент комиссии должен быть от 1% до 50%';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -353,6 +365,8 @@ const ProductFormPage: React.FC = () => {
         discount_price: formData.discount_price || undefined,
         partner_percent: formData.partner_percentage || undefined,
         delivery_type: formData.delivery_available ? 'paid' : 'pickup',
+        is_referral_enabled: formData.is_referral_enabled || false,
+        referral_commission_percent: formData.is_referral_enabled ? formData.referral_commission_percent : undefined,
       };
 
       if (isEditMode && id) {
@@ -555,6 +569,70 @@ const ProductFormPage: React.FC = () => {
                 sx={{ mt: 2 }}
               />
             </Paper>
+
+            {/* Referral Program (Business tariff only) */}
+            {user?.tariff === 'business' && (
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'success.50' }}>
+                <Typography variant="h6" gutterBottom>
+                  Реферальная программа
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.is_referral_enabled || false}
+                      onChange={(e) => handleInputChange('is_referral_enabled', e.target.checked)}
+                    />
+                  }
+                  label="Включить реферальную программу для этого товара"
+                  sx={{ mb: 2 }}
+                />
+
+                {formData.is_referral_enabled && (
+                  <>
+                    <TextField
+                      fullWidth
+                      label="Процент комиссии"
+                      type="number"
+                      value={formData.referral_commission_percent || ''}
+                      onChange={(e) => {
+                        const value = e.target.value ? Number(e.target.value) : undefined;
+                        handleInputChange('referral_commission_percent', value);
+                      }}
+                      error={!!formErrors.referral_commission_percent}
+                      helperText={formErrors.referral_commission_percent || 'От 1% до 50%'}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                      }}
+                      inputProps={{
+                        min: 1,
+                        max: 50,
+                        step: 1,
+                      }}
+                      sx={{ mb: 2 }}
+                    />
+
+                    {formData.referral_commission_percent && formData.price && (
+                      <Alert severity="info">
+                        <Typography variant="body2">
+                          <strong>Комиссия для рефералов:</strong>
+                          {' '}
+                          {((formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
+                          {' '}
+                          ({formData.referral_commission_percent}% от{' '}
+                          {formData.discount_price ? 'цены со скидкой' : 'обычной цены'})
+                        </Typography>
+                      </Alert>
+                    )}
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Любой пользователь сможет делиться ссылкой на этот товар и получать комиссию с каждой покупки.
+                    </Typography>
+                  </>
+                )}
+              </Paper>
+            )}
 
             {/* Images */}
             <Paper sx={{ p: 3, mb: 3 }}>

@@ -46,6 +46,7 @@ import {
   recommendationsAPI,
   usersAPI,
 } from '../services/api';
+import { handleProductReferralCode } from '../utils/referral';
 
 interface Product {
   id: string;
@@ -69,6 +70,9 @@ interface Product {
   location?: string;
   is_promoted: boolean;
   created_at: string;
+  is_referral_enabled: boolean;
+  referral_commission_percent?: number;
+  referral_commission_amount?: number;
 }
 
 interface Review {
@@ -105,6 +109,8 @@ const ProductDetailPage: React.FC = () => {
   const [sellerTariff, setSellerTariff] = useState<string | null>(null);
   const [partnerLink, setPartnerLink] = useState<string>('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [userReferralId, setUserReferralId] = useState<string | null>(null);
+  const [productReferralLink, setProductReferralLink] = useState<string>('');
 
   const loadProduct = useCallback(async () => {
     try {
@@ -208,6 +214,39 @@ const ProductDetailPage: React.FC = () => {
       loadSellerInfo(product.seller.id);
     }
   }, [product, loadSellerInfo]);
+
+  // Handle product referral code from URL
+  useEffect(() => {
+    if (id) {
+      const referralData = handleProductReferralCode(id);
+      if (referralData) {
+        console.log('Product referral saved:', referralData);
+      }
+    }
+  }, [id]);
+
+  // Load user referral ID for sharing
+  useEffect(() => {
+    const loadUserReferralId = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await usersAPI.getReferralLink();
+          setUserReferralId(response.data.referral_code);
+
+          // Generate product referral link if product has referral program enabled
+          if (product?.is_referral_enabled && id) {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/products/${id}?ref=${response.data.referral_code}`;
+            setProductReferralLink(link);
+          }
+        } catch (err) {
+          console.error('Error loading user referral ID:', err);
+        }
+      }
+    };
+
+    loadUserReferralId();
+  }, [isAuthenticated, product, id]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {
@@ -397,6 +436,60 @@ const ProductDetailPage: React.FC = () => {
                   </Typography>
                 )}
               </Box>
+
+              {/* Referral Commission Info */}
+              {product.is_referral_enabled && product.referral_commission_amount && (
+                <Paper sx={{ p: 2, mb: 3, bgcolor: 'success.50', border: 1, borderColor: 'success.main' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip
+                      label="Реферальная программа"
+                      color="success"
+                      size="small"
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Поделитесь ссылкой и получите комиссию:
+                  </Typography>
+                  <Typography variant="h5" fontWeight={600} color="success.main">
+                    {product.referral_commission_amount} сом ({product.referral_commission_percent}%)
+                  </Typography>
+                  {productReferralLink && isAuthenticated && (
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={productReferralLink}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontSize: '0.875rem', bgcolor: 'white' }
+                        }}
+                      />
+                      <IconButton
+                        color="success"
+                        onClick={() => {
+                          navigator.clipboard.writeText(productReferralLink);
+                          setCopySuccess(true);
+                          setTimeout(() => setCopySuccess(false), 2000);
+                        }}
+                        sx={{ border: 1, borderColor: 'success.main' }}
+                      >
+                        <ContentCopy />
+                      </IconButton>
+                    </Box>
+                  )}
+                  {!isAuthenticated && (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      size="small"
+                      sx={{ mt: 2 }}
+                      onClick={() => navigate('/login')}
+                    >
+                      Войдите, чтобы делиться ссылкой
+                    </Button>
+                  )}
+                </Paper>
+              )}
 
               {/* Action Buttons */}
               <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
