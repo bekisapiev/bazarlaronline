@@ -59,3 +59,67 @@ export const handleReferralCode = (): string | null => {
   // Return from cookie if exists
   return getReferralCodeCookie();
 };
+
+/**
+ * Product referral cookie structure
+ */
+export interface ProductReferralCookie {
+  productId: string;
+  referrerId: string;
+}
+
+/**
+ * Set product referral cookie (expires in 10 days)
+ */
+export const setProductReferralCookie = (productId: string, referrerId: string): void => {
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 10); // 10 days
+  const value = JSON.stringify({ productId, referrerId });
+  document.cookie = `product_ref=${encodeURIComponent(value)}; expires=${expiryDate.toUTCString()}; path=/`;
+};
+
+/**
+ * Get product referral cookie
+ */
+export const getProductReferralCookie = (productId: string): ProductReferralCookie | null => {
+  const name = 'product_ref=';
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookies = decodedCookie.split(';');
+
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      try {
+        const value = cookie.substring(name.length, cookie.length);
+        const data: ProductReferralCookie = JSON.parse(decodeURIComponent(value));
+        if (data.productId === productId) {
+          return data;
+        }
+      } catch (e) {
+        console.error('Error parsing product referral cookie:', e);
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Clear product referral cookie
+ */
+export const clearProductReferralCookie = (): void => {
+  document.cookie = 'product_ref=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+};
+
+/**
+ * Handle product referral code from URL
+ * Expected URL format: /products/{id}?ref={userId}
+ */
+export const handleProductReferralCode = (productId: string): ProductReferralCookie | null => {
+  const refFromUrl = getRefCodeFromUrl();
+  if (refFromUrl && productId) {
+    setProductReferralCookie(productId, refFromUrl);
+    return { productId, referrerId: refFromUrl };
+  }
+
+  return getProductReferralCookie(productId);
+};

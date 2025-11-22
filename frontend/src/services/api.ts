@@ -91,6 +91,7 @@ export const productsAPI = {
   getSellers: (params: any) => api.get('/seller-profile/catalog', { params }),
   getSellerById: (id: string, includeProducts: boolean = true) =>
     api.get(`/seller-profile/${id}`, { params: { include_products: includeProducts } }),
+  getReferralProducts: (params: any) => api.get('/products/referral/products', { params }),
 };
 
 export const ordersAPI = {
