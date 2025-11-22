@@ -6,12 +6,12 @@
 import asyncio
 import sys
 from sqlalchemy import text
-from app.database.session import async_engine
+from app.database.session import engine
 
 
 async def apply_migration():
     """Apply product referral system migration"""
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         print("🔄 Применение миграции реферальной программы товаров...")
 
         try:
