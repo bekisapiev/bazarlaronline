@@ -3,7 +3,7 @@ Order Schemas
 """
 from pydantic import BaseModel
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date, time
 from typing import List, Optional, Dict
 from uuid import UUID
 
@@ -35,6 +35,12 @@ class OrderCreate(BaseModel):
     payment_method: str = "wallet"  # wallet or mbank
     referral_code: Optional[str] = None  # Partner referral code
 
+    # Service booking fields
+    is_service: bool = False
+    booking_date: Optional[date] = None
+    booking_time: Optional[time] = None
+    comment: Optional[str] = None
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -50,7 +56,8 @@ class OrderCreate(BaseModel):
                 "delivery_address": "г. Бишкек, ул. Чуй 123",
                 "phone_number": "+996555123456",
                 "payment_method": "wallet",
-                "referral_code": "ABC123DEF456"
+                "referral_code": "ABC123DEF456",
+                "is_service": False
             }
         }
 
@@ -82,6 +89,13 @@ class OrderResponse(BaseModel):
     referral_id: Optional[str] = None
     referral_commission: Optional[Decimal] = None
     platform_commission: Optional[Decimal] = None
+
+    # Service booking fields
+    is_service: bool = False
+    booking_date: Optional[date] = None
+    booking_time: Optional[time] = None
+    comment: Optional[str] = None
+
     created_at: datetime
     updated_at: datetime
 

@@ -129,7 +129,12 @@ async def create_order(
         status="pending" if order_data.payment_method == "mbank" else "processing",
         referral_id=referral_user_id,
         referral_commission=referral_commission if referral_commission > 0 else None,
-        platform_commission=platform_commission if platform_commission > 0 else None
+        platform_commission=platform_commission if platform_commission > 0 else None,
+        # Service booking fields
+        is_service=order_data.is_service,
+        booking_date=order_data.booking_date,
+        booking_time=order_data.booking_time,
+        comment=order_data.comment
     )
 
     db.add(order)
@@ -235,6 +240,10 @@ async def create_order(
         referral_id=str(order.referral_id) if order.referral_id else None,
         referral_commission=order.referral_commission,
         platform_commission=order.platform_commission,
+        is_service=order.is_service,
+        booking_date=order.booking_date,
+        booking_time=order.booking_time,
+        comment=order.comment,
         created_at=order.created_at,
         updated_at=order.updated_at
     )
@@ -314,6 +323,10 @@ async def get_orders(
                 referral_id=str(o.referral_id) if o.referral_id else None,
                 referral_commission=o.referral_commission,
                 platform_commission=o.platform_commission,
+                is_service=o.is_service,
+                booking_date=o.booking_date,
+                booking_time=o.booking_time,
+                comment=o.comment,
                 created_at=o.created_at,
                 updated_at=o.updated_at
             )
@@ -369,6 +382,10 @@ async def get_order_by_id(
         referral_id=str(order.referral_id) if order.referral_id else None,
         referral_commission=order.referral_commission,
         platform_commission=order.platform_commission,
+        is_service=order.is_service,
+        booking_date=order.booking_date,
+        booking_time=order.booking_time,
+        comment=order.comment,
         created_at=order.created_at,
         updated_at=order.updated_at
     )
@@ -433,6 +450,10 @@ async def update_order_status(
         referral_id=str(order.referral_id) if order.referral_id else None,
         referral_commission=order.referral_commission,
         platform_commission=order.platform_commission,
+        is_service=order.is_service,
+        booking_date=order.booking_date,
+        booking_time=order.booking_time,
+        comment=order.comment,
         created_at=order.created_at,
         updated_at=order.updated_at
     )

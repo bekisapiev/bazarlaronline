@@ -1,7 +1,7 @@
 """
 Order Model
 """
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Numeric
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Numeric, Boolean, Date, Time
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -24,9 +24,18 @@ class Order(Base):
     phone_number = Column(String(20), nullable=True)
     payment_method = Column(String(20), nullable=True)  # wallet, mbank
     status = Column(String(20), default="pending")  # pending, processing, completed, cancelled
+
+    # Service booking fields
+    is_service = Column(Boolean, default=False, nullable=False)
+    booking_date = Column(Date, nullable=True)  # For service bookings
+    booking_time = Column(Time, nullable=True)  # For service bookings
+    comment = Column(Text, nullable=True)  # Additional comment for bookings
+
+    # Referral/commission fields
     referral_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     referral_commission = Column(Numeric(10, 2), nullable=True)
     platform_commission = Column(Numeric(10, 2), nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

@@ -13,6 +13,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { EventAvailable, Phone, CalendarMonth, AccessTime } from '@mui/icons-material';
+import { ordersAPI } from '../../services/api';
 
 interface ServiceBookingModalProps {
   open: boolean;
@@ -23,6 +24,9 @@ interface ServiceBookingModalProps {
     price: number;
     discount_price?: number;
     image?: string;
+    seller?: {
+      id: string;
+    };
   };
   onBookingSuccess?: (bookingId: string) => void;
 }
@@ -83,21 +87,33 @@ const ServiceBookingModal: React.FC<ServiceBookingModalProps> = ({
     setError('');
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await ordersAPI.createServiceBooking({
-      //   service_id: service.id,
-      //   booking_date: bookingDate,
-      //   booking_time: bookingTime,
-      //   phone_number: phoneNumber,
-      //   comment: comment,
-      // });
+      if (!service.seller?.id) {
+        setError('Информация о продавце недоступна');
+        setLoading(false);
+        return;
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await ordersAPI.createOrder({
+        seller_id: service.seller.id,
+        items: [
+          {
+            product_id: service.id,
+            quantity: 1,
+            price: service.price,
+            discount_price: service.discount_price || null,
+          },
+        ],
+        phone_number: phoneNumber,
+        payment_method: 'wallet',
+        is_service: true,
+        booking_date: bookingDate,
+        booking_time: bookingTime,
+        comment: comment || null,
+      });
 
       // Success
       if (onBookingSuccess) {
-        onBookingSuccess('mock-booking-id');
+        onBookingSuccess(response.data.id);
       }
 
       // Reset form

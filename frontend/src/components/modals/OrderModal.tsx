@@ -13,6 +13,7 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { ShoppingCart, Phone, LocationOn } from '@mui/icons-material';
+import { ordersAPI } from '../../services/api';
 
 interface OrderModalProps {
   open: boolean;
@@ -23,6 +24,9 @@ interface OrderModalProps {
     price: number;
     discount_price?: number;
     image?: string;
+    seller?: {
+      id: string;
+    };
   };
   onOrderSuccess?: (orderId: string) => void;
 }
@@ -65,20 +69,31 @@ const OrderModal: React.FC<OrderModalProps> = ({ open, onClose, product, onOrder
     setError('');
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await ordersAPI.createOrder({
-      //   product_id: product.id,
-      //   quantity,
-      //   delivery_address: deliveryAddress,
-      //   phone_number: phoneNumber,
-      // });
+      if (!product.seller?.id) {
+        setError('Информация о продавце недоступна');
+        setLoading(false);
+        return;
+      }
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await ordersAPI.createOrder({
+        seller_id: product.seller.id,
+        items: [
+          {
+            product_id: product.id,
+            quantity: quantity,
+            price: product.price,
+            discount_price: product.discount_price || null,
+          },
+        ],
+        delivery_address: deliveryAddress,
+        phone_number: phoneNumber,
+        payment_method: 'wallet',
+        is_service: false,
+      });
 
       // Success
       if (onOrderSuccess) {
-        onOrderSuccess('mock-order-id');
+        onOrderSuccess(response.data.id);
       }
 
       // Reset form
