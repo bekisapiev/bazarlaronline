@@ -32,6 +32,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
 import { removeFromCart, clearCart } from '../store/slices/cartSlice';
 import { productsAPI, ordersAPI } from '../services/api';
+import { getProductReferralCookie } from '../utils/referral';
 
 interface CartProduct {
   id: string;
@@ -139,17 +140,23 @@ const CartPage: React.FC = () => {
     setError('');
 
     try {
+      // Get product referral data from cookies for each item
       const orderData = {
         seller_id: sellerId,
-        items: items.map(item => ({
-          product_id: item.productId,
-          quantity: item.quantity,
-          price: item.discountPrice || item.price,
-        })),
+        items: items.map(item => {
+          const referralData = getProductReferralCookie(item.productId);
+          return {
+            product_id: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            discount_price: item.discountPrice || undefined,
+            product_referrer_id: referralData?.referrerId || undefined,
+          };
+        }),
         delivery_address: deliveryAddress,
         phone_number: phoneNumber,
         notes: notes || undefined,
-        total_amount: totalAmount,
+        payment_method: 'wallet',
       };
 
       await ordersAPI.createOrder(orderData);
