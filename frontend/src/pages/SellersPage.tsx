@@ -202,6 +202,15 @@ const SellersPage: React.FC = () => {
     }
   };
 
+  // Helper functions to get categories by level
+  const getCategory1 = () => categories.find((c) => c.id === selectedCategory1);
+  const getCategory2 = () => getCategory1()?.children?.find((c) => c.id === selectedCategory2);
+  const getCategory3 = () => getCategory2()?.children?.find((c) => c.id === selectedCategory3);
+
+  const category1Options = categories;
+  const category2Options = getCategory1()?.children || [];
+  const category3Options = getCategory2()?.children || [];
+
   const handleSearch = () => {
     setPage(1);
     loadSellers();
@@ -295,7 +304,7 @@ const SellersPage: React.FC = () => {
           }}
         >
           <MenuItem value="">Все категории</MenuItem>
-          {categories.map((cat) => (
+          {category1Options.map((cat) => (
             <MenuItem key={cat.id} value={cat.id}>
               {cat.name}
             </MenuItem>
@@ -304,7 +313,7 @@ const SellersPage: React.FC = () => {
       </FormControl>
 
       {/* Category Level 2 Filter */}
-      {selectedCategory1 && categories.find((c) => c.id === selectedCategory1)?.children && (
+      {selectedCategory1 && category2Options.length > 0 && (
         <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>Подкатегория</InputLabel>
           <Select
@@ -316,7 +325,7 @@ const SellersPage: React.FC = () => {
             }}
           >
             <MenuItem value="">Все подкатегории</MenuItem>
-            {categories.find((c) => c.id === selectedCategory1)?.children?.map((cat) => (
+            {category2Options.map((cat) => (
               <MenuItem key={cat.id} value={cat.id}>
                 {cat.name}
               </MenuItem>
@@ -326,8 +335,7 @@ const SellersPage: React.FC = () => {
       )}
 
       {/* Category Level 3 Filter */}
-      {selectedCategory2 &&
-       categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.children && (
+      {selectedCategory2 && category3Options.length > 0 && (
         <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>Раздел</InputLabel>
           <Select
@@ -336,8 +344,7 @@ const SellersPage: React.FC = () => {
             onChange={(e) => setSelectedCategory3(e.target.value ? Number(e.target.value) : null)}
           >
             <MenuItem value="">Все разделы</MenuItem>
-            {categories.find((c) => c.id === selectedCategory1)?.children
-              ?.find((c) => c.id === selectedCategory2)?.children?.map((cat) => (
+            {category3Options.map((cat) => (
               <MenuItem key={cat.id} value={cat.id}>
                 {cat.name}
               </MenuItem>
@@ -599,7 +606,7 @@ const SellersPage: React.FC = () => {
             )}
             {selectedCategory1 && (
               <Chip
-                label={`Категория: ${categories.find((c) => c.id === selectedCategory1)?.name}`}
+                label={`Категория: ${getCategory1()?.name || ''}`}
                 onDelete={() => {
                   setSelectedCategory1(null);
                   setSelectedCategory2(null);
@@ -609,7 +616,7 @@ const SellersPage: React.FC = () => {
             )}
             {selectedCategory2 && (
               <Chip
-                label={`Подкатегория: ${categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.name}`}
+                label={`Подкатегория: ${getCategory2()?.name || ''}`}
                 onDelete={() => {
                   setSelectedCategory2(null);
                   setSelectedCategory3(null);
@@ -618,7 +625,7 @@ const SellersPage: React.FC = () => {
             )}
             {selectedCategory3 && (
               <Chip
-                label={`Раздел: ${categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.children?.find((c) => c.id === selectedCategory3)?.name}`}
+                label={`Раздел: ${getCategory3()?.name || ''}`}
                 onDelete={() => setSelectedCategory3(null)}
               />
             )}
