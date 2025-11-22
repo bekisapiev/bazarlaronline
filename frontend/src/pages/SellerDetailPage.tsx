@@ -315,7 +315,7 @@ const SellerDetailPage: React.FC = () => {
             <Button
               variant="outlined"
               size="large"
-              onClick={() => navigate(`/products?seller=${seller.user_id}`)}
+              onClick={() => navigate(`/?seller=${seller.user_id}`)}
             >
               Показать все товары
             </Button>

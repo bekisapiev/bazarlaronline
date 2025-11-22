@@ -908,7 +908,7 @@ const ProfilePage: React.FC = () => {
               <Button
                 variant="contained"
                 sx={{ mt: 2 }}
-                onClick={() => navigate('/products')}
+                onClick={() => navigate('/')}
               >
                 Начать покупки
               </Button>
@@ -1165,7 +1165,7 @@ const ProfilePage: React.FC = () => {
             <Button
               variant="contained"
               sx={{ mt: 2 }}
-              onClick={() => navigate('/products')}
+              onClick={() => navigate('/')}
             >
               Смотреть товары
             </Button>
@@ -1244,7 +1244,7 @@ const ProfilePage: React.FC = () => {
             <Button
               variant="contained"
               sx={{ mt: 2 }}
-              onClick={() => navigate('/products')}
+              onClick={() => navigate('/')}
             >
               Смотреть товары
             </Button>

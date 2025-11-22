@@ -312,8 +312,8 @@ const ProductDetailPage: React.FC = () => {
       <Container maxWidth="xl">
         <Box sx={{ py: 4 }}>
           <Alert severity="error">{error || 'Товар не найден'}</Alert>
-          <Button sx={{ mt: 2 }} onClick={() => navigate('/products')}>
-            Вернуться к списку товаров
+          <Button sx={{ mt: 2 }} onClick={() => navigate('/')}>
+            Вернуться на главную
           </Button>
         </Box>
       </Container>
@@ -331,13 +331,10 @@ const ProductDetailPage: React.FC = () => {
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             Главная
           </Link>
-          <Link component={RouterLink} to="/products" underline="hover" color="inherit">
-            Товары
-          </Link>
           {product.category && (
             <Link
               component={RouterLink}
-              to={`/products?category=${product.category.slug}`}
+              to={`/?category=${product.category.slug}`}
               underline="hover"
               color="inherit"
             >

@@ -207,7 +207,7 @@ const CartPage: React.FC = () => {
             variant="contained"
             size="large"
             component={Link}
-            to="/products"
+            to="/"
           >
             Перейти к покупкам
           </Button>
