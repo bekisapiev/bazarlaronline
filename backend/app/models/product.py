@@ -46,6 +46,9 @@ class Product(Base):
     discount_price = Column(Numeric(10, 2), nullable=True)
     # discount_percent will be calculated as computed column
     partner_percent = Column(Numeric(5, 2), default=0)
+    # Referral program fields (Business tariff only)
+    is_referral_enabled = Column(Boolean, default=False)
+    referral_commission_percent = Column(Numeric(5, 2), nullable=True)  # 1-50%
     delivery_type = Column(String(20), nullable=True)  # pickup, paid, free
     delivery_methods = Column(JSONB, nullable=True)  # ['taxi', 'express', 'cargo', etc.]
     characteristics = Column(JSONB, nullable=True)  # [{name: 'Color', value: 'Red'}]
@@ -68,6 +71,7 @@ class Product(Base):
     # Constraints
     __table_args__ = (
         CheckConstraint('partner_percent >= 0 AND partner_percent <= 100', name='check_partner_percent'),
+        CheckConstraint('referral_commission_percent IS NULL OR (referral_commission_percent >= 1 AND referral_commission_percent <= 50)', name='check_referral_commission'),
         CheckConstraint("product_type IN ('product', 'service')", name='check_product_type'),
     )
 
@@ -79,4 +83,15 @@ class Product(Base):
         """Calculate discount percentage"""
         if self.discount_price and self.price:
             return round((1 - float(self.discount_price) / float(self.price)) * 100)
+        return None
+
+    @property
+    def referral_commission_amount(self):
+        """Calculate referral commission amount in som"""
+        if self.is_referral_enabled and self.referral_commission_percent:
+            # Use discount price if available, otherwise regular price
+            effective_price = self.discount_price if self.discount_price else self.price
+            if effective_price:
+                from decimal import Decimal
+                return (Decimal(str(effective_price)) * Decimal(str(self.referral_commission_percent)) / Decimal('100')).quantize(Decimal('0.01'))
         return None

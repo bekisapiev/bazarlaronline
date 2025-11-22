@@ -95,3 +95,28 @@ class ReferralEarning(Base):
 
     def __repr__(self):
         return f"<ReferralEarning referrer={self.referrer_id} amount={self.earning_amount}>"
+
+
+class ProductReferralPurchase(Base):
+    """Product Referral Purchase model - tracks purchases made via product referral links"""
+    __tablename__ = "product_referral_purchases"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    referrer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)  # Кто поделился ссылкой
+    buyer_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)  # Кто купил
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)  # Товар
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=True)  # Заказ
+    commission_percent = Column(Numeric(5, 2), nullable=False)  # Процент комиссии на момент покупки
+    commission_amount = Column(Numeric(10, 2), nullable=False)  # Сумма комиссии
+    product_price = Column(Numeric(10, 2), nullable=False)  # Цена товара на момент покупки
+    status = Column(String(20), default="pending")  # pending, completed, cancelled
+    completed_at = Column(DateTime, nullable=True)  # Когда заказ подтвержден
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    referrer = relationship("User", foreign_keys=[referrer_id])
+    buyer = relationship("User", foreign_keys=[buyer_id])
+    product = relationship("Product")
+
+    def __repr__(self):
+        return f"<ProductReferralPurchase referrer={self.referrer_id} amount={self.commission_amount} status={self.status}>"

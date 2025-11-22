@@ -137,7 +137,103 @@ async def get_products(
                 "discount_percent": p.discount_percent,
                 "images": p.images or [],
                 "is_promoted": p.is_promoted,
-                "views_count": p.views_count
+                "views_count": p.views_count,
+                "is_referral_enabled": p.is_referral_enabled,
+                "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
+                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
+            }
+            for p in products
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": (offset + limit) < total
+    }
+
+
+@router.get("/referral/products")
+async def get_referral_products(
+    category_id: Optional[int] = Query(None, description="Filter by category"),
+    search: Optional[str] = Query(None, description="Search in product titles"),
+    min_price: Optional[float] = Query(None, description="Minimum price"),
+    max_price: Optional[float] = Query(None, description="Maximum price"),
+    sort_by: Optional[str] = Query("commission", description="Sort by: commission, price, created"),
+    limit: int = Query(settings.DEFAULT_PAGE_SIZE, le=settings.MAX_PAGE_SIZE),
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get list of products with enabled referral program
+
+    Products are returned sorted by commission amount by default.
+    All users can view and share referral links for these products.
+    """
+    # Base query - only products with referral enabled
+    query = select(Product).where(
+        Product.status == "active",
+        Product.is_referral_enabled == True
+    )
+
+    # Apply filters
+    if category_id:
+        query = query.where(Product.category_id == category_id)
+
+    if search:
+        query = query.where(Product.title.ilike(f"%{search}%"))
+
+    if min_price is not None:
+        query = query.where(Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.where(Product.price <= max_price)
+
+    # Apply sorting
+    if sort_by == "commission":
+        # Sort by commission amount (highest first)
+        query = query.order_by(desc(Product.referral_commission_percent))
+    elif sort_by == "price":
+        query = query.order_by(Product.price)
+    else:  # created or default
+        query = query.order_by(desc(Product.created_at))
+
+    # Count total before pagination
+    count_query = select(func.count()).select_from(Product).where(
+        Product.status == "active",
+        Product.is_referral_enabled == True
+    )
+
+    if category_id:
+        count_query = count_query.where(Product.category_id == category_id)
+    if search:
+        count_query = count_query.where(Product.title.ilike(f"%{search}%"))
+    if min_price is not None:
+        count_query = count_query.where(Product.price >= min_price)
+    if max_price is not None:
+        count_query = count_query.where(Product.price <= max_price)
+
+    count_result = await db.execute(count_query)
+    total = count_result.scalar()
+
+    # Pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    products = result.scalars().all()
+
+    return {
+        "items": [
+            {
+                "id": str(p.id),
+                "seller_id": str(p.seller_id),
+                "title": p.title,
+                "price": float(p.price),
+                "discount_price": float(p.discount_price) if p.discount_price else None,
+                "discount_percent": p.discount_percent,
+                "images": p.images or [],
+                "is_promoted": p.is_promoted,
+                "is_referral_enabled": p.is_referral_enabled,
+                "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
+                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
             }
             for p in products
         ],
@@ -183,7 +279,10 @@ async def get_product_by_id(
         "delivery_type": product.delivery_type,
         "delivery_methods": product.delivery_methods,
         "views_count": product.views_count,
-        "created_at": product.created_at
+        "created_at": product.created_at,
+        "is_referral_enabled": product.is_referral_enabled,
+        "referral_commission_percent": float(product.referral_commission_percent) if product.referral_commission_percent else None,
+        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None
     }
 
 
@@ -239,6 +338,24 @@ async def create_product(
                 detail="Partner percent must be between 2 and 100"
             )
 
+    # Validate referral program (only for Business tariff)
+    if product_data.is_referral_enabled:
+        if current_user.tariff != "business":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Product referral program is only available for Business tariff"
+            )
+        if not product_data.referral_commission_percent:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Referral commission percent is required when referral program is enabled"
+            )
+        if product_data.referral_commission_percent < 1 or product_data.referral_commission_percent > 50:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Referral commission percent must be between 1 and 50"
+            )
+
     # Create product
     product = Product(
         seller_id=current_user.id,
@@ -252,7 +369,9 @@ async def create_product(
         delivery_methods=product_data.delivery_methods,
         characteristics=product_data.characteristics,
         images=product_data.images,
-        status="moderation"  # Will go through moderation
+        status="moderation",  # Will go through moderation
+        is_referral_enabled=product_data.is_referral_enabled if current_user.tariff == "business" else False,
+        referral_commission_percent=product_data.referral_commission_percent if (current_user.tariff == "business" and product_data.is_referral_enabled) else None
     )
 
     db.add(product)
@@ -278,7 +397,10 @@ async def create_product(
         promoted_at=product.promoted_at,
         views_count=product.views_count,
         created_at=product.created_at,
-        updated_at=product.updated_at
+        updated_at=product.updated_at,
+        is_referral_enabled=product.is_referral_enabled,
+        referral_commission_percent=product.referral_commission_percent,
+        referral_commission_amount=product.referral_commission_amount
     )
 
 
@@ -366,7 +488,10 @@ async def update_product(
         promoted_at=product.promoted_at,
         views_count=product.views_count,
         created_at=product.created_at,
-        updated_at=product.updated_at
+        updated_at=product.updated_at,
+        is_referral_enabled=product.is_referral_enabled,
+        referral_commission_percent=product.referral_commission_percent,
+        referral_commission_amount=product.referral_commission_amount
     )
 
 

@@ -19,6 +19,9 @@ class ProductCreate(BaseModel):
     delivery_methods: Optional[List[str]] = None
     characteristics: Optional[List[Dict[str, str]]] = None
     images: Optional[List[str]] = None
+    # Referral program fields (Business tariff only)
+    is_referral_enabled: Optional[bool] = False
+    referral_commission_percent: Optional[Decimal] = None
 
     class Config:
         json_schema_extra = {
@@ -53,6 +56,9 @@ class ProductUpdate(BaseModel):
     characteristics: Optional[List[Dict[str, str]]] = None
     images: Optional[List[str]] = None
     status: Optional[str] = None
+    # Referral program fields (Business tariff only)
+    is_referral_enabled: Optional[bool] = None
+    referral_commission_percent: Optional[Decimal] = None
 
 
 class ProductResponse(BaseModel):
@@ -76,6 +82,10 @@ class ProductResponse(BaseModel):
     views_count: int
     created_at: datetime
     updated_at: datetime
+    # Referral program fields
+    is_referral_enabled: bool
+    referral_commission_percent: Optional[Decimal]
+    referral_commission_amount: Optional[Decimal]
 
     class Config:
         from_attributes = True
@@ -91,6 +101,10 @@ class ProductListResponse(BaseModel):
     images: Optional[List[str]]
     is_promoted: bool
     seller: Dict[str, Any]
+    # Referral program fields
+    is_referral_enabled: bool
+    referral_commission_percent: Optional[Decimal]
+    referral_commission_amount: Optional[Decimal]
 
     class Config:
         from_attributes = True
