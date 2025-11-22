@@ -94,7 +94,7 @@ export const productsAPI = {
 };
 
 export const ordersAPI = {
-  getOrders: () => api.get('/orders/'),
+  getOrders: (params?: any) => api.get('/orders/', { params }),
   getOrderById: (id: string) => api.get(`/orders/${id}`),
   createOrder: (data: any) => api.post('/orders/', data),
   updateOrderStatus: (id: string, status: string) => api.put(`/orders/${id}/status`, { status }),
@@ -104,6 +104,7 @@ export const walletAPI = {
   getBalance: () => api.get('/wallet/balance'),
   topup: (amount: number) => api.post('/wallet/topup', { amount }),
   withdraw: (data: any) => api.post('/wallet/withdraw', data),
+  transfer: (data: { amount: number; from: string; to: string }) => api.post('/wallet/transfer', data),
   getTransactions: (limit: number, offset: number) => api.get('/wallet/transactions', { params: { limit, offset } }),
 };
 
