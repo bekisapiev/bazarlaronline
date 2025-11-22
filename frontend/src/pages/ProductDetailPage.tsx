@@ -112,6 +112,13 @@ const ProductDetailPage: React.FC = () => {
   const [userReferralId, setUserReferralId] = useState<string | null>(null);
   const [productReferralLink, setProductReferralLink] = useState<string>('');
 
+  // Order modal state
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [orderName, setOrderName] = useState('');
+  const [orderPhone, setOrderPhone] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+
   const loadProduct = useCallback(async () => {
     try {
       setLoading(true);
@@ -267,9 +274,32 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    // TODO: Implement cart functionality
-    alert('Добавлено в корзину!');
+  const handleOpenOrderDialog = () => {
+    setOrderDialogOpen(true);
+  };
+
+  const handleSubmitOrder = async () => {
+    if (!orderName.trim() || !orderPhone.trim()) {
+      alert('Пожалуйста, укажите имя и телефон');
+      return;
+    }
+
+    setSubmittingOrder(true);
+    try {
+      // TODO: Implement actual order API call
+      // For now, just show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      alert(`Заказ успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
+      setOrderDialogOpen(false);
+      setOrderName('');
+      setOrderPhone('');
+      setOrderNotes('');
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('Ошибка при оформлении заказа');
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   const handleSubmitReview = async () => {
@@ -494,10 +524,10 @@ const ProductDetailPage: React.FC = () => {
                   variant="contained"
                   size="large"
                   startIcon={<ShoppingCart />}
-                  onClick={handleAddToCart}
+                  onClick={handleOpenOrderDialog}
                   sx={{ flexGrow: 1 }}
                 >
-                  Добавить в корзину
+                  Заказать
                 </Button>
                 <IconButton
                   onClick={toggleFavorite}
@@ -798,6 +828,77 @@ const ProductDetailPage: React.FC = () => {
             disabled={submittingReview || !reviewComment.trim()}
           >
             {submittingReview ? <CircularProgress size={24} /> : 'Отправить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Order Dialog */}
+      <Dialog
+        open={orderDialogOpen}
+        onClose={() => setOrderDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Оформление заказа</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Заполните контактные данные, и продавец свяжется с вами для уточнения деталей заказа
+            </Typography>
+
+            <TextField
+              label="Ваше имя"
+              fullWidth
+              required
+              value={orderName}
+              onChange={(e) => setOrderName(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="Введите ваше имя"
+            />
+
+            <TextField
+              label="Номер телефона"
+              fullWidth
+              required
+              value={orderPhone}
+              onChange={(e) => setOrderPhone(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="+996 XXX XXX XXX"
+            />
+
+            <TextField
+              label="Примечания к заказу"
+              multiline
+              rows={3}
+              fullWidth
+              value={orderNotes}
+              onChange={(e) => setOrderNotes(e.target.value)}
+              placeholder="Укажите дополнительные пожелания (необязательно)"
+            />
+
+            {product && (
+              <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Товар:
+                </Typography>
+                <Typography variant="body1" fontWeight={600} gutterBottom>
+                  {product.title}
+                </Typography>
+                <Typography variant="h6" color="primary">
+                  {product.discount_price || product.price} сом
+                </Typography>
+              </Paper>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOrderDialogOpen(false)}>Отмена</Button>
+          <Button
+            onClick={handleSubmitOrder}
+            variant="contained"
+            disabled={submittingOrder || !orderName.trim() || !orderPhone.trim()}
+          >
+            {submittingOrder ? <CircularProgress size={24} /> : 'Отправить заказ'}
           </Button>
         </DialogActions>
       </Dialog>
