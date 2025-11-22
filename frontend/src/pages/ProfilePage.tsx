@@ -30,6 +30,8 @@ import {
   DialogActions,
   IconButton,
   CardMedia,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import {
   Person,
@@ -45,6 +47,11 @@ import {
   Add,
   Remove,
   FavoriteBorder,
+  Storefront,
+  ShoppingCart,
+  Receipt,
+  SwapHoriz,
+  AccountBalance,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -53,6 +60,7 @@ import {
   walletAPI,
   favoritesAPI,
   uploadAPI,
+  productsAPI,
 } from '../services/api';
 
 interface TabPanelProps {
@@ -113,6 +121,17 @@ interface ViewHistoryItem {
   viewed_at: string;
 }
 
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  discount_price?: number;
+  images: string[];
+  status: string;
+  created_at: string;
+  views?: number;
+}
+
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -148,22 +167,39 @@ const ProfilePage: React.FC = () => {
   const [viewHistory, setViewHistory] = useState<ViewHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // My Products tab state
+  const [myProducts, setMyProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  // Orders subtab state
+  const [ordersTab, setOrdersTab] = useState<'my_orders' | 'ordered_from_me'>('my_orders');
+  const [orderedFromMe, setOrderedFromMe] = useState<Order[]>([]);
+
+  // Wallet balances
+  const [mainBalance, setMainBalance] = useState(0);
+  const [referralBalance, setReferralBalance] = useState(0);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferAmount, setTransferAmount] = useState('');
+
   useEffect(() => {
     loadProfile();
   }, []);
 
   useEffect(() => {
-    if (currentTab === 1 && orders.length === 0) {
+    if (currentTab === 1 && myProducts.length === 0) {
+      loadMyProducts();
+    } else if (currentTab === 2 && orders.length === 0) {
       loadOrders();
-    } else if (currentTab === 2 && transactions.length === 0) {
+      loadOrderedFromMe();
+    } else if (currentTab === 3 && transactions.length === 0) {
       loadWallet();
-    } else if (currentTab === 3 && favorites.length === 0) {
+    } else if (currentTab === 4 && favorites.length === 0) {
       loadFavorites();
-    } else if (currentTab === 4 && viewHistory.length === 0) {
+    } else if (currentTab === 5 && viewHistory.length === 0) {
       loadViewHistory();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab, orders.length, transactions.length, favorites.length, viewHistory.length]);
+  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length]);
 
   const loadProfile = async () => {
     try {
@@ -201,7 +237,12 @@ const ProfilePage: React.FC = () => {
         walletAPI.getBalance(),
         walletAPI.getTransactions(20, 0),
       ]);
-      setWalletBalance(balanceRes.data.balance ?? 0);
+      // Set dual balances: main and referral
+      const balanceData = balanceRes.data;
+      setMainBalance(balanceData.main_balance ?? balanceData.balance ?? 0);
+      setReferralBalance(balanceData.referral_balance ?? 0);
+      setWalletBalance(balanceData.balance ?? 0); // Keep for backward compatibility
+
       // Handle both array and object with items
       const transactionsData = Array.isArray(transactionsRes.data)
         ? transactionsRes.data
@@ -240,6 +281,38 @@ const ProfilePage: React.FC = () => {
       setError(err.response?.data?.detail || 'Не удалось загрузить историю');
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const loadMyProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const response = await productsAPI.getProducts({
+        seller_id: profile?.id,
+        limit: 20,
+        offset: 0,
+      });
+      const productsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data.items || []);
+      setMyProducts(productsData);
+    } catch (err: any) {
+      console.error('Error loading my products:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить товары');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  const loadOrderedFromMe = async () => {
+    try {
+      const response = await ordersAPI.getOrders({ type: 'seller' });
+      const ordersData = Array.isArray(response.data)
+        ? response.data
+        : (response.data.items || []);
+      setOrderedFromMe(ordersData);
+    } catch (err: any) {
+      console.error('Error loading seller orders:', err);
     }
   };
 
@@ -306,19 +379,44 @@ const ProfilePage: React.FC = () => {
         setError('Введите корректную сумму');
         return;
       }
-      if (amount > walletBalance) {
-        setError('Недостаточно средств');
+      if (amount > referralBalance) {
+        setError('Недостаточно средств на реферальном балансе');
         return;
       }
       setLoading(true);
       await walletAPI.withdraw({ amount });
       setWithdrawDialogOpen(false);
       setWithdrawAmount('');
-      setSuccess('Средства успешно выведены');
+      setSuccess('Средства успешно выведены на MBank');
       loadWallet();
     } catch (err: any) {
       console.error('Error withdrawing from wallet:', err);
       setError(err.response?.data?.detail || 'Не удалось вывести средства');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTransfer = async () => {
+    try {
+      const amount = parseFloat(transferAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setError('Введите корректную сумму');
+        return;
+      }
+      if (amount > referralBalance) {
+        setError('Недостаточно средств на реферальном балансе');
+        return;
+      }
+      setLoading(true);
+      await walletAPI.transfer({ amount, from: 'referral', to: 'main' });
+      setTransferDialogOpen(false);
+      setTransferAmount('');
+      setSuccess('Средства успешно переведены на основной баланс');
+      loadWallet();
+    } catch (err: any) {
+      console.error('Error transferring funds:', err);
+      setError(err.response?.data?.detail || 'Не удалось перевести средства');
     } finally {
       setLoading(false);
     }
@@ -429,6 +527,7 @@ const ProfilePage: React.FC = () => {
           scrollButtons="auto"
         >
           <Tab icon={<Person />} iconPosition="start" label="Мой профиль" />
+          <Tab icon={<Storefront />} iconPosition="start" label="Мои товары" />
           <Tab icon={<ShoppingBag />} iconPosition="start" label="Заказы" />
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
           <Tab icon={<Favorite />} iconPosition="start" label="Избранное" />
@@ -559,64 +658,231 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 2: Orders */}
+      {/* Tab 1: My Products */}
       <TabPanel value={currentTab} index={1}>
-        {ordersLoading ? (
+        {productsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
           </Box>
-        ) : orders.length === 0 ? (
+        ) : myProducts.length === 0 ? (
           <Paper sx={{ p: 8, textAlign: 'center' }}>
-            <ShoppingBag sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Storefront sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              У вас пока нет заказов
+              У вас пока нет товаров
             </Typography>
             <Button
               variant="contained"
               sx={{ mt: 2 }}
-              onClick={() => navigate('/products')}
+              onClick={() => navigate('/add')}
             >
-              Начать покупки
+              Добавить товар
             </Button>
           </Paper>
         ) : (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID заказа</TableCell>
-                  <TableCell>Товар</TableCell>
-                  <TableCell>Продавец</TableCell>
-                  <TableCell>Сумма</TableCell>
-                  <TableCell>Статус</TableCell>
-                  <TableCell>Дата</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id} hover>
-                    <TableCell>{order.id.slice(0, 8)}</TableCell>
-                    <TableCell>{order.product_title}</TableCell>
-                    <TableCell>{order.seller_name}</TableCell>
-                    <TableCell>{order.total_price} сом</TableCell>
-                    <TableCell>
+          <Grid container spacing={3}>
+            {myProducts.map((product) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                  }}
+                >
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={
+                      product.images && product.images.length > 0
+                        ? product.images[0]
+                        : 'https://via.placeholder.com/200'
+                    }
+                    alt={product.title}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        mb: 1,
+                      }}
+                    >
+                      {product.title}
+                    </Typography>
+                    <Typography variant="h6" fontWeight={600} color="primary">
+                      {product.discount_price || product.price} сом
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                       <Chip
-                        label={getOrderStatusLabel(order.status)}
-                        color={getOrderStatusColor(order.status) as any}
+                        label={product.status === 'active' ? 'Активен' : product.status === 'moderation' ? 'На модерации' : 'Неактивен'}
+                        color={product.status === 'active' ? 'success' : product.status === 'moderation' ? 'warning' : 'default'}
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>{formatDate(order.created_at)}</TableCell>
+                      <Typography variant="caption" color="text.secondary">
+                        Просмотры: {product.views || 0}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        onClick={() => navigate(`/products/${product.id}/edit`)}
+                      >
+                        Редактировать
+                      </Button>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() => navigate(`/products/${product.id}`)}
+                      >
+                        Посмотреть
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </TabPanel>
+
+      {/* Tab 2: Orders */}
+      <TabPanel value={currentTab} index={2}>
+        <Box sx={{ mb: 3 }}>
+          <ToggleButtonGroup
+            value={ordersTab}
+            exclusive
+            onChange={(_, value) => {
+              if (value !== null) {
+                setOrdersTab(value);
+              }
+            }}
+            aria-label="orders type"
+          >
+            <ToggleButton value="my_orders" aria-label="my orders">
+              <ShoppingCart sx={{ mr: 1 }} />
+              Мои заказы
+            </ToggleButton>
+            <ToggleButton value="ordered_from_me" aria-label="ordered from me">
+              <Receipt sx={{ mr: 1 }} />
+              Мне заказали
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {ordersTab === 'my_orders' ? (
+          ordersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : orders.length === 0 ? (
+            <Paper sx={{ p: 8, textAlign: 'center' }}>
+              <ShoppingCart sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                У вас пока нет заказов
+              </Typography>
+              <Button
+                variant="contained"
+                sx={{ mt: 2 }}
+                onClick={() => navigate('/products')}
+              >
+                Начать покупки
+              </Button>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID заказа</TableCell>
+                    <TableCell>Товар</TableCell>
+                    <TableCell>Продавец</TableCell>
+                    <TableCell>Сумма</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Дата</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id} hover>
+                      <TableCell>{order.id.slice(0, 8)}</TableCell>
+                      <TableCell>{order.product_title}</TableCell>
+                      <TableCell>{order.seller_name}</TableCell>
+                      <TableCell>{order.total_price} сом</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getOrderStatusLabel(order.status)}
+                          color={getOrderStatusColor(order.status) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{formatDate(order.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )
+        ) : (
+          ordersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : orderedFromMe.length === 0 ? (
+            <Paper sx={{ p: 8, textAlign: 'center' }}>
+              <Receipt sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Нет заказов от покупателей
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Когда кто-то закажет ваши товары, они появятся здесь
+              </Typography>
+            </Paper>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID заказа</TableCell>
+                    <TableCell>Товар</TableCell>
+                    <TableCell>Покупатель</TableCell>
+                    <TableCell>Сумма</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Дата</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {orderedFromMe.map((order) => (
+                    <TableRow key={order.id} hover>
+                      <TableCell>{order.id.slice(0, 8)}</TableCell>
+                      <TableCell>{order.product_title}</TableCell>
+                      <TableCell>{order.seller_name}</TableCell>
+                      <TableCell>{order.total_price} сом</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getOrderStatusLabel(order.status)}
+                          color={getOrderStatusColor(order.status) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{formatDate(order.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )
         )}
       </TabPanel>
 
       {/* Tab 3: Wallet */}
-      <TabPanel value={currentTab} index={2}>
+      <TabPanel value={currentTab} index={3}>
         {walletLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -624,26 +890,62 @@ const ProfilePage: React.FC = () => {
         ) : (
           <>
             <Grid container spacing={3} sx={{ mb: 4 }}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Card>
                   <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <AccountBalance sx={{ mr: 1, color: 'primary.main' }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Основной баланс
+                      </Typography>
+                    </Box>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Текущий баланс
+                      Для оплаты услуг платформы
                     </Typography>
-                    <Typography variant="h3" fontWeight={600} color="primary">
-                      {(walletBalance ?? 0).toFixed(2)} сом
+                    <Typography variant="h3" fontWeight={600} color="primary" sx={{ my: 2 }}>
+                      {(mainBalance ?? 0).toFixed(2)} сом
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                      <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        fullWidth
-                        onClick={() => setTopupDialogOpen(true)}
-                      >
-                        Пополнить
-                      </Button>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      fullWidth
+                      onClick={() => setTopupDialogOpen(true)}
+                    >
+                      Пополнить
+                    </Button>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      Нельзя вывести. Используется для поднятия товаров, автоподнятия и реферальных выплат
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <AccountBalanceWallet sx={{ mr: 1, color: 'success.main' }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Реферальный баланс
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Можно вывести или перевести
+                    </Typography>
+                    <Typography variant="h3" fontWeight={600} color="success.main" sx={{ my: 2 }}>
+                      {(referralBalance ?? 0).toFixed(2)} сом
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button
                         variant="outlined"
+                        startIcon={<SwapHoriz />}
+                        fullWidth
+                        onClick={() => setTransferDialogOpen(true)}
+                      >
+                        Перевести
+                      </Button>
+                      <Button
+                        variant="contained"
+                        color="success"
                         startIcon={<Remove />}
                         fullWidth
                         onClick={() => setWithdrawDialogOpen(true)}
@@ -731,7 +1033,7 @@ const ProfilePage: React.FC = () => {
       </TabPanel>
 
       {/* Tab 4: Favorites */}
-      <TabPanel value={currentTab} index={3}>
+      <TabPanel value={currentTab} index={4}>
         {favoritesLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -810,7 +1112,7 @@ const ProfilePage: React.FC = () => {
       </TabPanel>
 
       {/* Tab 5: View History */}
-      <TabPanel value={currentTab} index={4}>
+      <TabPanel value={currentTab} index={5}>
         {historyLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -905,10 +1207,10 @@ const ProfilePage: React.FC = () => {
 
       {/* Withdraw Dialog */}
       <Dialog open={withdrawDialogOpen} onClose={() => setWithdrawDialogOpen(false)}>
-        <DialogTitle>Вывести средства</DialogTitle>
+        <DialogTitle>Вывести средства на MBank</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Доступно: {(walletBalance ?? 0).toFixed(2)} сом
+            Доступно на реферальном балансе: {(referralBalance ?? 0).toFixed(2)} сом
           </Typography>
           <TextField
             autoFocus
@@ -919,11 +1221,42 @@ const ProfilePage: React.FC = () => {
             value={withdrawAmount}
             onChange={(e) => setWithdrawAmount(e.target.value)}
           />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Средства будут переведены на ваш счет MBank
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setWithdrawDialogOpen(false)}>Отмена</Button>
-          <Button onClick={handleWithdraw} variant="contained" disabled={loading}>
+          <Button onClick={handleWithdraw} variant="contained" color="success" disabled={loading}>
             Вывести
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Transfer Dialog */}
+      <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)}>
+        <DialogTitle>Перевести на основной баланс</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
+            Доступно на реферальном балансе: {(referralBalance ?? 0).toFixed(2)} сом
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Сумма (сом)"
+            type="number"
+            fullWidth
+            value={transferAmount}
+            onChange={(e) => setTransferAmount(e.target.value)}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Средства будут переведены на основной баланс для оплаты услуг платформы
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTransferDialogOpen(false)}>Отмена</Button>
+          <Button onClick={handleTransfer} variant="contained" disabled={loading}>
+            Перевести
           </Button>
         </DialogActions>
       </Dialog>
