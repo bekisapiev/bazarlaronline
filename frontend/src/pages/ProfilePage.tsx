@@ -213,9 +213,10 @@ const ProfilePage: React.FC = () => {
     try {
       setFavoritesLoading(true);
       const response = await favoritesAPI.getFavorites({ limit: 8, offset: 0 });
-      setFavorites(response.data);
+      // Handle both array and object with items
+      const favoritesData = Array.isArray(response.data) ? response.data : (response.data.items || []);
+      setFavorites(favoritesData);
     } catch (err: any) {
-      console.error('Error loading favorites:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить избранное');
     } finally {
       setFavoritesLoading(false);
@@ -226,9 +227,10 @@ const ProfilePage: React.FC = () => {
     try {
       setHistoryLoading(true);
       const response = await favoritesAPI.getViewHistory({ limit: 20, offset: 0 });
-      setViewHistory(response.data);
+      // Handle both array and object with items
+      const historyData = Array.isArray(response.data) ? response.data : (response.data.items || []);
+      setViewHistory(historyData);
     } catch (err: any) {
-      console.error('Error loading view history:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить историю');
     } finally {
       setHistoryLoading(false);
@@ -623,7 +625,7 @@ const ProfilePage: React.FC = () => {
                       Текущий баланс
                     </Typography>
                     <Typography variant="h3" fontWeight={600} color="primary">
-                      {walletBalance.toFixed(2)} ₽
+                      {walletBalance.toFixed(2)} сом
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                       <Button
@@ -696,7 +698,7 @@ const ProfilePage: React.FC = () => {
                             }}
                           >
                             {transaction.type === 'topup' ? '+' : '-'}
-                            {transaction.amount.toFixed(2)} ₽
+                            {transaction.amount.toFixed(2)} сом
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -879,7 +881,7 @@ const ProfilePage: React.FC = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Сумма (₽)"
+            label="Сумма (сом)"
             type="number"
             fullWidth
             value={topupAmount}
@@ -900,12 +902,12 @@ const ProfilePage: React.FC = () => {
         <DialogTitle>Вывести средства</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Доступно: {walletBalance.toFixed(2)} ₽
+            Доступно: {walletBalance.toFixed(2)} сом
           </Typography>
           <TextField
             autoFocus
             margin="dense"
-            label="Сумма (₽)"
+            label="Сумма (сом)"
             type="number"
             fullWidth
             value={withdrawAmount}

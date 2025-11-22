@@ -76,6 +76,10 @@ interface Market {
 interface Category {
   id: number;
   name: string;
+  slug: string;
+  level: number;
+  parent_id?: number | null;
+  children?: Category[];
 }
 
 const SellersPage: React.FC = () => {
@@ -96,7 +100,9 @@ const SellersPage: React.FC = () => {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [cityId, setCityId] = useState(searchParams.get('city') || '');
   const [marketId, setMarketId] = useState(searchParams.get('market') || '');
-  const [categoryId, setCategoryId] = useState(searchParams.get('category') || '');
+  const [selectedCategory1, setSelectedCategory1] = useState<number | null>(null);
+  const [selectedCategory2, setSelectedCategory2] = useState<number | null>(null);
+  const [selectedCategory3, setSelectedCategory3] = useState<number | null>(null);
   const [minRating, setMinRating] = useState(Number(searchParams.get('rating')) || 0);
   const [verifiedOnly, setVerifiedOnly] = useState(searchParams.get('verified') === 'true');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
@@ -133,7 +139,10 @@ const SellersPage: React.FC = () => {
       if (search) params.search = search;
       if (cityId) params.city_id = cityId;
       if (marketId) params.market_id = marketId;
-      if (categoryId) params.category_id = categoryId;
+      // Use most specific category selected
+      if (selectedCategory3) params.category_id = selectedCategory3;
+      else if (selectedCategory2) params.category_id = selectedCategory2;
+      else if (selectedCategory1) params.category_id = selectedCategory1;
       if (minRating > 0) params.min_rating = minRating;
       if (verifiedOnly) params.verified_only = true;
 
@@ -145,7 +154,7 @@ const SellersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, sortBy, search, cityId, marketId, categoryId, minRating, verifiedOnly]);
+  }, [page, sortBy, search, cityId, marketId, selectedCategory1, selectedCategory2, selectedCategory3, minRating, verifiedOnly]);
 
   // Load initial data
   useEffect(() => {
@@ -159,7 +168,7 @@ const SellersPage: React.FC = () => {
   useEffect(() => {
     loadSellers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, sortBy, search, cityId, marketId, categoryId, minRating, verifiedOnly]);
+  }, [page, sortBy, search, cityId, marketId, selectedCategory1, selectedCategory2, selectedCategory3, minRating, verifiedOnly]);
 
   const loadCities = async () => {
     try {
@@ -181,18 +190,14 @@ const SellersPage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await categoriesAPI.getCategories({ parent_id: null });
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setCategories(response.data);
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
+      const response = await categoriesAPI.getCategoryTree();
+      // Backend returns {tree: [...]} for hierarchical category tree
+      if (response.data && Array.isArray(response.data.tree)) {
+        setCategories(response.data.tree);
       } else {
-        console.warn('Unexpected categories data format:', response.data);
         setCategories([]);
       }
     } catch (err) {
-      console.error('Failed to load categories:', err);
       setCategories([]); // Set to empty array on error
     }
   };
@@ -211,7 +216,6 @@ const SellersPage: React.FC = () => {
       if (value) loadMarkets();
     }
     if (filter === 'market') setMarketId(value);
-    if (filter === 'category') setCategoryId(value);
     if (filter === 'rating') setMinRating(value);
     if (filter === 'verified') setVerifiedOnly(value);
     if (filter === 'sort') setSortBy(value);
@@ -223,7 +227,9 @@ const SellersPage: React.FC = () => {
     if (search) params.search = search;
     if (cityId) params.city = cityId;
     if (marketId) params.market = marketId;
-    if (categoryId) params.category = categoryId;
+    if (selectedCategory3) params.category = selectedCategory3;
+    else if (selectedCategory2) params.category = selectedCategory2;
+    else if (selectedCategory1) params.category = selectedCategory1;
     if (minRating > 0) params.rating = minRating.toString();
     if (verifiedOnly) params.verified = 'true';
     if (sortBy !== 'rating') params.sort = sortBy;
@@ -276,13 +282,17 @@ const SellersPage: React.FC = () => {
         </Select>
       </FormControl>
 
-      {/* Category Filter */}
-      <FormControl fullWidth sx={{ mb: 3 }}>
+      {/* Category Level 1 Filter */}
+      <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel>Категория</InputLabel>
         <Select
-          value={categoryId}
+          value={selectedCategory1 || ''}
           label="Категория"
-          onChange={(e) => handleFilterChange('category', e.target.value)}
+          onChange={(e) => {
+            setSelectedCategory1(e.target.value ? Number(e.target.value) : null);
+            setSelectedCategory2(null);
+            setSelectedCategory3(null);
+          }}
         >
           <MenuItem value="">Все категории</MenuItem>
           {categories.map((cat) => (
@@ -292,6 +302,49 @@ const SellersPage: React.FC = () => {
           ))}
         </Select>
       </FormControl>
+
+      {/* Category Level 2 Filter */}
+      {selectedCategory1 && categories.find((c) => c.id === selectedCategory1)?.children && (
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Подкатегория</InputLabel>
+          <Select
+            value={selectedCategory2 || ''}
+            label="Подкатегория"
+            onChange={(e) => {
+              setSelectedCategory2(e.target.value ? Number(e.target.value) : null);
+              setSelectedCategory3(null);
+            }}
+          >
+            <MenuItem value="">Все подкатегории</MenuItem>
+            {categories.find((c) => c.id === selectedCategory1)?.children?.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+
+      {/* Category Level 3 Filter */}
+      {selectedCategory2 &&
+       categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.children && (
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Раздел</InputLabel>
+          <Select
+            value={selectedCategory3 || ''}
+            label="Раздел"
+            onChange={(e) => setSelectedCategory3(e.target.value ? Number(e.target.value) : null)}
+          >
+            <MenuItem value="">Все разделы</MenuItem>
+            {categories.find((c) => c.id === selectedCategory1)?.children
+              ?.find((c) => c.id === selectedCategory2)?.children?.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
 
       {/* Min Rating */}
       <Typography gutterBottom>Минимальный рейтинг</Typography>
@@ -323,7 +376,9 @@ const SellersPage: React.FC = () => {
         onClick={() => {
           setCityId('');
           setMarketId('');
-          setCategoryId('');
+          setSelectedCategory1(null);
+          setSelectedCategory2(null);
+          setSelectedCategory3(null);
           setMinRating(0);
           setVerifiedOnly(false);
           setPage(1);
@@ -528,7 +583,7 @@ const SellersPage: React.FC = () => {
         </Stack>
 
         {/* Active Filters */}
-        {(cityId || marketId || categoryId || minRating > 0 || verifiedOnly) && (
+        {(cityId || marketId || selectedCategory1 || minRating > 0 || verifiedOnly) && (
           <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {cityId && (
               <Chip
@@ -542,10 +597,29 @@ const SellersPage: React.FC = () => {
                 onDelete={() => handleFilterChange('market', '')}
               />
             )}
-            {categoryId && (
+            {selectedCategory1 && (
               <Chip
-                label={`Категория: ${categories.find((c) => c.id === Number(categoryId))?.name}`}
-                onDelete={() => handleFilterChange('category', '')}
+                label={`Категория: ${categories.find((c) => c.id === selectedCategory1)?.name}`}
+                onDelete={() => {
+                  setSelectedCategory1(null);
+                  setSelectedCategory2(null);
+                  setSelectedCategory3(null);
+                }}
+              />
+            )}
+            {selectedCategory2 && (
+              <Chip
+                label={`Подкатегория: ${categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.name}`}
+                onDelete={() => {
+                  setSelectedCategory2(null);
+                  setSelectedCategory3(null);
+                }}
+              />
+            )}
+            {selectedCategory3 && (
+              <Chip
+                label={`Раздел: ${categories.find((c) => c.id === selectedCategory1)?.children?.find((c) => c.id === selectedCategory2)?.children?.find((c) => c.id === selectedCategory3)?.name}`}
+                onDelete={() => setSelectedCategory3(null)}
               />
             )}
             {minRating > 0 && (

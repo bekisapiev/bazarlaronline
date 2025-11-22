@@ -143,7 +143,7 @@ const ChatPage: React.FC = () => {
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Socket connected');
+      // Socket connected
     });
 
     socketRef.current.on('new_message', (message: Message) => {

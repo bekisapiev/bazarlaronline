@@ -38,7 +38,7 @@ import {
   Warehouse as WarehouseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { productsAPI } from '../services/api';
+import { productsAPI, categoriesAPI } from '../services/api';
 
 interface Product {
   id: string;
@@ -173,11 +173,9 @@ const HomePage: React.FC = () => {
         // If data is wrapped in an object with 'cities' property
         setCities(response.data.cities);
       } else {
-        console.warn('Unexpected cities data format:', response.data);
         setCities([]);
       }
     } catch (error) {
-      console.error('Error loading cities:', error);
       setCities([]); // Set to empty array on error
     }
   };
@@ -191,29 +189,23 @@ const HomePage: React.FC = () => {
       } else if (response.data && Array.isArray(response.data.markets)) {
         setMarkets(response.data.markets);
       } else {
-        console.warn('Unexpected markets data format:', response.data);
         setMarkets([]);
       }
     } catch (error) {
-      console.error('Error loading markets:', error);
       setMarkets([]); // Set to empty array on error
     }
   };
 
   const loadCategories = async () => {
     try {
-      const response = await productsAPI.getCategories();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setCategories(response.data);
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
+      const response = await categoriesAPI.getCategoryTree();
+      // Backend returns {tree: [...]} for hierarchical category tree
+      if (response.data && Array.isArray(response.data.tree)) {
+        setCategories(response.data.tree);
       } else {
-        console.warn('Unexpected categories data format:', response.data);
         setCategories([]);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
       setCategories([]); // Set to empty array on error
     }
   };
@@ -249,7 +241,6 @@ const HomePage: React.FC = () => {
 
       setHasMore(newProducts.length === 30);
     } catch (error: any) {
-      console.error('Error loading products:', error);
       setError('Ошибка загрузки товаров');
     } finally {
       setLoadingState(false);
