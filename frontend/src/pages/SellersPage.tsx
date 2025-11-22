@@ -111,18 +111,14 @@ const SellersPage: React.FC = () => {
   const loadMarkets = useCallback(async () => {
     try {
       const response = await productsAPI.getMarkets(cityId ? { city_id: cityId } : {});
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setMarkets(response.data);
-      } else if (response.data && Array.isArray(response.data.markets)) {
-        setMarkets(response.data.markets);
+      // API returns {items: [...], total: ...}
+      if (response.data && Array.isArray(response.data.items)) {
+        setMarkets(response.data.items);
       } else {
-        console.warn('Unexpected markets data format:', response.data);
         setMarkets([]);
       }
     } catch (err) {
-      console.error('Failed to load markets:', err);
-      setMarkets([]); // Set to empty array on error
+      setMarkets([]);
     }
   }, [cityId]);
 
@@ -130,10 +126,12 @@ const SellersPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
+      const limit = 24;
+      const offset = (page - 1) * limit;
+
       const params: any = {
-        page,
-        page_size: 24,
-        sort_by: sortBy,
+        limit,
+        offset,
       };
 
       if (search) params.search = search;
@@ -143,12 +141,12 @@ const SellersPage: React.FC = () => {
       if (selectedCategory3) params.category_id = selectedCategory3;
       else if (selectedCategory2) params.category_id = selectedCategory2;
       else if (selectedCategory1) params.category_id = selectedCategory1;
-      if (minRating > 0) params.min_rating = minRating;
-      if (verifiedOnly) params.verified_only = true;
 
       const response = await productsAPI.getSellers(params);
-      setSellers(response.data.items);
-      setTotalPages(response.data.total_pages);
+      setSellers(response.data.items || []);
+      // Calculate total pages from total count
+      const totalCount = response.data.total || 0;
+      setTotalPages(Math.ceil(totalCount / limit));
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки продавцов');
     } finally {
@@ -173,18 +171,14 @@ const SellersPage: React.FC = () => {
   const loadCities = async () => {
     try {
       const response = await productsAPI.getCities();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setCities(response.data);
-      } else if (response.data && Array.isArray(response.data.cities)) {
-        setCities(response.data.cities);
+      // API returns {items: [...], total: ...}
+      if (response.data && Array.isArray(response.data.items)) {
+        setCities(response.data.items);
       } else {
-        console.warn('Unexpected cities data format:', response.data);
         setCities([]);
       }
     } catch (err) {
-      console.error('Failed to load cities:', err);
-      setCities([]); // Set to empty array on error
+      setCities([]);
     }
   };
 
