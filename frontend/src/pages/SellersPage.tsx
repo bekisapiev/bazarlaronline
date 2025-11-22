@@ -41,6 +41,7 @@ import { productsAPI, categoriesAPI } from '../services/api';
 
 interface Seller {
   id: string;
+  user_id: string;
   shop_name: string;
   description?: string;
   logo_url?: string;
@@ -405,7 +406,7 @@ const SellersPage: React.FC = () => {
             transition: 'all 0.3s',
           },
         }}
-        onClick={() => navigate(`/sellers/${seller.id}`)}
+        onClick={() => navigate(`/sellers/${seller.user_id}`)}
       >
         {/* Banner or Logo */}
         {seller.banner_url || seller.logo_url ? (
@@ -509,7 +510,7 @@ const SellersPage: React.FC = () => {
             variant="contained"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/sellers/${seller.id}`);
+              navigate(`/sellers/${seller.user_id}`);
             }}
           >
             Посмотреть товары
