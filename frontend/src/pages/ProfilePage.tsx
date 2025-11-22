@@ -52,6 +52,7 @@ import {
   Receipt,
   SwapHoriz,
   AccountBalance,
+  ContentCopy,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -182,12 +183,18 @@ const ProfilePage: React.FC = () => {
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState('');
 
+  // Referral program state
+  const [referralLink, setReferralLink] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralStats, setReferralStats] = useState<any>(null);
+
   useEffect(() => {
     loadProfile();
+    loadReferralData();
   }, []);
 
   useEffect(() => {
-    if (currentTab === 1 && myProducts.length === 0) {
+    if (currentTab === 1 && myProducts.length === 0 && profile?.id) {
       loadMyProducts();
     } else if (currentTab === 2 && orders.length === 0) {
       loadOrders();
@@ -200,7 +207,7 @@ const ProfilePage: React.FC = () => {
       loadViewHistory();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length]);
+  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length, profile]);
 
   const loadProfile = async () => {
     try {
@@ -314,6 +321,20 @@ const ProfilePage: React.FC = () => {
       setOrderedFromMe(ordersData);
     } catch (err: any) {
       console.error('Error loading seller orders:', err);
+    }
+  };
+
+  const loadReferralData = async () => {
+    try {
+      const [linkRes, statsRes] = await Promise.all([
+        usersAPI.getReferralLink(),
+        usersAPI.getReferralStats(),
+      ]);
+      setReferralLink(linkRes.data.referral_link);
+      setReferralCode(linkRes.data.referral_code);
+      setReferralStats(statsRes.data);
+    } catch (err: any) {
+      console.error('Error loading referral data:', err);
     }
   };
 
@@ -661,6 +682,93 @@ const ProfilePage: React.FC = () => {
                       placeholder="+996 XXX XXX XXX"
                     />
                   </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Referral Program Section */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Партнерская программа
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Приглашайте друзей и получайте 20% от их пополнений на реферальный баланс
+                </Typography>
+
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Ваша партнерская ссылка"
+                      value={referralLink}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <IconButton
+                            onClick={() => {
+                              navigator.clipboard.writeText(referralLink);
+                              setSuccess('Ссылка скопирована в буфер обмена');
+                            }}
+                          >
+                            <ContentCopy />
+                          </IconButton>
+                        ),
+                      }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Ваш реферальный код"
+                      value={referralCode}
+                      sx={{ mt: 2 }}
+                      InputProps={{
+                        readOnly: true,
+                      }}
+                    />
+                  </Grid>
+
+                  {referralStats && (
+                    <Grid item xs={12} md={6}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="body2" color="text.secondary">
+                                Всего рефералов
+                              </Typography>
+                              <Typography variant="h4" fontWeight={600}>
+                                {referralStats.total_referrals || 0}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="body2" color="text.secondary">
+                                Активных
+                              </Typography>
+                              <Typography variant="h4" fontWeight={600} color="success.main">
+                                {referralStats.active_referrals || 0}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Card variant="outlined">
+                            <CardContent>
+                              <Typography variant="body2" color="text.secondary">
+                                Всего заработано
+                              </Typography>
+                              <Typography variant="h4" fontWeight={600} color="primary">
+                                {Number(referralStats.total_earned || 0).toFixed(2)} сом
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  )}
                 </Grid>
               </Paper>
             </Grid>

@@ -34,6 +34,7 @@ import {
   Share,
   NavigateNext,
   Star,
+  ContentCopy,
 } from '@mui/icons-material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -43,6 +44,7 @@ import {
   favoritesAPI,
   reviewsAPI,
   recommendationsAPI,
+  usersAPI,
 } from '../services/api';
 
 interface Product {
@@ -100,6 +102,9 @@ const ProductDetailPage: React.FC = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [sellerTariff, setSellerTariff] = useState<string | null>(null);
+  const [partnerLink, setPartnerLink] = useState<string>('');
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const loadProduct = useCallback(async () => {
     try {
@@ -162,6 +167,28 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [id]);
 
+  const loadSellerInfo = useCallback(async (sellerId: string) => {
+    try {
+      // Get seller profile to check tariff
+      const sellerResponse = await productsAPI.getSellerById(sellerId, false);
+      const sellerData = sellerResponse.data;
+
+      if (sellerData.user?.tariff) {
+        setSellerTariff(sellerData.user.tariff);
+
+        // If seller has Business tariff, generate partner link for this product
+        if (sellerData.user.tariff === 'business' && sellerData.user.referral_id) {
+          const baseUrl = window.location.origin;
+          // Create partner link pointing to this product with seller's ref code
+          const link = `${baseUrl}/products/${id}?ref=${sellerData.user.referral_id}`;
+          setPartnerLink(link);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading seller info:', error);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id) {
       loadProduct();
@@ -174,6 +201,13 @@ const ProductDetailPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isAuthenticated]);
+
+  // Load seller info when product is loaded
+  useEffect(() => {
+    if (product?.seller?.id) {
+      loadSellerInfo(product.seller.id);
+    }
+  }, [product, loadSellerInfo]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {
@@ -430,6 +464,48 @@ const ProductDetailPage: React.FC = () => {
                   >
                     Посмотреть профиль продавца
                   </Button>
+                </>
+              )}
+
+              {/* Partner Link for Business Tariff */}
+              {sellerTariff === 'business' && partnerLink && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Paper sx={{ p: 2, bgcolor: 'primary.50' }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Партнерская ссылка
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      Поделитесь этой ссылкой и получайте бонусы с покупок по вашей реферальной программе
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={partnerLink}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontSize: '0.875rem' }
+                        }}
+                      />
+                      <IconButton
+                        color="primary"
+                        onClick={() => {
+                          navigator.clipboard.writeText(partnerLink);
+                          setCopySuccess(true);
+                          setTimeout(() => setCopySuccess(false), 2000);
+                        }}
+                        sx={{ border: 1, borderColor: 'primary.main' }}
+                      >
+                        <ContentCopy />
+                      </IconButton>
+                    </Box>
+                    {copySuccess && (
+                      <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>
+                        Ссылка скопирована в буфер обмена!
+                      </Typography>
+                    )}
+                  </Paper>
                 </>
               )}
 

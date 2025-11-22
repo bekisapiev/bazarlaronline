@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -17,6 +17,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { setUser } from '../../store/slices/authSlice';
+import { handleReferralCode, clearReferralCodeCookie } from '../../utils/referral';
 
 const EmailAuth: React.FC = () => {
   const dispatch = useDispatch();
@@ -26,9 +27,18 @@ const EmailAuth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [refCode, setRefCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Load referral code from cookies on component mount
+    const code = handleReferralCode();
+    if (code) {
+      setRefCode(code);
+    }
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -92,7 +102,7 @@ const EmailAuth: React.FC = () => {
     setLoading(true);
 
     try {
-      const result = await authAPI.register(email, password, fullName || undefined);
+      const result = await authAPI.register(email, password, fullName || undefined, refCode || undefined);
 
       // Save tokens
       localStorage.setItem('access_token', result.data.access_token);
@@ -101,6 +111,9 @@ const EmailAuth: React.FC = () => {
       // Get user info
       const userResponse = await authAPI.getCurrentUser();
       dispatch(setUser(userResponse.data));
+
+      // Clear referral cookie after successful registration
+      clearReferralCodeCookie();
 
       // Redirect to home
       navigate('/');

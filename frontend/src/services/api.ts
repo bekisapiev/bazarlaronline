@@ -71,8 +71,8 @@ export const authAPI = {
     api.post('/auth/telegram/webapp', { init_data }),
 
   // Email auth methods
-  register: (email: string, password: string, full_name?: string) =>
-    api.post('/auth/register', { email, password, full_name }),
+  register: (email: string, password: string, full_name?: string, ref_code?: string) =>
+    api.post('/auth/register', { email, password, full_name, ref_code }),
 
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
