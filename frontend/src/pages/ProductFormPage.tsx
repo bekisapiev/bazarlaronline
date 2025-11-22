@@ -162,7 +162,10 @@ const ProductFormPage: React.FC = () => {
       // Handle different response formats
       let categoriesData: Category[] = [];
 
-      if (Array.isArray(response.data)) {
+      if (response.data && Array.isArray(response.data.tree)) {
+        // Backend returns {tree: [...]} for hierarchical category tree
+        categoriesData = response.data.tree;
+      } else if (Array.isArray(response.data)) {
         categoriesData = response.data;
       } else if (response.data && Array.isArray(response.data.items)) {
         categoriesData = response.data.items;
