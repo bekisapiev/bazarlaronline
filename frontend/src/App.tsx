@@ -20,6 +20,7 @@ import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
+import ReferralProductsPage from './pages/ReferralProductsPage';
 import './App.css';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
+          <Route path="/referral-products" element={<ReferralProductsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
