@@ -114,6 +114,22 @@ const ProductFormPage: React.FC = () => {
       const response = await productsAPI.getProductById(productId);
       const product = response.data;
 
+      // Convert characteristics array to object format for form
+      const characteristicsObject: Record<string, string> = {};
+      if (Array.isArray(product.characteristics)) {
+        product.characteristics.forEach((char: any) => {
+          // Backend uses 'name' field, not 'key'
+          const key = char.name || char.key;
+          const value = char.value;
+          if (key && value) {
+            characteristicsObject[key] = value;
+          }
+        });
+      } else if (typeof product.characteristics === 'object' && product.characteristics !== null) {
+        // Handle if backend returns object format
+        Object.assign(characteristicsObject, product.characteristics);
+      }
+
       setFormData({
         title: product.title,
         description: product.description,
@@ -124,9 +140,9 @@ const ProductFormPage: React.FC = () => {
         discount_price: product.discount_price,
         discount_percent: product.discount_percent,
         stock_quantity: product.stock_quantity,
-        delivery_available: product.delivery_available || false,
-        characteristics: product.characteristics || {},
-        partner_percentage: product.partner_percentage,
+        delivery_available: product.delivery_type === 'paid',
+        characteristics: characteristicsObject,
+        partner_percentage: product.partner_percent,
       });
 
       // Set category hierarchy
@@ -320,9 +336,23 @@ const ProductFormPage: React.FC = () => {
     setSuccess('');
 
     try {
-      const productData = {
-        ...formData,
+      // Convert characteristics object to array format expected by backend
+      const characteristicsArray = Object.entries(formData.characteristics).map(([name, value]) => ({
+        name,
+        value,
+      }));
+
+      // Map frontend data to backend schema
+      const productData: any = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
         category_id: formData.category_id!,
+        images: formData.images,
+        characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
+        discount_price: formData.discount_price || undefined,
+        partner_percent: formData.partner_percentage || undefined,
+        delivery_type: formData.delivery_available ? 'paid' : 'pickup',
       };
 
       if (isEditMode && id) {
