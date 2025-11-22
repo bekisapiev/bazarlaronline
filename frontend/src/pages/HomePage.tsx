@@ -38,7 +38,7 @@ import {
   Warehouse as WarehouseIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { productsAPI } from '../services/api';
+import { productsAPI, categoriesAPI } from '../services/api';
 
 interface Product {
   id: string;
@@ -198,12 +198,10 @@ const HomePage: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await productsAPI.getCategories();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setCategories(response.data);
-      } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
+      const response = await categoriesAPI.getCategoryTree();
+      // Backend returns {tree: [...]} for hierarchical category tree
+      if (response.data && Array.isArray(response.data.tree)) {
+        setCategories(response.data.tree);
       } else {
         setCategories([]);
       }
