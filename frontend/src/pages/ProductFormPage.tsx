@@ -41,6 +41,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { productsAPI, categoriesAPI, uploadAPI } from '../services/api';
+import { formatErrorMessage } from '../utils/errorHandler';
 
 interface Category {
   id: number;
@@ -139,7 +140,7 @@ const ProductFormPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки товара');
+      setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
       setLoading(false);
     }
@@ -224,7 +225,7 @@ const ProductFormPage: React.FC = () => {
         images: [...prev.images, ...uploadedUrls],
       }));
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки изображений');
+      setError(formatErrorMessage(err, 'Ошибка загрузки изображений'));
     } finally {
       setUploadingImages(false);
     }
@@ -342,8 +343,7 @@ const ProductFormPage: React.FC = () => {
       }
     } catch (err: any) {
       setError(
-        err.response?.data?.detail ||
-          `Ошибка при сохранении ${formData.is_service ? 'услуги' : 'товара'}`
+        formatErrorMessage(err, `Ошибка при сохранении ${formData.is_service ? 'услуги' : 'товара'}`)
       );
     } finally {
       setSaving(false);
