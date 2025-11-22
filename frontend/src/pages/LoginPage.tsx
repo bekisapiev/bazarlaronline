@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Box, Typography, Paper, Divider, Tabs, Tab } from '@mui/material';
-import { Google, Telegram, PhoneAndroid } from '@mui/icons-material';
+import { Google, Telegram, PhoneAndroid, Email } from '@mui/icons-material';
 import GoogleLoginButton from '../components/auth/GoogleLoginButton';
 import TelegramLoginWidget from '../components/auth/TelegramLoginWidget';
 import TelegramCodeAuth from '../components/auth/TelegramCodeAuth';
+import EmailAuth from '../components/auth/EmailAuth';
 
 const LoginPage: React.FC = () => {
-  const [authMethod, setAuthMethod] = useState<'widget' | 'code'>('widget');
+  const [authMethod, setAuthMethod] = useState<'widget' | 'code' | 'email'>('email');
 
   const telegramBotUsername = process.env.REACT_APP_TELEGRAM_BOT_USERNAME || 'bazarlar_online_bot';
 
@@ -42,7 +43,7 @@ const LoginPage: React.FC = () => {
             <Divider sx={{ flex: 1 }} />
           </Box>
 
-          {/* Telegram Auth Methods Tabs */}
+          {/* Auth Methods Tabs */}
           <Box sx={{ mb: 2 }}>
             <Tabs
               value={authMethod}
@@ -56,6 +57,13 @@ const LoginPage: React.FC = () => {
                 },
               }}
             >
+              <Tab
+                icon={<Email />}
+                iconPosition="start"
+                label="Email"
+                value="email"
+                sx={{ textTransform: 'none' }}
+              />
               <Tab
                 icon={<Telegram />}
                 iconPosition="start"
@@ -72,6 +80,13 @@ const LoginPage: React.FC = () => {
               />
             </Tabs>
           </Box>
+
+          {/* Email Auth */}
+          {authMethod === 'email' && (
+            <Box sx={{ mt: 3 }}>
+              <EmailAuth />
+            </Box>
+          )}
 
           {/* Telegram Login Widget */}
           {authMethod === 'widget' && (

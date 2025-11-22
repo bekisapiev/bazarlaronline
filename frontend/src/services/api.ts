@@ -69,6 +69,13 @@ export const authAPI = {
 
   telegramWebApp: (init_data: string) =>
     api.post('/auth/telegram/webapp', { init_data }),
+
+  // Email auth methods
+  register: (email: string, password: string, full_name?: string) =>
+    api.post('/auth/register', { email, password, full_name }),
+
+  login: (email: string, password: string) =>
+    api.post('/auth/login', { email, password }),
 };
 
 export const productsAPI = {

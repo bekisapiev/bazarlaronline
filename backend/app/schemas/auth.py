@@ -54,6 +54,19 @@ class TelegramWebAppRequest(BaseModel):
     init_data: str  # Telegram WebApp initData string
 
 
+class EmailRegisterRequest(BaseModel):
+    """Email registration request"""
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+
+
+class EmailLoginRequest(BaseModel):
+    """Email login request"""
+    email: EmailStr
+    password: str
+
+
 class UserResponse(BaseModel):
     """User response"""
     id: str
