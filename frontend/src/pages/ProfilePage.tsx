@@ -201,7 +201,7 @@ const ProfilePage: React.FC = () => {
         walletAPI.getBalance(),
         walletAPI.getTransactions(20, 0),
       ]);
-      setWalletBalance(balanceRes.data.balance);
+      setWalletBalance(balanceRes.data.balance ?? 0);
       // Handle both array and object with items
       const transactionsData = Array.isArray(transactionsRes.data)
         ? transactionsRes.data
@@ -631,7 +631,7 @@ const ProfilePage: React.FC = () => {
                       Текущий баланс
                     </Typography>
                     <Typography variant="h3" fontWeight={600} color="primary">
-                      {walletBalance.toFixed(2)} сом
+                      {(walletBalance ?? 0).toFixed(2)} сом
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                       <Button
@@ -704,7 +704,7 @@ const ProfilePage: React.FC = () => {
                             }}
                           >
                             {transaction.type === 'topup' ? '+' : '-'}
-                            {transaction.amount.toFixed(2)} сом
+                            {(transaction.amount ?? 0).toFixed(2)} сом
                           </TableCell>
                           <TableCell>
                             <Chip
@@ -908,7 +908,7 @@ const ProfilePage: React.FC = () => {
         <DialogTitle>Вывести средства</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Доступно: {walletBalance.toFixed(2)} сом
+            Доступно: {(walletBalance ?? 0).toFixed(2)} сом
           </Typography>
           <TextField
             autoFocus
