@@ -183,7 +183,9 @@ const ProfilePage: React.FC = () => {
     try {
       setOrdersLoading(true);
       const response = await ordersAPI.getOrders();
-      setOrders(response.data);
+      // Handle both array and object with items
+      const ordersData = Array.isArray(response.data) ? response.data : (response.data.items || []);
+      setOrders(ordersData);
     } catch (err: any) {
       console.error('Error loading orders:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить заказы');
@@ -200,7 +202,11 @@ const ProfilePage: React.FC = () => {
         walletAPI.getTransactions(20, 0),
       ]);
       setWalletBalance(balanceRes.data.balance);
-      setTransactions(transactionsRes.data);
+      // Handle both array and object with items
+      const transactionsData = Array.isArray(transactionsRes.data)
+        ? transactionsRes.data
+        : (transactionsRes.data.items || []);
+      setTransactions(transactionsData);
     } catch (err: any) {
       console.error('Error loading wallet:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить кошелёк');
