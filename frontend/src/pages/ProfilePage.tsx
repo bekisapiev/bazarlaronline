@@ -178,7 +178,6 @@ const ProfilePage: React.FC = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
 
   // Wallet tab state
-  const [walletBalance, setWalletBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [walletLoading, setWalletLoading] = useState(false);
   const [topupDialogOpen, setTopupDialogOpen] = useState(false);
