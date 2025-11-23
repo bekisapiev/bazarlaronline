@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Email, Lock, Visibility, VisibilityOff, Person } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { setUser } from '../../store/slices/authSlice';
 import { handleReferralCode, clearReferralCodeCookie } from '../../utils/referral';
@@ -22,6 +22,7 @@ import { handleReferralCode, clearReferralCodeCookie } from '../../utils/referra
 const EmailAuth: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -71,8 +72,9 @@ const EmailAuth: React.FC = () => {
       const userResponse = await authAPI.getCurrentUser();
       dispatch(setUser(userResponse.data));
 
-      // Redirect to home
-      navigate('/');
+      // Redirect to the page user was trying to access, or home
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Ошибка входа';
       setError(errorMessage);
@@ -115,8 +117,9 @@ const EmailAuth: React.FC = () => {
       // Clear referral cookie after successful registration
       clearReferralCodeCookie();
 
-      // Redirect to home
-      navigate('/');
+      // Redirect to the page user was trying to access, or home
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Ошибка регистрации';
       setError(errorMessage);
@@ -145,7 +148,7 @@ const EmailAuth: React.FC = () => {
   };
 
   return (
-    <Paper elevation={0} sx={{ p: 3, backgroundColor: 'transparent' }}>
+    <Paper elevation={0} sx={{ backgroundColor: 'transparent' }}>
       <Box sx={{ mb: 3 }}>
         <Tabs
           value={mode}
@@ -156,8 +159,8 @@ const EmailAuth: React.FC = () => {
             borderColor: 'divider',
           }}
         >
-          <Tab label="Вход" value="login" sx={{ textTransform: 'none' }} />
-          <Tab label="Регистрация" value="register" sx={{ textTransform: 'none' }} />
+          <Tab label="Вход" value="login" sx={{ textTransform: 'none', fontSize: '1rem' }} />
+          <Tab label="Регистрация" value="register" sx={{ textTransform: 'none', fontSize: '1rem' }} />
         </Tabs>
       </Box>
 
