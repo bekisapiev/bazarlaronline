@@ -108,6 +108,9 @@ const Header: React.FC = () => {
             <Button color="inherit" onClick={() => navigate('/sellers')}>
               Продавцы
             </Button>
+            <Button color="inherit" onClick={() => navigate('/documentation')}>
+              Документация
+            </Button>
 
             {isAuthenticated ? (
               <>
