@@ -22,6 +22,7 @@ import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
 import ReferralProductsPage from './pages/ReferralProductsPage';
+import TariffsPage from './pages/TariffsPage';
 import { authAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
 import './App.css';
@@ -138,6 +139,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReferralProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tariffs"
+            element={
+              <ProtectedRoute>
+                <TariffsPage />
               </ProtectedRoute>
             }
           />

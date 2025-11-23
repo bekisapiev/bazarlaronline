@@ -85,6 +85,9 @@ export const productsAPI = {
   updateProduct: (id: string, data: any) => api.put(`/products/${id}`, data),
   deleteProduct: (id: string) => api.delete(`/products/${id}`),
   promoteProduct: (id: string) => api.post(`/products/${id}/promote`),
+  boostProduct: (id: string) => api.post(`/products/${id}/boost`),
+  enableAutoBoost: (id: string, interval: number) => api.post(`/products/${id}/auto-boost`, { interval }),
+  disableAutoBoost: (id: string) => api.delete(`/products/${id}/auto-boost`),
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
   getCities: () => api.get('/locations/cities'),
   getMarkets: (params: any) => api.get('/locations/markets', { params }),
@@ -124,6 +127,7 @@ export const usersAPI = {
   getSellerProfile: (userId: string) => api.get(`/users/${userId}/seller-profile`),
   getReferralLink: () => api.get('/users/me/referral-link'),
   getReferralStats: () => api.get('/users/me/referral-stats'),
+  activateTariff: (tariffId: string) => api.post(`/users/me/activate-tariff`, { tariff: tariffId }),
 };
 
 export const sellerProfileAPI = {
