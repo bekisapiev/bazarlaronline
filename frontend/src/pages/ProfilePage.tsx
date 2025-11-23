@@ -280,7 +280,6 @@ const ProfilePage: React.FC = () => {
       const balanceData = balanceRes.data;
       setMainBalance(balanceData.main_balance ?? balanceData.balance ?? 0);
       setReferralBalance(balanceData.referral_balance ?? 0);
-      setWalletBalance(balanceData.balance ?? 0); // Keep for backward compatibility
 
       // Handle both array and object with items
       const transactionsData = Array.isArray(transactionsRes.data)
