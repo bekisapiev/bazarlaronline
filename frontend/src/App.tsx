@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { Box, CircularProgress } from '@mui/material';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -21,9 +23,54 @@ import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
 import ReferralProductsPage from './pages/ReferralProductsPage';
+import { authAPI } from './services/api';
+import { setUser } from './store/slices/authSlice';
 import './App.css';
 
 function App() {
+  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check for existing tokens and restore auth state
+    const initAuth = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      const refreshToken = localStorage.getItem('refresh_token');
+
+      if (accessToken && refreshToken) {
+        try {
+          // Try to get current user
+          const response = await authAPI.getCurrentUser();
+          dispatch(setUser(response.data));
+        } catch (error) {
+          // If token is invalid, clear it
+          console.error('Failed to restore auth:', error);
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+        }
+      }
+
+      setLoading(false);
+    };
+
+    initAuth();
+  }, [dispatch]);
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <div className="App">
       <Header />

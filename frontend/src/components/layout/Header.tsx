@@ -30,6 +30,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { notificationsAPI } from '../../services/api';
 import { setUnreadCount } from '../../store/slices/notificationsSlice';
+import { logout } from '../../store/slices/authSlice';
 import SearchBar from '../common/SearchBar';
 
 const Header: React.FC = () => {
@@ -71,7 +72,14 @@ const Header: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // Handle logout logic
+    // Clear tokens from localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    // Clear Redux auth state
+    dispatch(logout());
+
+    // Close menu and navigate to login
     handleProfileMenuClose();
     navigate('/login');
   };
