@@ -205,7 +205,7 @@ const ProfilePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentTab === 1 && myProducts.length === 0 && profile?.id) {
+    if (currentTab === 1 && myProducts.length === 0) {
       loadMyProducts();
     } else if (currentTab === 2 && orders.length === 0) {
       loadOrders();
@@ -220,7 +220,7 @@ const ProfilePage: React.FC = () => {
       loadPartnerProducts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length, partnerProducts.length, profile]);
+  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length, partnerProducts.length]);
 
   const loadProfile = async () => {
     try {
@@ -308,8 +308,7 @@ const ProfilePage: React.FC = () => {
   const loadMyProducts = async () => {
     try {
       setProductsLoading(true);
-      const response = await productsAPI.getProducts({
-        seller_id: profile?.id,
+      const response = await productsAPI.getMyProducts({
         limit: 20,
         offset: 0,
       });

@@ -80,6 +80,7 @@ export const authAPI = {
 
 export const productsAPI = {
   getProducts: (params: any) => api.get('/products/', { params }),
+  getMyProducts: (params: any) => api.get('/products/my-products', { params }),
   getProductById: (id: string) => api.get(`/products/${id}`),
   createProduct: (data: any) => api.post('/products/', data),
   updateProduct: (id: string, data: any) => api.put(`/products/${id}`, data),
