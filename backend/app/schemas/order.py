@@ -69,12 +69,28 @@ class OrderStatusUpdate(BaseModel):
         }
 
 
+class UserInfo(BaseModel):
+    """Basic user information"""
+    id: str
+    full_name: str
+    phone: Optional[str] = None
+
+
+class SellerInfo(BaseModel):
+    """Basic seller information"""
+    id: str
+    shop_name: str
+    phone: Optional[str] = None
+
+
 class OrderResponse(BaseModel):
     """Order response"""
     id: str
     order_number: str
     buyer_id: str
     seller_id: str
+    buyer: Optional[UserInfo] = None
+    seller: Optional[SellerInfo] = None
     items: List[Dict]
     total_amount: Decimal
     delivery_address: Optional[str] = None

@@ -117,15 +117,20 @@ const OrdersPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await ordersAPI.getOrders();
-      // Handle both array and object with items
-      const orders = Array.isArray(response.data) ? response.data : (response.data.items || []);
+      // Load orders as seller (received orders)
+      const sellerResponse = await ordersAPI.getOrders({ role: 'seller' });
+      const sellerOrders = Array.isArray(sellerResponse.data)
+        ? sellerResponse.data
+        : (sellerResponse.data.items || []);
 
-      // Split orders into received (seller) and placed (buyer)
-      // This logic depends on your backend implementation
-      // Assuming backend returns a flag or separate endpoints
-      setReceivedOrders(orders.filter((o: any) => o.role === 'seller'));
-      setPlacedOrders(orders.filter((o: any) => o.role === 'buyer'));
+      // Load orders as buyer (placed orders)
+      const buyerResponse = await ordersAPI.getOrders({ role: 'buyer' });
+      const buyerOrders = Array.isArray(buyerResponse.data)
+        ? buyerResponse.data
+        : (buyerResponse.data.items || []);
+
+      setReceivedOrders(sellerOrders);
+      setPlacedOrders(buyerOrders);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки заказов');
     } finally {

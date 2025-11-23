@@ -12,12 +12,51 @@ from datetime import datetime
 from app.database.session import get_db
 from app.models.order import Order
 from app.models.product import Product
-from app.models.user import User
+from app.models.user import User, SellerProfile
 from app.models.wallet import Wallet, Transaction, ProductReferralPurchase
 from app.core.dependencies import get_current_active_user
-from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse
+from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse, UserInfo, SellerInfo
 
 router = APIRouter()
+
+
+async def get_user_info(user_id: UUID, db: AsyncSession) -> Optional[UserInfo]:
+    """Get basic user information"""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        return None
+    return UserInfo(
+        id=str(user.id),
+        full_name=user.full_name or "Неизвестно",
+        phone=user.phone
+    )
+
+
+async def get_seller_info(user_id: UUID, db: AsyncSession) -> Optional[SellerInfo]:
+    """Get basic seller information"""
+    result = await db.execute(
+        select(SellerProfile).where(SellerProfile.user_id == user_id)
+    )
+    seller_profile = result.scalar_one_or_none()
+
+    if seller_profile:
+        return SellerInfo(
+            id=str(user_id),
+            shop_name=seller_profile.shop_name or "Магазин",
+            phone=seller_profile.phone
+        )
+    else:
+        # Fallback to user info if no seller profile
+        user_result = await db.execute(select(User).where(User.id == user_id))
+        user = user_result.scalar_one_or_none()
+        if user:
+            return SellerInfo(
+                id=str(user.id),
+                shop_name=user.full_name or "Магазин",
+                phone=user.phone
+            )
+    return None
 
 
 @router.post("/", response_model=OrderResponse)
@@ -250,11 +289,17 @@ async def create_order(
     await db.commit()
     await db.refresh(order)
 
+    # Get buyer and seller info
+    buyer_info = await get_user_info(order.buyer_id, db)
+    seller_info = await get_seller_info(order.seller_id, db)
+
     return OrderResponse(
         id=str(order.id),
         order_number=order.order_number,
         buyer_id=str(order.buyer_id),
         seller_id=str(order.seller_id),
+        buyer=buyer_info,
+        seller=seller_info,
         items=order.items,
         total_amount=order.total_amount,
         delivery_address=order.delivery_address,
@@ -327,13 +372,20 @@ async def get_orders(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
 
-    return {
-        "items": [
+    # Build response with buyer and seller info for each order
+    items_with_info = []
+    for o in orders:
+        buyer_info = await get_user_info(o.buyer_id, db)
+        seller_info = await get_seller_info(o.seller_id, db)
+
+        items_with_info.append(
             OrderResponse(
                 id=str(o.id),
                 order_number=o.order_number,
                 buyer_id=str(o.buyer_id),
                 seller_id=str(o.seller_id),
+                buyer=buyer_info,
+                seller=seller_info,
                 items=o.items,
                 total_amount=o.total_amount,
                 delivery_address=o.delivery_address,
@@ -346,8 +398,10 @@ async def get_orders(
                 created_at=o.created_at,
                 updated_at=o.updated_at
             )
-            for o in orders
-        ],
+        )
+
+    return {
+        "items": items_with_info,
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -384,11 +438,17 @@ async def get_order_by_id(
             detail="You don't have permission to view this order"
         )
 
+    # Get buyer and seller info
+    buyer_info = await get_user_info(order.buyer_id, db)
+    seller_info = await get_seller_info(order.seller_id, db)
+
     return OrderResponse(
         id=str(order.id),
         order_number=order.order_number,
         buyer_id=str(order.buyer_id),
         seller_id=str(order.seller_id),
+        buyer=buyer_info,
+        seller=seller_info,
         items=order.items,
         total_amount=order.total_amount,
         delivery_address=order.delivery_address,
@@ -489,11 +549,17 @@ async def update_order_status(
     await db.commit()
     await db.refresh(order)
 
+    # Get buyer and seller info
+    buyer_info = await get_user_info(order.buyer_id, db)
+    seller_info = await get_seller_info(order.seller_id, db)
+
     return OrderResponse(
         id=str(order.id),
         order_number=order.order_number,
         buyer_id=str(order.buyer_id),
         seller_id=str(order.seller_id),
+        buyer=buyer_info,
+        seller=seller_info,
         items=order.items,
         total_amount=order.total_amount,
         delivery_address=order.delivery_address,
