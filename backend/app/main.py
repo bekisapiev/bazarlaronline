@@ -11,6 +11,12 @@ from app.core.config import settings
 from app.api.v1 import api_router
 from app.database.session import engine
 from app.database.base import Base
+from app.middleware import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    SecurityLoggerMiddleware,
+    ErrorHandlerMiddleware
+)
 
 
 @asynccontextmanager
@@ -44,7 +50,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configure CORS
+# Configure Security Middleware (порядок важен - выполняются в обратном порядке)
+# 1. Error Handler - перехватывает все необработанные ошибки
+app.add_middleware(ErrorHandlerMiddleware)
+
+# 2. Security Logger - логирует подозрительную активность
+app.add_middleware(SecurityLoggerMiddleware)
+
+# 3. Security Headers - добавляет заголовки безопасности
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 4. Rate Limiting - ограничивает частоту запросов
+app.add_middleware(RateLimitMiddleware)
+
+# 5. CORS - настройка политики CORS (должен быть последним)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
