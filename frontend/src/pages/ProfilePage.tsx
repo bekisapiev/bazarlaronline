@@ -61,7 +61,6 @@ import {
   usersAPI,
   ordersAPI,
   walletAPI,
-  favoritesAPI,
   uploadAPI,
   productsAPI,
 } from '../services/api';
@@ -115,15 +114,6 @@ interface Transaction {
   description: string;
   created_at: string;
   status: string;
-}
-
-interface ViewHistoryItem {
-  id: string;
-  title: string;
-  price: number;
-  discount_price?: number;
-  images: string[];
-  viewed_at: string;
 }
 
 interface Product {
@@ -186,14 +176,6 @@ const ProfilePage: React.FC = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [mbankPhone, setMbankPhone] = useState('');
 
-  // Favorites tab state
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [favoritesLoading, setFavoritesLoading] = useState(false);
-
-  // History tab state
-  const [viewHistory, setViewHistory] = useState<ViewHistoryItem[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-
   // My Products tab state
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -230,15 +212,11 @@ const ProfilePage: React.FC = () => {
       loadOrderedFromMe();
     } else if (currentTab === 3 && transactions.length === 0) {
       loadWallet();
-    } else if (currentTab === 4 && favorites.length === 0) {
-      loadFavorites();
-    } else if (currentTab === 5 && viewHistory.length === 0) {
-      loadViewHistory();
-    } else if (currentTab === 6 && partnerProducts.length === 0) {
+    } else if (currentTab === 4 && partnerProducts.length === 0) {
       loadPartnerProducts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length, partnerProducts.length]);
+  }, [currentTab, myProducts.length, orders.length, transactions.length, partnerProducts.length]);
 
   const loadProfile = async () => {
     try {
@@ -291,34 +269,6 @@ const ProfilePage: React.FC = () => {
       setError(err.response?.data?.detail || 'Не удалось загрузить кошелёк');
     } finally {
       setWalletLoading(false);
-    }
-  };
-
-  const loadFavorites = async () => {
-    try {
-      setFavoritesLoading(true);
-      const response = await favoritesAPI.getFavorites({ limit: 8, offset: 0 });
-      // Handle both array and object with items
-      const favoritesData = Array.isArray(response.data) ? response.data : (response.data.items || []);
-      setFavorites(favoritesData);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Не удалось загрузить избранное');
-    } finally {
-      setFavoritesLoading(false);
-    }
-  };
-
-  const loadViewHistory = async () => {
-    try {
-      setHistoryLoading(true);
-      const response = await favoritesAPI.getViewHistory({ limit: 20, offset: 0 });
-      // Handle both array and object with items
-      const historyData = Array.isArray(response.data) ? response.data : (response.data.items || []);
-      setViewHistory(historyData);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Не удалось загрузить историю');
-    } finally {
-      setHistoryLoading(false);
     }
   };
 
@@ -625,6 +575,24 @@ const ProfilePage: React.FC = () => {
         </Typography>
       </Box>
 
+      {/* Quick Links */}
+      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<Favorite />}
+          onClick={() => navigate('/favorites')}
+        >
+          Избранное
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<History />}
+          onClick={() => navigate('/history')}
+        >
+          История просмотров
+        </Button>
+      </Box>
+
       {/* Tabs */}
       <Paper sx={{ mb: 3 }}>
         <Tabs
@@ -637,8 +605,6 @@ const ProfilePage: React.FC = () => {
           <Tab icon={<Storefront />} iconPosition="start" label="Мои товары и услуги" />
           <Tab icon={<ShoppingBag />} iconPosition="start" label="Заказы" />
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
-          <Tab icon={<Favorite />} iconPosition="start" label="Избранное" />
-          <Tab icon={<History />} iconPosition="start" label="История" />
           <Tab icon={<Handshake />} iconPosition="start" label="Партнерские товары" />
         </Tabs>
       </Paper>
@@ -1304,158 +1270,8 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 4: Favorites */}
+      {/* Tab 4: Partner Products */}
       <TabPanel value={currentTab} index={4}>
-        {favoritesLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : favorites.length === 0 ? (
-          <Paper sx={{ p: 8, textAlign: 'center' }}>
-            <FavoriteBorder sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Нет избранных товаров
-            </Typography>
-            <Button
-              variant="contained"
-              sx={{ mt: 2 }}
-              onClick={() => navigate('/')}
-            >
-              Смотреть товары
-            </Button>
-          </Paper>
-        ) : (
-          <>
-            <Grid container spacing={3}>
-              {favorites.slice(0, 8).map((product) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: 4 },
-                    }}
-                    onClick={() => navigate(`/products/${product.id}`)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={
-                        product.images && product.images.length > 0
-                          ? product.images[0]
-                          : 'https://via.placeholder.com/200'
-                      }
-                      alt={product.title}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="subtitle1"
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {product.title}
-                      </Typography>
-                      <Typography variant="h6" fontWeight={600} sx={{ mt: 1 }}>
-                        {product.discount_price || product.price} сом
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => navigate('/favorites')}
-              >
-                Посмотреть все ({favorites.length})
-              </Button>
-            </Box>
-          </>
-        )}
-      </TabPanel>
-
-      {/* Tab 5: View History */}
-      <TabPanel value={currentTab} index={5}>
-        {historyLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : viewHistory.length === 0 ? (
-          <Paper sx={{ p: 8, textAlign: 'center' }}>
-            <History sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              История просмотров пуста
-            </Typography>
-            <Button
-              variant="contained"
-              sx={{ mt: 2 }}
-              onClick={() => navigate('/')}
-            >
-              Смотреть товары
-            </Button>
-          </Paper>
-        ) : (
-          <Grid container spacing={3}>
-            {viewHistory.map((item) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    cursor: 'pointer',
-                    '&:hover': { boxShadow: 4 },
-                  }}
-                  onClick={() => navigate(`/products/${item.id}`)}
-                >
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={
-                      item.images && item.images.length > 0
-                        ? item.images[0]
-                        : 'https://via.placeholder.com/200'
-                    }
-                    alt={item.title}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {item.title}
-                    </Typography>
-                    <Typography variant="h6" fontWeight={600} sx={{ mt: 1 }}>
-                      {item.discount_price || item.price} сом
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-                      Просмотрено: {formatDate(item.viewed_at)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </TabPanel>
-
-      {/* Tab 6: Partner Products */}
-      <TabPanel value={currentTab} index={6}>
         {partnerProductsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />

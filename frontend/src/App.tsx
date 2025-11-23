@@ -14,6 +14,7 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import NotificationsPage from './pages/NotificationsPage';
 import FavoritesPage from './pages/FavoritesPage';
+import ViewHistoryPage from './pages/ViewHistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
@@ -173,6 +174,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FavoritesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <ViewHistoryPage />
               </ProtectedRoute>
             }
           />
