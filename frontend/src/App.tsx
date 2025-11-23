@@ -16,6 +16,12 @@ import NotificationsPage from './pages/NotificationsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ViewHistoryPage from './pages/ViewHistoryPage';
 import SettingsPage from './pages/SettingsPage';
+import MyProfilePage from './pages/profile/MyProfilePage';
+import MyProductsServicesPage from './pages/profile/MyProductsServicesPage';
+import MyOrdersPage from './pages/profile/MyOrdersPage';
+import OrdersFromMePage from './pages/profile/OrdersFromMePage';
+import PartnerProductsPage from './pages/profile/PartnerProductsPage';
+import MyWalletPage from './pages/profile/MyWalletPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import OrdersPage from './pages/OrdersPage';
@@ -182,6 +188,54 @@ function App() {
             element={
               <ProtectedRoute>
                 <ViewHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-profile"
+            element={
+              <ProtectedRoute>
+                <MyProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-products-services"
+            element={
+              <ProtectedRoute>
+                <MyProductsServicesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-orders"
+            element={
+              <ProtectedRoute>
+                <MyOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/me-orders"
+            element={
+              <ProtectedRoute>
+                <OrdersFromMePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/partners-products"
+            element={
+              <ProtectedRoute>
+                <PartnerProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-wallet"
+            element={
+              <ProtectedRoute>
+                <MyWalletPage />
               </ProtectedRoute>
             }
           />

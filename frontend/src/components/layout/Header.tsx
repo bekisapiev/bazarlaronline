@@ -24,6 +24,12 @@ import {
   ExitToApp as LogoutIcon,
   Dashboard as DashboardIcon,
   AdminPanelSettings as AdminIcon,
+  Person as PersonIcon,
+  Storefront as StorefrontIcon,
+  ShoppingBag as ShoppingBagIcon,
+  Receipt as ReceiptIcon,
+  Handshake as HandshakeIcon,
+  AccountBalanceWallet as WalletIcon,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
@@ -162,12 +168,49 @@ const Header: React.FC = () => {
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                  <MenuItem onClick={() => handleProfileNavigation('/profile')}>
+                  <MenuItem onClick={() => handleProfileNavigation('/my-profile')}>
                     <ListItemIcon>
-                      <AccountIcon fontSize="small" />
+                      <PersonIcon fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText>Профиль</ListItemText>
+                    <ListItemText>Мой профиль</ListItemText>
                   </MenuItem>
+
+                  <MenuItem onClick={() => handleProfileNavigation('/my-products-services')}>
+                    <ListItemIcon>
+                      <StorefrontIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Мои товары и услуги</ListItemText>
+                  </MenuItem>
+
+                  <MenuItem onClick={() => handleProfileNavigation('/my-orders')}>
+                    <ListItemIcon>
+                      <ShoppingBagIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Мои заказы</ListItemText>
+                  </MenuItem>
+
+                  <MenuItem onClick={() => handleProfileNavigation('/me-orders')}>
+                    <ListItemIcon>
+                      <ReceiptIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Мне заказали</ListItemText>
+                  </MenuItem>
+
+                  <MenuItem onClick={() => handleProfileNavigation('/partners-products')}>
+                    <ListItemIcon>
+                      <HandshakeIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Партнерские товары и услуги</ListItemText>
+                  </MenuItem>
+
+                  <MenuItem onClick={() => handleProfileNavigation('/my-wallet')}>
+                    <ListItemIcon>
+                      <WalletIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Мой кошелек</ListItemText>
+                  </MenuItem>
+
+                  <Divider />
 
                   {isSeller && (
                     <MenuItem onClick={() => handleProfileNavigation('/seller/dashboard')}>
