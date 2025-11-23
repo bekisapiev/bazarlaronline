@@ -833,9 +833,12 @@ const ProfilePage: React.FC = () => {
                     Управление тарифами
                   </Button>
                 </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Текущий тариф: <Chip label={profile?.tariff?.toUpperCase() || 'FREE'} size="small" color="primary" sx={{ ml: 1 }} />
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Текущий тариф:
+                  </Typography>
+                  <Chip label={profile?.tariff?.toUpperCase() || 'FREE'} size="small" color="primary" />
+                </Box>
               </Paper>
             </Grid>
 
