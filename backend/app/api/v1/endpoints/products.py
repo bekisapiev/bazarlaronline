@@ -642,7 +642,7 @@ async def promote_product(
 async def get_my_products(
     status_filter: Optional[str] = Query(None, description="active, inactive, moderation"),
     limit: int = Query(30, le=100),
-    offset: int = 0,
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
