@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { Box, CircularProgress } from '@mui/material';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import BottomNav from './components/layout/BottomNav';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -129,6 +130,14 @@ function App() {
           />
           <Route
             path="/add"
+            element={
+              <ProtectedRoute>
+                <ProductFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/add"
             element={
               <ProtectedRoute>
                 <ProductFormPage />
@@ -298,6 +307,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <BottomNav />
     </div>
   );
 }

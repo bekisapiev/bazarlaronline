@@ -11,6 +11,7 @@ const Footer: React.FC = () => {
         mt: 'auto',
         backgroundColor: '#F5F5F5',
         borderTop: '1px solid #E0E0E0',
+        display: { xs: 'none', md: 'block' }, // Hide on mobile, show on desktop
       }}
     >
       <Container maxWidth="xl">
