@@ -198,10 +198,11 @@ async def get_referral_products(
     Products are returned sorted by commission amount by default.
     All users can view and share referral links for these products.
     """
-    # Base query - only products with referral enabled
+    # Base query - only products with referral enabled and commission >= 1%
     query = select(Product).where(
         Product.status == "active",
-        Product.is_referral_enabled == True
+        Product.is_referral_enabled == True,
+        Product.referral_commission_percent >= 1
     )
 
     # Apply filters
@@ -231,7 +232,8 @@ async def get_referral_products(
     # Count total before pagination
     count_query = select(func.count()).select_from(Product).where(
         Product.status == "active",
-        Product.is_referral_enabled == True
+        Product.is_referral_enabled == True,
+        Product.referral_commission_percent >= 1
     )
 
     if category_id:

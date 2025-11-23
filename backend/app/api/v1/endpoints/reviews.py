@@ -18,6 +18,122 @@ from app.schemas.review import ReviewCreate, ReviewResponse, SellerRatingRespons
 router = APIRouter()
 
 
+@router.post("/product", response_model=ReviewResponse)
+async def create_product_review(
+    product_id: str,
+    rating: int = Query(..., ge=0, le=10),
+    comment: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Create a review for a product
+
+    Requirements:
+    - User must have purchased the product (have at least one completed order)
+    - Only one review per product per user
+    """
+    from app.models.product import Product
+
+    product_uuid = UUID(product_id)
+
+    # Verify product exists
+    product_result = await db.execute(
+        select(Product).where(Product.id == product_uuid)
+    )
+    product = product_result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    # Check if user has purchased this product (find any completed order)
+    order_result = await db.execute(
+        select(Order)
+        .where(
+            Order.product_id == product_uuid,
+            Order.buyer_id == current_user.id,
+            Order.status == "completed"
+        )
+        .limit(1)
+    )
+    order = order_result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You can only review products you have purchased and received"
+        )
+
+    # Check if review already exists for this product
+    existing_review_result = await db.execute(
+        select(Review)
+        .join(Order, Review.order_id == Order.id)
+        .where(
+            Order.product_id == product_uuid,
+            Review.buyer_id == current_user.id
+        )
+    )
+    existing_review = existing_review_result.scalar_one_or_none()
+
+    if existing_review:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already reviewed this product"
+        )
+
+    # Create review using the found order
+    review = Review(
+        seller_id=order.seller_id,
+        buyer_id=current_user.id,
+        order_id=order.id,
+        rating=rating,
+        comment=comment
+    )
+    db.add(review)
+
+    # Update seller profile rating
+    seller_profile_result = await db.execute(
+        select(SellerProfile).where(SellerProfile.user_id == order.seller_id)
+    )
+    seller_profile = seller_profile_result.scalar_one_or_none()
+
+    if seller_profile:
+        # Recalculate average rating
+        all_reviews_result = await db.execute(
+            select(func.avg(Review.rating), func.count(Review.id))
+            .select_from(Review)
+            .where(Review.seller_id == order.seller_id)
+        )
+        avg_rating, review_count = all_reviews_result.one()
+
+        # Include new review in calculation
+        if avg_rating:
+            new_avg = (float(avg_rating) * review_count + rating) / (review_count + 1)
+        else:
+            new_avg = float(rating)
+
+        seller_profile.rating = Decimal(str(round(new_avg, 2)))
+        seller_profile.reviews_count = (review_count or 0) + 1
+
+    await db.commit()
+    await db.refresh(review)
+
+    return ReviewResponse(
+        id=str(review.id),
+        seller_id=str(review.seller_id),
+        buyer_id=str(review.buyer_id),
+        order_id=str(review.order_id),
+        rating=review.rating,
+        comment=review.comment,
+        created_at=review.created_at,
+        buyer_name=current_user.full_name,
+        order_number=order.order_number
+    )
+
+
 @router.post("/", response_model=ReviewResponse)
 async def create_review(
     review_data: ReviewCreate,

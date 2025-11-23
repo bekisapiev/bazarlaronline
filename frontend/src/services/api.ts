@@ -223,7 +223,7 @@ export const reviewsAPI = {
     api.get(`/reviews/product/${productId}`, { params }),
   getSellerReviews: (sellerId: string, params: any) =>
     api.get(`/reviews/seller/${sellerId}`, { params }),
-  createReview: (data: any) => api.post('/reviews/', data),
+  createReview: (data: any) => api.post('/reviews/product', null, { params: data }),
   updateReview: (id: string, data: any) => api.put(`/reviews/${id}`, data),
   deleteReview: (id: string) => api.delete(`/reviews/${id}`),
   respondToReview: (id: string, response: string) =>

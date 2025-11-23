@@ -89,6 +89,7 @@ function App() {
           <Route path="/sellers" element={<SellersPage />} />
           <Route path="/sellers/:id" element={<SellerDetailPage />} />
           <Route path="/partners" element={<PartnersPage />} />
+          <Route path="/partner" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
