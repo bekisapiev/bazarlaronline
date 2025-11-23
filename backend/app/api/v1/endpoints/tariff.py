@@ -106,13 +106,20 @@ async def upgrade_tariff(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Upgrade user tariff
+    Activate user tariff
+
+    НОВАЯ ЛОГИКА:
+    - Тариф активируется БЕСПЛАТНО при наличии достаточного баланса
+    - Средства НЕ списываются при активации
+    - Списание происходит только при:
+      * Продвижении товаров/услуг
+      * Автоподнятии
+      * Оплате партнерских комиссий (Business тариф)
 
     This endpoint:
-    1. Checks wallet balance
-    2. Deducts payment from main balance
-    3. Updates user tariff
-    4. Creates transaction record
+    1. Checks wallet balance (минимальный порог для активации)
+    2. Activates tariff without charging
+    3. Creates activation record (without payment)
     """
     if request.tariff not in ["pro", "business"]:
         raise HTTPException(
@@ -126,9 +133,11 @@ async def upgrade_tariff(
             detail="Duration must be between 1 and 12 months"
         )
 
-    # Calculate total price
+    # Calculate required balance (минимальный порог для активации)
+    # Требуем баланс хотя бы на 1 продвижение
     monthly_price = TARIFF_PRICES[request.tariff]
-    total_price = Decimal(monthly_price * request.duration_months)
+    promotion_price = TARIFF_FEATURES[request.tariff]["promotion_price"]
+    min_required_balance = Decimal(promotion_price)
 
     # Get wallet
     result = await db.execute(
@@ -136,16 +145,13 @@ async def upgrade_tariff(
     )
     wallet = result.scalar_one_or_none()
 
-    if not wallet or wallet.main_balance < total_price:
+    if not wallet or wallet.main_balance < min_required_balance:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Insufficient balance. Required: {total_price} KGS"
+            detail=f"Insufficient balance. Minimum required for activation: {min_required_balance} KGS (price for 1 promotion)"
         )
 
-    # Deduct from wallet
-    wallet.main_balance -= total_price
-
-    # Update user tariff
+    # Update user tariff (БЕЗ списания средств)
     if current_user.tariff_expires_at and current_user.tariff_expires_at > datetime.utcnow():
         # Extend existing subscription
         current_user.tariff_expires_at += timedelta(days=30 * request.duration_months)
@@ -154,13 +160,13 @@ async def upgrade_tariff(
         current_user.tariff = request.tariff
         current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=30 * request.duration_months)
 
-    # Create transaction record
+    # Create activation record (БЕЗ списания)
     transaction = Transaction(
         user_id=current_user.id,
-        type="tariff_upgrade",
-        amount=total_price,
+        type="tariff_activation",
+        amount=Decimal(0),  # Активация бесплатная
         balance_type="main",
-        description=f"Подписка {request.tariff.capitalize()} на {request.duration_months} мес.",
+        description=f"Активация тарифа {request.tariff.capitalize()} на {request.duration_months} мес.",
         status="completed"
     )
     db.add(transaction)
@@ -169,10 +175,12 @@ async def upgrade_tariff(
     await db.refresh(current_user)
 
     return {
-        "message": "Tariff upgraded successfully",
+        "message": "Tariff activated successfully (no charge)",
         "tariff": current_user.tariff,
         "expires_at": current_user.tariff_expires_at,
-        "amount_paid": float(total_price)
+        "amount_paid": 0.0,
+        "promotion_price": float(promotion_price),
+        "info": "Средства списываются только при продвижении товаров/услуг и оплате партнерских комиссий"
     }
 
 

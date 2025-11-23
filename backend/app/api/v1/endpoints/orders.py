@@ -137,12 +137,21 @@ async def create_order(
             "discount_price": float(item.discount_price) if item.discount_price else None
         })
 
-    # Process referral commission
+    # Process referral commission (НОВАЯ ЛОГИКА)
+    # Партнерская программа доступна только для Business тарифа
+    # Комиссия списывается с продавца ОТДЕЛЬНО (не из суммы заказа)
     referral_user_id = None
     referral_commission = Decimal(0)
     platform_commission = Decimal(0)
 
-    if order_data.referral_code and partner_percent > 0:
+    # Проверяем, имеет ли продавец Business тариф
+    seller_has_business = (
+        seller.tariff == "business" and
+        seller.tariff_expires_at and
+        seller.tariff_expires_at > datetime.utcnow()
+    )
+
+    if order_data.referral_code and partner_percent > 0 and seller_has_business:
         # Find referral user by referral_id
         referral_result = await db.execute(
             select(User).where(User.referral_id == order_data.referral_code)
@@ -151,9 +160,9 @@ async def create_order(
 
         if referral_user:
             referral_user_id = referral_user.id
-            # Calculate commission: partner gets partner_percent, platform gets rest
+            # Calculate commission from order amount
+            # Комиссия будет списана с продавца ОТДЕЛЬНО
             referral_commission = (total_amount * partner_percent) / 100
-            platform_commission = total_amount - referral_commission
 
     # Create order first
     order = Order(
@@ -168,7 +177,7 @@ async def create_order(
         status="pending" if order_data.payment_method == "mbank" else "processing",
         referral_id=referral_user_id,
         referral_commission=referral_commission if referral_commission > 0 else None,
-        platform_commission=platform_commission if platform_commission > 0 else None
+        platform_commission=None  # Больше не используется
     )
 
     db.add(order)
@@ -214,15 +223,14 @@ async def create_order(
             db.add(seller_wallet)
             await db.flush()
 
-        # Seller gets full amount minus commissions
-        seller_amount = total_amount - referral_commission - platform_commission
-        seller_wallet.main_balance += seller_amount
+        # НОВАЯ ЛОГИКА: Продавец получает ПОЛНУЮ сумму
+        seller_wallet.main_balance += total_amount
 
-        # Create seller transaction
+        # Create seller transaction (полная сумма)
         seller_transaction = Transaction(
             user_id=seller.id,
             type="order_received",
-            amount=seller_amount,
+            amount=total_amount,
             balance_type="main",
             description=f"Получен платеж за заказ {order.order_number}",
             reference_id=order.id,
@@ -230,32 +238,55 @@ async def create_order(
         )
         db.add(seller_transaction)
 
-        # If referral commission exists, credit to referral user
-        if referral_commission > 0 and referral_user_id:
-            referral_wallet_result = await db.execute(
-                select(Wallet).where(Wallet.user_id == referral_user_id)
-            )
-            referral_wallet = referral_wallet_result.scalar_one_or_none()
+        # If referral commission exists, charge seller and credit partner
+        # Это происходит ПОСЛЕ того как продавец получил оплату
+        if referral_commission > 0 and referral_user_id and seller_has_business:
+            # Проверяем баланс продавца для оплаты комиссии
+            if seller_wallet.main_balance < referral_commission:
+                # Если недостаточно средств, заказ создается, но комиссия не выплачивается
+                # Можно логировать или отправить уведомление
+                pass
+            else:
+                # Списываем комиссию с продавца
+                seller_wallet.main_balance -= referral_commission
 
-            if not referral_wallet:
-                referral_wallet = Wallet(user_id=referral_user_id)
-                db.add(referral_wallet)
-                await db.flush()
+                # Create transaction for commission payment
+                commission_payment = Transaction(
+                    user_id=seller.id,
+                    type="partner_commission_payment",
+                    amount=referral_commission,
+                    balance_type="main",
+                    description=f"Оплата партнерской комиссии за заказ {order.order_number}",
+                    reference_id=order.id,
+                    status="completed"
+                )
+                db.add(commission_payment)
 
-            # Partner commission goes to referral_balance (can be withdrawn)
-            referral_wallet.referral_balance += referral_commission
+                # Начисляем комиссию партнеру
+                referral_wallet_result = await db.execute(
+                    select(Wallet).where(Wallet.user_id == referral_user_id)
+                )
+                referral_wallet = referral_wallet_result.scalar_one_or_none()
 
-            # Create referral transaction
-            referral_transaction = Transaction(
-                user_id=referral_user_id,
-                type="referral_commission",
-                amount=referral_commission,
-                balance_type="referral",
-                description=f"Партнерская комиссия от заказа {order.order_number}",
-                reference_id=order.id,
-                status="completed"
-            )
-            db.add(referral_transaction)
+                if not referral_wallet:
+                    referral_wallet = Wallet(user_id=referral_user_id)
+                    db.add(referral_wallet)
+                    await db.flush()
+
+                # Partner commission goes to referral_balance (can be withdrawn)
+                referral_wallet.referral_balance += referral_commission
+
+                # Create referral transaction
+                referral_transaction = Transaction(
+                    user_id=referral_user_id,
+                    type="referral_commission",
+                    amount=referral_commission,
+                    balance_type="referral",
+                    description=f"Партнерская комиссия от заказа {order.order_number}",
+                    reference_id=order.id,
+                    status="completed"
+                )
+                db.add(referral_transaction)
 
     # Process product referral purchases
     # Create ProductReferralPurchase records for products with referral program enabled
