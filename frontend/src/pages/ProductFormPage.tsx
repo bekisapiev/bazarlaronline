@@ -215,7 +215,11 @@ const ProductFormPage: React.FC = () => {
 
   // Get full category path (parent -> child -> grandchild)
   const getCategoryPath = (categoryId: number): { level1: number | null; level2: number | null; level3: number | null } => {
-    const result = { level1: null, level2: null, level3: null };
+    const result: { level1: number | null; level2: number | null; level3: number | null } = {
+      level1: null,
+      level2: null,
+      level3: null
+    };
 
     // Find the category
     const findWithParents = (cats: Category[], id: number, parents: number[] = []): number[] | null => {
@@ -233,9 +237,9 @@ const ProductFormPage: React.FC = () => {
 
     const path = findWithParents(categories, categoryId);
     if (path) {
-      result.level1 = path[0] || null;
-      result.level2 = path[1] || null;
-      result.level3 = path[2] || null;
+      result.level1 = path[0] !== undefined ? path[0] : null;
+      result.level2 = path[1] !== undefined ? path[1] : null;
+      result.level3 = path[2] !== undefined ? path[2] : null;
     }
 
     return result;
