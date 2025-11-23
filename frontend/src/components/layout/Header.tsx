@@ -120,19 +120,6 @@ const Header: React.FC = () => {
       <AppBar position="sticky" color="default" elevation={1}>
         <Container maxWidth="xl">
           <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
-            {/* Mobile Menu Icon */}
-            {isMobile && (
-              <IconButton
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
-
             {/* Logo */}
             <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
               <Typography
@@ -297,6 +284,19 @@ const Header: React.FC = () => {
               </Button>
             )}
           </Box>
+
+          {/* Mobile Menu Icon */}
+          {isMobile && (
+            <IconButton
+              edge="end"
+              color="inherit"
+              aria-label="menu"
+              onClick={handleDrawerToggle}
+              sx={{ ml: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
         </Toolbar>
       </Container>
     </AppBar>
