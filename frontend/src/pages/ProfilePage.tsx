@@ -142,6 +142,25 @@ interface Product {
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
 
+  // Helper function to format error messages
+  const formatErrorMessage = (err: any): string => {
+    if (typeof err === 'string') return err;
+
+    // Handle Pydantic validation errors
+    if (Array.isArray(err)) {
+      return err.map((e: any) => e.msg || JSON.stringify(e)).join(', ');
+    }
+
+    // Handle object errors
+    if (err && typeof err === 'object') {
+      if (err.msg) return err.msg;
+      if (err.message) return err.message;
+      return JSON.stringify(err);
+    }
+
+    return 'Произошла ошибка';
+  };
+
   const [currentTab, setCurrentTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1672,7 +1691,7 @@ const ProfilePage: React.FC = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-          {error}
+          {formatErrorMessage(error)}
         </Alert>
       </Snackbar>
     </Container>
