@@ -26,6 +26,9 @@ import TariffsPage from './pages/TariffsPage';
 import AboutPage from './pages/AboutPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage';
 import { authAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
 import './App.css';
@@ -201,6 +204,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminPanelPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <ProtectedRoute>
+                <AdminProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/withdrawals"
+            element={
+              <ProtectedRoute>
+                <AdminWithdrawalsPage />
               </ProtectedRoute>
             }
           />
