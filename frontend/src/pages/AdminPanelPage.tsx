@@ -960,10 +960,10 @@ const AdminPanelPage: React.FC = () => {
                           <Grid item xs={12} md={4}>
                             <Box sx={{ p: 2, bgcolor: 'warning.50', borderRadius: 1 }}>
                               <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                2️⃣ Списание комиссии
+                                2️⃣ Подтверждение заказа
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                Из основного счета продавца (Business тариф) списывается установленный процент комиссии
+                                Продавец подтверждает заказ, после чего из основного счета продавца (Business тариф) списывается установленный процент комиссии
                               </Typography>
                             </Box>
                           </Grid>

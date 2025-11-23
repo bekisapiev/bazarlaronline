@@ -410,6 +410,7 @@ const TariffsPage: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
                 Только на тарифе Business. Устанавливайте процент комиссии для партнеров, которые продвигают ваши товары.
+                После подтверждения заказа комиссия списывается с основного счета и распределяется: 45% партнеру, 55% платформе.
               </Typography>
             </Grid>
           </Grid>
