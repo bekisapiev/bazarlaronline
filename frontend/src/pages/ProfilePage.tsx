@@ -96,6 +96,7 @@ interface UserProfile {
   avatar?: string;
   banner?: string;
   created_at: string;
+  tariff?: string;
 }
 
 interface Order {
@@ -134,6 +135,8 @@ interface Product {
   status: string;
   created_at: string;
   views?: number;
+  referral_commission_amount?: number;
+  referral_commission_percent?: number;
 }
 
 const ProfilePage: React.FC = () => {
