@@ -50,16 +50,27 @@ async def create_product_review(
         )
 
     # Check if user has purchased this product (find any completed order)
-    order_result = await db.execute(
+    # Note: items is JSONB array, need to check if any item contains this product_id
+    # Get all completed orders by this user
+    orders_result = await db.execute(
         select(Order)
         .where(
-            Order.product_id == product_uuid,
             Order.buyer_id == current_user.id,
             Order.status == "completed"
         )
-        .limit(1)
     )
-    order = order_result.scalar_one_or_none()
+    orders = orders_result.scalars().all()
+
+    # Find order containing this product
+    order = None
+    for ord in orders:
+        if isinstance(ord.items, list):
+            for item in ord.items:
+                if isinstance(item, dict) and item.get('product_id') == str(product_uuid):
+                    order = ord
+                    break
+        if order:
+            break
 
     if not order:
         raise HTTPException(
@@ -68,21 +79,28 @@ async def create_product_review(
         )
 
     # Check if review already exists for this product
-    existing_review_result = await db.execute(
+    # Check all reviews by this buyer for orders containing this product
+    all_reviews_result = await db.execute(
         select(Review)
-        .join(Order, Review.order_id == Order.id)
-        .where(
-            Order.product_id == product_uuid,
-            Review.buyer_id == current_user.id
-        )
+        .where(Review.buyer_id == current_user.id)
     )
-    existing_review = existing_review_result.scalar_one_or_none()
+    all_reviews = all_reviews_result.scalars().all()
 
-    if existing_review:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You have already reviewed this product"
+    # Check if any review is for an order containing this product
+    for review in all_reviews:
+        # Get the order for this review
+        review_order_result = await db.execute(
+            select(Order).where(Order.id == review.order_id)
         )
+        review_order = review_order_result.scalar_one_or_none()
+
+        if review_order and isinstance(review_order.items, list):
+            for item in review_order.items:
+                if isinstance(item, dict) and item.get('product_id') == str(product_uuid):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="You have already reviewed this product"
+                    )
 
     # Create review using the found order
     review = Review(
