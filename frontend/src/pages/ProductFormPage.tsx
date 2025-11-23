@@ -150,13 +150,7 @@ const ProductFormPage: React.FC = () => {
         referral_commission_percent: product.referral_commission_percent,
       });
 
-      // Set category hierarchy
-      if (product.category_id && categories.length > 0) {
-        const path = getCategoryPath(product.category_id);
-        setSelectedParentCategory(path.level1);
-        setSelectedSubcategory(path.level2);
-        setSelectedThirdLevel(path.level3);
-      }
+      // Category hierarchy is set automatically by useEffect
     } catch (err: any) {
       setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
@@ -172,6 +166,25 @@ const ProductFormPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, id, categories.length]);
+
+  // Auto-select category hierarchy when editing
+  useEffect(() => {
+    if (isEditMode && formData.category_id && categories.length > 0) {
+      // Only set if not already set to avoid unnecessary re-renders
+      const path = getCategoryPath(formData.category_id);
+
+      if (path.level1 !== selectedParentCategory) {
+        setSelectedParentCategory(path.level1);
+      }
+      if (path.level2 !== selectedSubcategory) {
+        setSelectedSubcategory(path.level2);
+      }
+      if (path.level3 !== selectedThirdLevel) {
+        setSelectedThirdLevel(path.level3);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, formData.category_id, categories]);
 
   const loadCategories = async () => {
     try {
