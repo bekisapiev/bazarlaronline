@@ -343,8 +343,15 @@ const ProfilePage: React.FC = () => {
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
-      await usersAPI.updateCurrentUser(editedProfile);
-      setProfile({ ...profile, ...editedProfile } as UserProfile);
+      // Explicitly include phone field in the update
+      const updateData = {
+        full_name: editedProfile.full_name,
+        phone: editedProfile.phone || null,
+      };
+      await usersAPI.updateCurrentUser(updateData);
+      const updatedProfile = { ...profile, ...updateData } as UserProfile;
+      setProfile(updatedProfile);
+      setEditedProfile(updatedProfile);
       setIsEditingProfile(false);
       setSuccess('Профиль успешно обновлён');
     } catch (err: any) {

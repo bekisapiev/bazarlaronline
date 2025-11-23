@@ -44,7 +44,7 @@ import {
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../store';
-import { addToCart, removeFromCart, clearCart } from '../store/slices/cartSlice';
+import { addToCart, removeFromCart, clearCart, incrementQuantity, decrementQuantity } from '../store/slices/cartSlice';
 import { productsAPI, ordersAPI } from '../services/api';
 import { getProductReferralCookie } from '../utils/referral';
 
@@ -496,7 +496,7 @@ const SellerDetailPage: React.FC = () => {
                   if (!product) return null;
 
                   return (
-                    <ListItem key={item.productId} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, mb: 2 }}>
+                    <ListItem key={item.productId} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, mb: 2, flexDirection: 'column', alignItems: 'stretch' }}>
                       <Box sx={{ width: '100%' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="subtitle1" fontWeight={600}>
@@ -506,9 +506,33 @@ const SellerDetailPage: React.FC = () => {
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.discountPrice || item.price} сом × {item.quantity}
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Цена: {item.discountPrice || item.price} сом
                         </Typography>
+
+                        {/* Quantity controls */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Количество:
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => dispatch(decrementQuantity(item.productId))}
+                            disabled={item.quantity <= 1}
+                          >
+                            <RemoveIcon fontSize="small" />
+                          </IconButton>
+                          <Typography variant="body1" fontWeight={600} sx={{ minWidth: 30, textAlign: 'center' }}>
+                            {item.quantity}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => dispatch(incrementQuantity(item.productId))}
+                          >
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+
                         <Typography variant="subtitle2" color="primary" fontWeight={600}>
                           Итого: {(item.discountPrice || item.price) * item.quantity} сом
                         </Typography>
