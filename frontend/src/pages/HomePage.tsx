@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { productsAPI, categoriesAPI } from '../services/api';
+import ProductCard from '../components/products/ProductCard';
 
 interface Product {
   id: string;
@@ -288,76 +289,6 @@ const HomePage: React.FC = () => {
     </Grid>
   );
 
-  const renderProductCard = (product: Product) => (
-    <Card
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        cursor: 'pointer',
-        '&:hover': { boxShadow: 6, transform: 'translateY(-4px)', transition: 'all 0.3s' },
-      }}
-      onClick={() => navigate(`/products/${product.id}`)}
-    >
-      {product.is_promoted && (
-        <Chip
-          label="Продвигается"
-          color="warning"
-          size="small"
-          sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}
-        />
-      )}
-      {product.discount_percent && (
-        <Chip
-          label={`-${product.discount_percent}%`}
-          color="error"
-          size="small"
-          sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
-        />
-      )}
-
-      <CardMedia
-        component="img"
-        height="200"
-        image={product.images[0] || '/placeholder.png'}
-        alt={product.title}
-        sx={{ objectFit: 'cover' }}
-      />
-
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography gutterBottom variant="h6" component="div" noWrap>
-          {product.title}
-        </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {product.discount_price ? (
-            <>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ textDecoration: 'line-through' }}
-              >
-                {product.price} сом
-              </Typography>
-              <Typography variant="h6" color="error" fontWeight={600}>
-                {product.discount_price} сом
-              </Typography>
-            </>
-          ) : (
-            <Typography variant="h6" color="primary" fontWeight={600}>
-              {product.price} сом
-            </Typography>
-          )}
-        </Box>
-      </CardContent>
-
-      <CardActions>
-        <Button size="small" color="primary" fullWidth variant="outlined">
-          Подробнее
-        </Button>
-      </CardActions>
-    </Card>
-  );
 
   const renderFiltersHorizontal = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -738,7 +669,7 @@ const HomePage: React.FC = () => {
               <Grid container spacing={3}>
                 {products.map((product) => (
                   <Grid item xs={12} sm={6} md={3} key={product.id}>
-                    {renderProductCard(product)}
+                    <ProductCard product={product} />
                   </Grid>
                 ))}
               </Grid>

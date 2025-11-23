@@ -37,8 +37,9 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage';
-import { authAPI } from './services/api';
+import { authAPI, favoritesAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
+import { setFavorites } from './store/slices/favoritesSlice';
 import './App.css';
 
 function App() {
@@ -56,6 +57,17 @@ function App() {
           // Try to get current user
           const response = await authAPI.getCurrentUser();
           dispatch(setUser(response.data));
+
+          // Load favorites for authenticated user
+          try {
+            const favoritesResponse = await favoritesAPI.getFavorites({ limit: 100, offset: 0 });
+            const favoritesData = Array.isArray(favoritesResponse.data)
+              ? favoritesResponse.data
+              : (favoritesResponse.data.items || []);
+            dispatch(setFavorites(favoritesData));
+          } catch (favError) {
+            console.error('Failed to load favorites:', favError);
+          }
         } catch (error) {
           // If token is invalid, clear it
           console.error('Failed to restore auth:', error);
