@@ -38,6 +38,8 @@ async def get_current_user(
         id=str(user.id),
         email=user.email,
         full_name=user.full_name,
+        avatar=user.avatar,
+        banner=user.banner,
         referral_id=user.referral_id,
         tariff=user.tariff,
         role=user.role,
@@ -76,6 +78,10 @@ async def update_current_user(
         current_user.full_name = update_data.full_name
     if update_data.phone is not None:
         current_user.phone = update_data.phone
+    if update_data.avatar is not None:
+        current_user.avatar = update_data.avatar
+    if update_data.banner is not None:
+        current_user.banner = update_data.banner
 
     await db.commit()
     await db.refresh(current_user)
@@ -86,7 +92,9 @@ async def update_current_user(
             "id": str(current_user.id),
             "email": current_user.email,
             "full_name": current_user.full_name,
-            "phone": current_user.phone
+            "phone": current_user.phone,
+            "avatar": current_user.avatar,
+            "banner": current_user.banner
         }
     }
 

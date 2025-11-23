@@ -92,6 +92,7 @@ interface UserProfile {
   full_name: string;
   phone?: string;
   avatar?: string;
+  banner?: string;
   created_at: string;
 }
 
@@ -146,6 +147,7 @@ const ProfilePage: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   // Orders tab state
   const [orders, setOrders] = useState<Order[]>([]);
@@ -373,6 +375,26 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingBanner(true);
+      const response = await uploadAPI.uploadImage(file);
+      const bannerUrl = response.data.url;
+      await usersAPI.updateCurrentUser({ banner: bannerUrl });
+      setProfile({ ...profile, banner: bannerUrl } as UserProfile);
+      setEditedProfile({ ...editedProfile, banner: bannerUrl });
+      setSuccess('Баннер успешно обновлён');
+    } catch (err: any) {
+      console.error('Error uploading banner:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить баннер');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   const handleTopup = async () => {
     try {
       const amount = parseFloat(topupAmount);
@@ -570,6 +592,59 @@ const ProfilePage: React.FC = () => {
       <TabPanel value={currentTab} index={0}>
         {profile && (
           <Grid container spacing={3}>
+            {/* Banner Section */}
+            <Grid item xs={12}>
+              <Paper sx={{ position: 'relative', height: 200, overflow: 'hidden', mb: 2 }}>
+                {profile.banner ? (
+                  <Box
+                    component="img"
+                    src={profile.banner}
+                    alt="Profile Banner"
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      backgroundColor: 'grey.200',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="h6" color="text.secondary">
+                      Нет баннера профиля
+                    </Typography>
+                  </Box>
+                )}
+                <IconButton
+                  component="label"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 16,
+                    right: 16,
+                    backgroundColor: 'primary.main',
+                    color: 'white',
+                    '&:hover': { backgroundColor: 'primary.dark' },
+                  }}
+                  disabled={uploadingBanner}
+                >
+                  {uploadingBanner ? <CircularProgress size={20} color="inherit" /> : <CloudUpload />}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleBannerUpload}
+                  />
+                </IconButton>
+              </Paper>
+            </Grid>
+
             <Grid item xs={12} md={4}>
               <Paper sx={{ p: 3, textAlign: 'center' }}>
                 <Box sx={{ position: 'relative', display: 'inline-block', mb: 2 }}>

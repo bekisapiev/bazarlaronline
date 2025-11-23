@@ -31,6 +31,8 @@ class User(Base):
     referred_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     referral_expires_at = Column(DateTime, nullable=True)  # Когда заканчивается реферальная программа (1 год)
     full_name = Column(String(255), nullable=True)
+    avatar = Column(String(500), nullable=True)  # URL аватара пользователя
+    banner = Column(String(500), nullable=True)  # URL баннера профиля
     phone = Column(String(20), nullable=True, index=True)
     phone_verification_code = Column(String(10), nullable=True)
     phone_verification_expires_at = Column(DateTime, nullable=True)
