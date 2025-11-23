@@ -106,11 +106,17 @@ const PartnersPage: React.FC = () => {
 
       // Load referrals list
       const referralsResponse = await api.get('/partners/referrals');
-      setReferrals(referralsResponse.data);
+      const referralsData = Array.isArray(referralsResponse.data)
+        ? referralsResponse.data
+        : (referralsResponse.data.items || []);
+      setReferrals(referralsData);
 
       // Load earnings history
       const earningsResponse = await api.get('/partners/earnings');
-      setEarnings(earningsResponse.data);
+      const earningsData = Array.isArray(earningsResponse.data)
+        ? earningsResponse.data
+        : (earningsResponse.data.items || []);
+      setEarnings(earningsData);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка загрузки данных');
     } finally {
