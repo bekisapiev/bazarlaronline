@@ -225,7 +225,7 @@ const TariffsPage: React.FC = () => {
             variant="outlined"
             size="small"
             sx={{ mt: 1 }}
-            onClick={() => navigate('/profile?tab=3')}
+            onClick={() => navigate('/my-profile?tab=3')}
           >
             Пополнить баланс
           </Button>

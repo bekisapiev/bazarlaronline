@@ -37,7 +37,7 @@ const BottomNav: React.FC = () => {
     if (path === '/') return 0;
     if (path.startsWith('/sellers') || path.startsWith('/users')) return 1;
     if (path.startsWith('/favorites')) return 3;
-    if (path.startsWith('/profile') || path.startsWith('/my-')) return 4;
+    if (path.startsWith('/my-')) return 4;
     return 0;
   };
 
@@ -53,7 +53,7 @@ const BottomNav: React.FC = () => {
         navigate('/favorites');
         break;
       case 4:
-        navigate('/profile');
+        navigate('/my-profile');
         break;
     }
   };

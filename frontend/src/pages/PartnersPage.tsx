@@ -167,7 +167,7 @@ const PartnersPage: React.FC = () => {
         <MuiLink component={Link} to="/" underline="hover" color="inherit">
           Главная
         </MuiLink>
-        <MuiLink component={Link} to="/profile" underline="hover" color="inherit">
+        <MuiLink component={Link} to="/my-profile" underline="hover" color="inherit">
           Профиль
         </MuiLink>
         <Typography color="text.primary">Партнерская программа</Typography>
@@ -267,7 +267,7 @@ const PartnersPage: React.FC = () => {
                 variant="outlined"
                 sx={{ mt: 1 }}
                 component={Link}
-                to="/profile"
+                to="/my-profile"
                 disabled={(stats?.available_withdrawal || 0) < 100}
               >
                 Вывести

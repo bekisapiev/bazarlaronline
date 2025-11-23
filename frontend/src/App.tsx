@@ -11,7 +11,6 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import ProductFormPage from './pages/ProductFormPage';
 import SellersPage from './pages/SellersPage';
 import SellerDetailPage from './pages/SellerDetailPage';
-import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import NotificationsPage from './pages/NotificationsPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -116,14 +115,6 @@ function App() {
           <Route path="/terms" element={<TermsOfServicePage />} />
 
           {/* Защищенные роуты - требуют авторизации */}
-          <Route
-            path="/profile/*"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="/products/new"
             element={

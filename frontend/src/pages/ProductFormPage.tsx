@@ -469,7 +469,7 @@ const ProductFormPage: React.FC = () => {
         <MuiLink component={Link} to="/" underline="hover" color="inherit">
           Главная
         </MuiLink>
-        <MuiLink component={Link} to="/profile" underline="hover" color="inherit">
+        <MuiLink component={Link} to="/my-profile" underline="hover" color="inherit">
           Профиль
         </MuiLink>
         <Typography color="text.primary">
@@ -942,7 +942,7 @@ const ProductFormPage: React.FC = () => {
                   fullWidth
                   variant="outlined"
                   component={Link}
-                  to="/profile"
+                  to="/my-profile"
                 >
                   Отмена
                 </Button>

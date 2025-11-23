@@ -100,10 +100,10 @@ const ViewHistoryPage: React.FC = () => {
         <Link
           underline="hover"
           color="inherit"
-          href="/profile"
+          href="/my-profile"
           onClick={(e) => {
             e.preventDefault();
-            navigate('/profile');
+            navigate('/my-profile');
           }}
         >
           Профиль
