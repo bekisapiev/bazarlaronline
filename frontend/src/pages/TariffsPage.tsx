@@ -129,7 +129,7 @@ const TariffsPage: React.FC = () => {
 
       setCurrentTariff(userResponse.data.tariff || 'free');
       setTariffExpiresAt(userResponse.data.tariff_expires_at || null);
-      setBalance(balanceResponse.data.main_balance || 0);
+      setBalance(Number(balanceResponse.data.main_balance) || 0);
     } catch (err: any) {
       console.error('Error loading user data:', err);
       setError('Не удалось загрузить данные пользователя');
@@ -144,8 +144,8 @@ const TariffsPage: React.FC = () => {
       return;
     }
 
-    if (balance < tariff.price) {
-      setError(`Недостаточно средств. Необходимо: ${tariff.price} сом, доступно: ${balance.toFixed(2)} сом`);
+    if (Number(balance) < tariff.price) {
+      setError(`Недостаточно средств. Необходимо: ${tariff.price} сом, доступно: ${Number(balance).toFixed(2)} сом`);
       return;
     }
 
@@ -219,7 +219,7 @@ const TariffsPage: React.FC = () => {
             Баланс основного счета:
           </Typography>
           <Typography variant="h4" fontWeight={600} color="primary">
-            {balance.toFixed(2)} сом
+            {Number(balance).toFixed(2)} сом
           </Typography>
           <Button
             variant="outlined"
@@ -434,7 +434,7 @@ const TariffsPage: React.FC = () => {
                   Тариф будет активен в течение <strong>{selectedTariff.duration} дней</strong>
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  Остаток после активации: <strong>{(balance - selectedTariff.price).toFixed(2)} сом</strong>
+                  Остаток после активации: <strong>{(Number(balance) - selectedTariff.price).toFixed(2)} сом</strong>
                 </Typography>
               </Alert>
             </Box>

@@ -278,8 +278,8 @@ const ProfilePage: React.FC = () => {
       ]);
       // Set dual balances: main and referral
       const balanceData = balanceRes.data;
-      setMainBalance(balanceData.main_balance ?? balanceData.balance ?? 0);
-      setReferralBalance(balanceData.referral_balance ?? 0);
+      setMainBalance(Number(balanceData.main_balance ?? balanceData.balance ?? 0));
+      setReferralBalance(Number(balanceData.referral_balance ?? 0));
 
       // Handle both array and object with items
       const transactionsData = Array.isArray(transactionsRes.data)
