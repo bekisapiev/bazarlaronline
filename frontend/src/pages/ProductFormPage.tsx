@@ -97,6 +97,7 @@ const ProductFormPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
+  const [selectedThirdLevel, setSelectedThirdLevel] = useState<number | null>(null);
 
   // Image upload
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -150,14 +151,11 @@ const ProductFormPage: React.FC = () => {
       });
 
       // Set category hierarchy
-      if (product.category_id) {
-        const category = findCategoryById(categories, product.category_id);
-        if (category?.parent_id) {
-          setSelectedParentCategory(category.parent_id);
-          setSelectedSubcategory(category.id);
-        } else {
-          setSelectedParentCategory(category?.id || null);
-        }
+      if (product.category_id && categories.length > 0) {
+        const path = getCategoryPath(product.category_id);
+        setSelectedParentCategory(path.level1);
+        setSelectedSubcategory(path.level2);
+        setSelectedThirdLevel(path.level3);
       }
     } catch (err: any) {
       setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
@@ -169,11 +167,11 @@ const ProductFormPage: React.FC = () => {
 
   // Load product if edit mode
   useEffect(() => {
-    if (isEditMode && id) {
+    if (isEditMode && id && categories.length > 0) {
       loadProduct(id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, id]);
+  }, [isEditMode, id, categories.length]);
 
   const loadCategories = async () => {
     try {
@@ -213,6 +211,34 @@ const ProductFormPage: React.FC = () => {
       }
     }
     return null;
+  };
+
+  // Get full category path (parent -> child -> grandchild)
+  const getCategoryPath = (categoryId: number): { level1: number | null; level2: number | null; level3: number | null } => {
+    const result = { level1: null, level2: null, level3: null };
+
+    // Find the category
+    const findWithParents = (cats: Category[], id: number, parents: number[] = []): number[] | null => {
+      for (const cat of cats) {
+        if (cat.id === id) {
+          return [...parents, cat.id];
+        }
+        if (cat.children) {
+          const found = findWithParents(cat.children, id, [...parents, cat.id]);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const path = findWithParents(categories, categoryId);
+    if (path) {
+      result.level1 = path[0] || null;
+      result.level2 = path[1] || null;
+      result.level3 = path[2] || null;
+    }
+
+    return result;
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
@@ -284,11 +310,18 @@ const ProductFormPage: React.FC = () => {
   const handleParentCategoryChange = (categoryId: number) => {
     setSelectedParentCategory(categoryId);
     setSelectedSubcategory(null);
+    setSelectedThirdLevel(null);
     setFormData((prev) => ({ ...prev, category_id: categoryId }));
   };
 
   const handleSubcategoryChange = (categoryId: number) => {
     setSelectedSubcategory(categoryId);
+    setSelectedThirdLevel(null);
+    setFormData((prev) => ({ ...prev, category_id: categoryId }));
+  };
+
+  const handleThirdLevelChange = (categoryId: number) => {
+    setSelectedThirdLevel(categoryId);
     setFormData((prev) => ({ ...prev, category_id: categoryId }));
   };
 
@@ -407,6 +440,9 @@ const ProductFormPage: React.FC = () => {
   const parentCategories = categories.filter((c) => !c.parent_id);
   const subcategories = selectedParentCategory
     ? categories.find((c) => c.id === selectedParentCategory)?.children || []
+    : [];
+  const thirdLevelCategories = selectedSubcategory
+    ? subcategories.find((c) => c.id === selectedSubcategory)?.children || []
     : [];
 
   return (
@@ -792,11 +828,11 @@ const ProductFormPage: React.FC = () => {
                   </FormControl>
 
                   {subcategories.length > 0 && (
-                    <FormControl fullWidth>
-                      <InputLabel>Подкатегория (уточнить)</InputLabel>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Подкатегория</InputLabel>
                       <Select
                         value={selectedSubcategory || ''}
-                        label="Подкатегория (уточнить)"
+                        label="Подкатегория"
                         onChange={(e) => handleSubcategoryChange(Number(e.target.value))}
                       >
                         <MenuItem value="">
@@ -808,11 +844,35 @@ const ProductFormPage: React.FC = () => {
                           </MenuItem>
                         ))}
                       </Select>
-                      <FormHelperText>
-                        Выбрано: {parentCategories.find(c => c.id === selectedParentCategory)?.name}
-                        {selectedSubcategory && ` → ${subcategories.find(c => c.id === selectedSubcategory)?.name}`}
-                      </FormHelperText>
                     </FormControl>
+                  )}
+
+                  {thirdLevelCategories.length > 0 && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Под-подкатегория (уточнить)</InputLabel>
+                      <Select
+                        value={selectedThirdLevel || ''}
+                        label="Под-подкатегория (уточнить)"
+                        onChange={(e) => handleThirdLevelChange(Number(e.target.value))}
+                      >
+                        <MenuItem value="">
+                          <em>Не выбрано</em>
+                        </MenuItem>
+                        {thirdLevelCategories.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {selectedParentCategory && (
+                    <FormHelperText>
+                      Выбрано: {parentCategories.find(c => c.id === selectedParentCategory)?.name}
+                      {selectedSubcategory && ` → ${subcategories.find(c => c.id === selectedSubcategory)?.name}`}
+                      {selectedThirdLevel && ` → ${thirdLevelCategories.find(c => c.id === selectedThirdLevel)?.name}`}
+                    </FormHelperText>
                   )}
                 </>
               )}
