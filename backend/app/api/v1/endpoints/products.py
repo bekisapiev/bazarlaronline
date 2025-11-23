@@ -458,7 +458,8 @@ async def update_product(
             detail="Product not found"
         )
 
-    if product.seller_id != current_user.id:
+    # Check ownership - convert to string for safe comparison
+    if str(product.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own products"
@@ -548,7 +549,8 @@ async def delete_product(
             detail="Product not found"
         )
 
-    if product.seller_id != current_user.id:
+    # Check ownership - convert to string for safe comparison
+    if str(product.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own products"
@@ -585,7 +587,8 @@ async def promote_product(
             detail="Product not found"
         )
 
-    if product.seller_id != current_user.id:
+    # Check ownership - convert to string for safe comparison
+    if str(product.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only promote your own products"

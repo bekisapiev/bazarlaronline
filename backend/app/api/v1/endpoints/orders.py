@@ -377,8 +377,8 @@ async def get_order_by_id(
             detail="Order not found"
         )
 
-    # Check permission - only buyer or seller can view
-    if order.buyer_id != current_user.id and order.seller_id != current_user.id:
+    # Check permission - only buyer or seller can view - convert to string for safe comparison
+    if str(order.buyer_id) != str(current_user.id) and str(order.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to view this order"
@@ -434,8 +434,8 @@ async def update_order_status(
             detail="Order not found"
         )
 
-    # Only seller can update status
-    if order.seller_id != current_user.id:
+    # Only seller can update status - convert to string for safe comparison
+    if str(order.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only seller can update order status"
