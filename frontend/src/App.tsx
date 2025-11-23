@@ -17,7 +17,6 @@ import FavoritesPage from './pages/FavoritesPage';
 import SettingsPage from './pages/SettingsPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
 import AdminPanelPage from './pages/AdminPanelPage';
-import CartPage from './pages/CartPage';
 import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
@@ -115,14 +114,6 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProductFormPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute>
-                <CartPage />
               </ProtectedRoute>
             }
           />
