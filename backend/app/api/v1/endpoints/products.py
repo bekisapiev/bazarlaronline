@@ -277,6 +277,67 @@ async def get_referral_products(
     }
 
 
+@router.get("/my-products")
+async def get_my_products(
+    status_filter: Optional[str] = Query(None, description="active, inactive, moderation"),
+    limit: int = Query(30, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get current user's products
+    """
+    query = select(Product).where(Product.seller_id == current_user.id)
+
+    if status_filter:
+        query = query.where(Product.status == status_filter)
+
+    query = query.order_by(desc(Product.created_at)).limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    products = result.scalars().all()
+
+    # Count total
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(Product)
+        .where(Product.seller_id == current_user.id)
+    )
+    total = count_result.scalar()
+
+    return {
+        "items": [
+            ProductResponse(
+                id=str(p.id),
+                seller_id=str(p.seller_id),
+                title=p.title,
+                description=p.description,
+                category_id=p.category_id,
+                price=p.price,
+                discount_price=p.discount_price,
+                discount_percent=p.discount_percent,
+                partner_percent=p.partner_percent,
+                delivery_type=p.delivery_type,
+                delivery_methods=p.delivery_methods,
+                characteristics=p.characteristics,
+                images=p.images,
+                status=p.status,
+                is_promoted=p.is_promoted,
+                promoted_at=p.promoted_at,
+                views_count=p.views_count,
+                created_at=p.created_at,
+                updated_at=p.updated_at
+            )
+            for p in products
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "tariff_limit": TARIFF_LIMITS.get(current_user.tariff, 10)
+    }
+
+
 @router.get("/{product_id}")
 async def get_product_by_id(
     product_id: UUID,
@@ -635,67 +696,6 @@ async def promote_product(
         "product_id": str(product.id),
         "amount_paid": float(promotion_price),
         "promoted_at": product.promoted_at
-    }
-
-
-@router.get("/my-products")
-async def get_my_products(
-    status_filter: Optional[str] = Query(None, description="active, inactive, moderation"),
-    limit: int = Query(30, le=100),
-    offset: int = Query(0, ge=0),
-    current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get current user's products
-    """
-    query = select(Product).where(Product.seller_id == current_user.id)
-
-    if status_filter:
-        query = query.where(Product.status == status_filter)
-
-    query = query.order_by(desc(Product.created_at)).limit(limit).offset(offset)
-
-    result = await db.execute(query)
-    products = result.scalars().all()
-
-    # Count total
-    count_result = await db.execute(
-        select(func.count())
-        .select_from(Product)
-        .where(Product.seller_id == current_user.id)
-    )
-    total = count_result.scalar()
-
-    return {
-        "items": [
-            ProductResponse(
-                id=str(p.id),
-                seller_id=str(p.seller_id),
-                title=p.title,
-                description=p.description,
-                category_id=p.category_id,
-                price=p.price,
-                discount_price=p.discount_price,
-                discount_percent=p.discount_percent,
-                partner_percent=p.partner_percent,
-                delivery_type=p.delivery_type,
-                delivery_methods=p.delivery_methods,
-                characteristics=p.characteristics,
-                images=p.images,
-                status=p.status,
-                is_promoted=p.is_promoted,
-                promoted_at=p.promoted_at,
-                views_count=p.views_count,
-                created_at=p.created_at,
-                updated_at=p.updated_at
-            )
-            for p in products
-        ],
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "tariff_limit": TARIFF_LIMITS.get(current_user.tariff, 10)
     }
 
 
