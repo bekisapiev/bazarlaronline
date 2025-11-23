@@ -158,15 +158,33 @@ async def get_admin_stats(
     """
     Get platform statistics (admin only)
 
-    Returns counts of users, products, orders, etc.
+    Returns counts of users, products, orders, withdrawals, and partner program stats
     """
     from app.models.order import Order
+    from app.models.wallet import WithdrawalRequest, Transaction
+    from decimal import Decimal
 
-    # Count users
+    # Count total users
     users_result = await db.execute(
         select(func.count()).select_from(User)
     )
     total_users = users_result.scalar()
+
+    # Count active users (non-banned)
+    active_users_result = await db.execute(
+        select(func.count()).select_from(User).where(User.is_banned == False)
+    )
+    active_users = active_users_result.scalar()
+
+    # Count new users this month
+    from datetime import datetime
+    first_day_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    new_users_result = await db.execute(
+        select(func.count())
+        .select_from(User)
+        .where(User.created_at >= first_day_of_month)
+    )
+    new_users_this_month = new_users_result.scalar()
 
     # Count products by status
     products_moderation_result = await db.execute(
@@ -190,42 +208,91 @@ async def get_admin_stats(
     )
     products_rejected = products_rejected_result.scalar()
 
+    total_products = (products_moderation or 0) + (products_active or 0) + (products_rejected or 0)
+
     # Count orders
     orders_result = await db.execute(
         select(func.count()).select_from(Order)
     )
     total_orders = orders_result.scalar()
 
-    # Count orders by status
-    orders_pending_result = await db.execute(
-        select(func.count())
-        .select_from(Order)
-        .where(Order.status == "pending")
-    )
-    orders_pending = orders_pending_result.scalar()
-
-    orders_completed_result = await db.execute(
-        select(func.count())
+    # Calculate total revenue (sum of all completed orders)
+    revenue_result = await db.execute(
+        select(func.coalesce(func.sum(Order.total_amount), 0))
         .select_from(Order)
         .where(Order.status == "completed")
     )
-    orders_completed = orders_completed_result.scalar()
+    total_revenue = revenue_result.scalar() or Decimal(0)
+
+    # Withdrawal statistics
+    pending_withdrawals_result = await db.execute(
+        select(func.count())
+        .select_from(WithdrawalRequest)
+        .where(WithdrawalRequest.status == "pending")
+    )
+    pending_withdrawals = pending_withdrawals_result.scalar()
+
+    total_withdrawals_result = await db.execute(
+        select(func.coalesce(func.sum(WithdrawalRequest.amount), 0))
+        .select_from(WithdrawalRequest)
+        .where(WithdrawalRequest.status.in_(["completed", "pending"]))
+    )
+    total_withdrawals_amount = total_withdrawals_result.scalar() or Decimal(0)
+
+    # Partner program statistics
+    partner_products_result = await db.execute(
+        select(func.count())
+        .select_from(Product)
+        .where(Product.partner_percent > 0, Product.status == "active")
+    )
+    partner_active_products = partner_products_result.scalar()
+
+    # Sum of all partner commission transactions
+    partner_commission_result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0))
+        .select_from(Transaction)
+        .where(Transaction.type == "referral_commission", Transaction.status == "completed")
+    )
+    partner_total_commission = partner_commission_result.scalar() or Decimal(0)
+
+    # Sum of all orders with referral commission
+    partner_sales_result = await db.execute(
+        select(func.coalesce(func.sum(Order.total_amount), 0))
+        .select_from(Order)
+        .where(Order.referral_commission != None, Order.status == "completed")
+    )
+    partner_total_sales = partner_sales_result.scalar() or Decimal(0)
+
+    # Calculate distribution (40% partner, 60% platform)
+    partner_referrer_share = partner_total_commission * Decimal('0.40')
+    partner_platform_share = partner_total_commission * Decimal('0.60')
 
     return {
-        "users": {
-            "total": total_users or 0
-        },
-        "products": {
-            "moderation": products_moderation or 0,
-            "active": products_active or 0,
-            "rejected": products_rejected or 0,
-            "total": (products_moderation or 0) + (products_active or 0) + (products_rejected or 0)
-        },
-        "orders": {
-            "total": total_orders or 0,
-            "pending": orders_pending or 0,
-            "completed": orders_completed or 0
-        }
+        # User stats
+        "total_users": total_users or 0,
+        "active_users": active_users or 0,
+        "new_users_this_month": new_users_this_month or 0,
+
+        # Product stats
+        "total_products": total_products,
+        "pending_products": products_moderation or 0,
+        "active_products": products_active or 0,
+        "rejected_products": products_rejected or 0,
+
+        # Order stats
+        "total_orders": total_orders or 0,
+        "total_revenue": float(total_revenue),
+
+        # Withdrawal stats
+        "pending_withdrawals": pending_withdrawals or 0,
+        "total_withdrawals_amount": float(total_withdrawals_amount),
+
+        # Partner program stats
+        "partner_active_products": partner_active_products or 0,
+        "partner_total_sales": float(partner_total_sales),
+        "partner_total_commission": float(partner_total_commission),
+        "partner_referrer_share": float(partner_referrer_share),
+        "partner_platform_share": float(partner_platform_share)
     }
 
 
@@ -273,6 +340,7 @@ async def get_users_list(
                 "tariff": u.tariff,
                 "role": u.role,
                 "is_banned": u.is_banned,
+                "ban_reason": u.ban_reason,
                 "created_at": u.created_at
             }
             for u in users
@@ -312,6 +380,7 @@ async def ban_user(
         )
 
     user.is_banned = True
+    user.ban_reason = reason  # Сохраняем причину бана
     await db.commit()
 
     return {
@@ -342,9 +411,185 @@ async def unban_user(
         )
 
     user.is_banned = False
+    user.ban_reason = None  # Очищаем причину бана
     await db.commit()
 
     return {
         "message": "User unbanned successfully",
         "user_id": str(user.id)
+    }
+
+
+@router.get("/withdrawals")
+async def get_withdrawal_requests(
+    limit: int = Query(50, le=100),
+    offset: int = 0,
+    status_filter: Optional[str] = Query(None, description="Filter by status: pending, approved, rejected, completed"),
+    admin_user: User = Depends(check_admin_access),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get list of withdrawal requests (admin only)
+    """
+    from app.models.wallet import WithdrawalRequest
+
+    query = select(WithdrawalRequest)
+
+    if status_filter:
+        query = query.where(WithdrawalRequest.status == status_filter)
+
+    query = query.order_by(desc(WithdrawalRequest.created_at)).limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    withdrawals = result.scalars().all()
+
+    # Count total
+    count_query = select(func.count()).select_from(WithdrawalRequest)
+    if status_filter:
+        count_query = count_query.where(WithdrawalRequest.status == status_filter)
+
+    count_result = await db.execute(count_query)
+    total = count_result.scalar()
+
+    # Get user info for each withdrawal
+    items = []
+    for w in withdrawals:
+        user_result = await db.execute(
+            select(User).where(User.id == w.user_id)
+        )
+        user = user_result.scalar_one_or_none()
+
+        items.append({
+            "id": str(w.id),
+            "user_id": str(w.user_id),
+            "user_email": user.email if user else "Unknown",
+            "user_name": user.full_name if user else "Unknown",
+            "amount": float(w.amount),
+            "method": w.method,
+            "mbank_phone": w.mbank_phone,
+            "account_number": w.account_number,
+            "account_name": w.account_name,
+            "balance_type": w.balance_type,
+            "status": w.status,
+            "admin_note": w.admin_note,
+            "created_at": w.created_at,
+            "updated_at": w.updated_at
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": (offset + limit) < total
+    }
+
+
+@router.put("/withdrawals/{withdrawal_id}/approve")
+async def approve_withdrawal(
+    withdrawal_id: UUID,
+    admin_note: Optional[str] = Query(None, description="Admin note"),
+    admin_user: User = Depends(check_admin_access),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Approve a withdrawal request (admin only)
+    """
+    from app.models.wallet import WithdrawalRequest
+
+    result = await db.execute(
+        select(WithdrawalRequest).where(WithdrawalRequest.id == withdrawal_id)
+    )
+    withdrawal = result.scalar_one_or_none()
+
+    if not withdrawal:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Withdrawal request not found"
+        )
+
+    if withdrawal.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot approve withdrawal with status: {withdrawal.status}"
+        )
+
+    withdrawal.status = "completed"
+    withdrawal.admin_note = admin_note
+    withdrawal.updated_at = datetime.utcnow()
+
+    await db.commit()
+
+    return {
+        "message": "Withdrawal approved successfully",
+        "withdrawal_id": str(withdrawal.id),
+        "amount": float(withdrawal.amount)
+    }
+
+
+@router.put("/withdrawals/{withdrawal_id}/reject")
+async def reject_withdrawal(
+    withdrawal_id: UUID,
+    reason: str = Query(..., description="Rejection reason"),
+    admin_user: User = Depends(check_admin_access),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Reject a withdrawal request and return funds (admin only)
+    """
+    from app.models.wallet import WithdrawalRequest, Wallet, Transaction
+
+    result = await db.execute(
+        select(WithdrawalRequest).where(WithdrawalRequest.id == withdrawal_id)
+    )
+    withdrawal = result.scalar_one_or_none()
+
+    if not withdrawal:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Withdrawal request not found"
+        )
+
+    if withdrawal.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot reject withdrawal with status: {withdrawal.status}"
+        )
+
+    # Return funds to user's balance
+    wallet_result = await db.execute(
+        select(Wallet).where(Wallet.user_id == withdrawal.user_id)
+    )
+    wallet = wallet_result.scalar_one_or_none()
+
+    if wallet:
+        # Return to appropriate balance
+        if withdrawal.balance_type == "referral":
+            wallet.referral_balance += withdrawal.amount
+        else:
+            wallet.main_balance += withdrawal.amount
+
+        # Create refund transaction
+        transaction = Transaction(
+            user_id=withdrawal.user_id,
+            type="withdrawal_refund",
+            amount=withdrawal.amount,
+            balance_type=withdrawal.balance_type,
+            description=f"Возврат средств - отклоненный запрос на вывод. Причина: {reason}",
+            reference_id=withdrawal.id,
+            status="completed"
+        )
+        db.add(transaction)
+
+    withdrawal.status = "rejected"
+    withdrawal.admin_note = reason
+    withdrawal.updated_at = datetime.utcnow()
+
+    await db.commit()
+
+    return {
+        "message": "Withdrawal rejected and funds returned",
+        "withdrawal_id": str(withdrawal.id),
+        "amount": float(withdrawal.amount),
+        "reason": reason
     }
