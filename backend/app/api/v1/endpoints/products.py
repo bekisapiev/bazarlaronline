@@ -329,7 +329,10 @@ async def get_my_products(
                 promoted_at=p.promoted_at,
                 views_count=p.views_count,
                 created_at=p.created_at,
-                updated_at=p.updated_at
+                updated_at=p.updated_at,
+                is_referral_enabled=p.is_referral_enabled,
+                referral_commission_percent=p.referral_commission_percent,
+                referral_commission_amount=p.referral_commission_amount
             )
             for p in products
         ],
