@@ -74,7 +74,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = ", ".join(permissions)
 
         # Remove server header для скрытия информации о сервере
-        response.headers.pop("Server", None)
+        if "Server" in response.headers:
+            del response.headers["Server"]
 
         # X-Permitted-Cross-Domain-Policies - защита для Adobe продуктов
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
