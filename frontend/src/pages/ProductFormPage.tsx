@@ -19,8 +19,10 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  Switch,
+  ToggleButtonGroup,
+  ToggleButton,
   FormControlLabel,
+  Switch,
   InputAdornment,
   Stack,
   ImageList,
@@ -32,11 +34,14 @@ import {
   Delete as DeleteIcon,
   CloudUpload as UploadIcon,
   Save as SaveIcon,
+  ShoppingBag as ProductIcon,
+  MiscellaneousServices as ServiceIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { productsAPI, categoriesAPI, uploadAPI } from '../services/api';
+import { formatErrorMessage } from '../utils/errorHandler';
 
 interface Category {
   id: number;
@@ -59,6 +64,8 @@ interface ProductFormData {
   delivery_available: boolean;
   characteristics: Record<string, string>;
   partner_percentage?: number;
+  is_referral_enabled?: boolean;
+  referral_commission_percent?: number;
 }
 
 const ProductFormPage: React.FC = () => {
@@ -109,6 +116,22 @@ const ProductFormPage: React.FC = () => {
       const response = await productsAPI.getProductById(productId);
       const product = response.data;
 
+      // Convert characteristics array to object format for form
+      const characteristicsObject: Record<string, string> = {};
+      if (Array.isArray(product.characteristics)) {
+        product.characteristics.forEach((char: any) => {
+          // Backend uses 'name' field, not 'key'
+          const key = char.name || char.key;
+          const value = char.value;
+          if (key && value) {
+            characteristicsObject[key] = value;
+          }
+        });
+      } else if (typeof product.characteristics === 'object' && product.characteristics !== null) {
+        // Handle if backend returns object format
+        Object.assign(characteristicsObject, product.characteristics);
+      }
+
       setFormData({
         title: product.title,
         description: product.description,
@@ -119,9 +142,11 @@ const ProductFormPage: React.FC = () => {
         discount_price: product.discount_price,
         discount_percent: product.discount_percent,
         stock_quantity: product.stock_quantity,
-        delivery_available: product.delivery_available || false,
-        characteristics: product.characteristics || {},
-        partner_percentage: product.partner_percentage,
+        delivery_available: product.delivery_type === 'paid',
+        characteristics: characteristicsObject,
+        partner_percentage: product.partner_percent,
+        is_referral_enabled: product.is_referral_enabled || false,
+        referral_commission_percent: product.referral_commission_percent,
       });
 
       // Set category hierarchy
@@ -135,7 +160,7 @@ const ProductFormPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки товара');
+      setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
       setLoading(false);
     }
@@ -153,18 +178,29 @@ const ProductFormPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategoryTree();
-      // Ensure response.data is an array
-      if (Array.isArray(response.data)) {
-        setCategories(response.data);
+      console.log('Categories response:', response.data);
+
+      // Handle different response formats
+      let categoriesData: Category[] = [];
+
+      if (response.data && Array.isArray(response.data.tree)) {
+        // Backend returns {tree: [...]} for hierarchical category tree
+        categoriesData = response.data.tree;
+      } else if (Array.isArray(response.data)) {
+        categoriesData = response.data;
+      } else if (response.data && Array.isArray(response.data.items)) {
+        categoriesData = response.data.items;
       } else if (response.data && Array.isArray(response.data.categories)) {
-        setCategories(response.data.categories);
+        categoriesData = response.data.categories;
       } else {
         console.warn('Unexpected categories data format:', response.data);
-        setCategories([]);
       }
+
+      console.log('Loaded categories:', categoriesData);
+      setCategories(categoriesData);
     } catch (err) {
       console.error('Failed to load categories:', err);
-      setCategories([]); // Set to empty array on error
+      setCategories([]);
     }
   };
 
@@ -209,7 +245,7 @@ const ProductFormPage: React.FC = () => {
         images: [...prev.images, ...uploadedUrls],
       }));
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка загрузки изображений');
+      setError(formatErrorMessage(err, 'Ошибка загрузки изображений'));
     } finally {
       setUploadingImages(false);
     }
@@ -287,6 +323,14 @@ const ProductFormPage: React.FC = () => {
       errors.discount_price = 'Цена со скидкой должна быть меньше обычной цены';
     }
 
+    if (formData.is_referral_enabled) {
+      if (!formData.referral_commission_percent) {
+        errors.referral_commission_percent = 'Укажите процент комиссии';
+      } else if (formData.referral_commission_percent < 1 || formData.referral_commission_percent > 50) {
+        errors.referral_commission_percent = 'Процент комиссии должен быть от 1% до 50%';
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -304,17 +348,37 @@ const ProductFormPage: React.FC = () => {
     setSuccess('');
 
     try {
-      const productData = {
-        ...formData,
+      // Convert characteristics object to array format expected by backend
+      const characteristicsArray = Object.entries(formData.characteristics).map(([name, value]) => ({
+        name,
+        value,
+      }));
+
+      // Map frontend data to backend schema
+      const productData: any = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
         category_id: formData.category_id!,
+        images: formData.images,
+        characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
+        discount_price: formData.discount_price || undefined,
+        partner_percent: formData.partner_percentage || undefined,
+        delivery_type: formData.delivery_available ? 'paid' : 'pickup',
+        is_referral_enabled: formData.is_referral_enabled || false,
+        referral_commission_percent: formData.is_referral_enabled ? formData.referral_commission_percent : undefined,
       };
 
       if (isEditMode && id) {
         await productsAPI.updateProduct(id, productData);
-        setSuccess('Товар успешно обновлен');
+        setSuccess(
+          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'обновлена' : 'обновлен'}`
+        );
       } else {
         const response = await productsAPI.createProduct(productData);
-        setSuccess('Товар успешно добавлен');
+        setSuccess(
+          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'добавлена' : 'добавлен'}`
+        );
 
         // Redirect to product page after 1.5 seconds
         setTimeout(() => {
@@ -322,7 +386,9 @@ const ProductFormPage: React.FC = () => {
         }, 1500);
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка при сохранении товара');
+      setError(
+        formatErrorMessage(err, `Ошибка при сохранении ${formData.is_service ? 'услуги' : 'товара'}`)
+      );
     } finally {
       setSaving(false);
     }
@@ -360,7 +426,15 @@ const ProductFormPage: React.FC = () => {
 
       {/* Page Header */}
       <Typography variant="h4" gutterBottom fontWeight={600}>
-        {isEditMode ? 'Редактировать товар' : 'Добавить товар'}
+        {isEditMode
+          ? `Редактировать ${formData.is_service ? 'услугу' : 'товар'}`
+          : `Добавить ${formData.is_service ? 'услугу' : 'товар'}`}
+      </Typography>
+
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+        {isEditMode
+          ? 'Обновите информацию о вашем объявлении'
+          : 'Заполните форму для размещения объявления на площадке'}
       </Typography>
 
       {/* Alerts */}
@@ -387,16 +461,29 @@ const ProductFormPage: React.FC = () => {
               </Typography>
               <Divider sx={{ mb: 3 }} />
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.is_service}
-                    onChange={(e) => handleInputChange('is_service', e.target.checked)}
-                  />
-                }
-                label="Это услуга"
-                sx={{ mb: 2 }}
-              />
+              {/* Product/Service Toggle */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <ToggleButtonGroup
+                  value={formData.is_service ? 'service' : 'product'}
+                  exclusive
+                  onChange={(e, newValue) => {
+                    if (newValue !== null) {
+                      handleInputChange('is_service', newValue === 'service');
+                    }
+                  }}
+                  aria-label="product type"
+                  size="large"
+                >
+                  <ToggleButton value="product" aria-label="product">
+                    <ProductIcon sx={{ mr: 1 }} />
+                    Товар
+                  </ToggleButton>
+                  <ToggleButton value="service" aria-label="service">
+                    <ServiceIcon sx={{ mr: 1 }} />
+                    Услуга
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
 
               <TextField
                 fullWidth
@@ -482,6 +569,70 @@ const ProductFormPage: React.FC = () => {
                 sx={{ mt: 2 }}
               />
             </Paper>
+
+            {/* Referral Program (Business tariff only) */}
+            {user?.tariff === 'business' && (
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'success.50' }}>
+                <Typography variant="h6" gutterBottom>
+                  Реферальная программа
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.is_referral_enabled || false}
+                      onChange={(e) => handleInputChange('is_referral_enabled', e.target.checked)}
+                    />
+                  }
+                  label="Включить реферальную программу для этого товара"
+                  sx={{ mb: 2 }}
+                />
+
+                {formData.is_referral_enabled && (
+                  <>
+                    <TextField
+                      fullWidth
+                      label="Процент комиссии"
+                      type="number"
+                      value={formData.referral_commission_percent || ''}
+                      onChange={(e) => {
+                        const value = e.target.value ? Number(e.target.value) : undefined;
+                        handleInputChange('referral_commission_percent', value);
+                      }}
+                      error={!!formErrors.referral_commission_percent}
+                      helperText={formErrors.referral_commission_percent || 'От 1% до 50%'}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                      }}
+                      inputProps={{
+                        min: 1,
+                        max: 50,
+                        step: 1,
+                      }}
+                      sx={{ mb: 2 }}
+                    />
+
+                    {formData.referral_commission_percent && formData.price && (
+                      <Alert severity="info">
+                        <Typography variant="body2">
+                          <strong>Комиссия для рефералов:</strong>
+                          {' '}
+                          {((formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
+                          {' '}
+                          ({formData.referral_commission_percent}% от{' '}
+                          {formData.discount_price ? 'цены со скидкой' : 'обычной цены'})
+                        </Typography>
+                      </Alert>
+                    )}
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                      Любой пользователь сможет делиться ссылкой на этот товар и получать комиссию с каждой покупки.
+                    </Typography>
+                  </>
+                )}
+              </Paper>
+            )}
 
             {/* Images */}
             <Paper sx={{ p: 3, mb: 3 }}>
@@ -609,39 +760,61 @@ const ProductFormPage: React.FC = () => {
               </Typography>
               <Divider sx={{ mb: 3 }} />
 
-              <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.category_id}>
-                <InputLabel>Основная категория</InputLabel>
-                <Select
-                  value={selectedParentCategory || ''}
-                  label="Основная категория"
-                  onChange={(e) => handleParentCategoryChange(Number(e.target.value))}
-                >
-                  {parentCategories.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formErrors.category_id && (
-                  <FormHelperText>{formErrors.category_id}</FormHelperText>
-                )}
-              </FormControl>
+              {categories.length === 0 ? (
+                <Alert severity="info">
+                  Загрузка категорий...
+                </Alert>
+              ) : (
+                <>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Выберите категорию для вашего {formData.is_service ? 'услуги' : 'товара'}
+                  </Typography>
 
-              {subcategories.length > 0 && (
-                <FormControl fullWidth>
-                  <InputLabel>Подкатегория</InputLabel>
-                  <Select
-                    value={selectedSubcategory || ''}
-                    label="Подкатегория"
-                    onChange={(e) => handleSubcategoryChange(Number(e.target.value))}
-                  >
-                    {subcategories.map((cat) => (
-                      <MenuItem key={cat.id} value={cat.id}>
-                        {cat.name}
+                  <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.category_id}>
+                    <InputLabel>Основная категория *</InputLabel>
+                    <Select
+                      value={selectedParentCategory || ''}
+                      label="Основная категория *"
+                      onChange={(e) => handleParentCategoryChange(Number(e.target.value))}
+                    >
+                      <MenuItem value="" disabled>
+                        <em>Выберите категорию</em>
                       </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                      {parentCategories.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {formErrors.category_id && (
+                      <FormHelperText>{formErrors.category_id}</FormHelperText>
+                    )}
+                  </FormControl>
+
+                  {subcategories.length > 0 && (
+                    <FormControl fullWidth>
+                      <InputLabel>Подкатегория (уточнить)</InputLabel>
+                      <Select
+                        value={selectedSubcategory || ''}
+                        label="Подкатегория (уточнить)"
+                        onChange={(e) => handleSubcategoryChange(Number(e.target.value))}
+                      >
+                        <MenuItem value="">
+                          <em>Не выбрано</em>
+                        </MenuItem>
+                        {subcategories.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      <FormHelperText>
+                        Выбрано: {parentCategories.find(c => c.id === selectedParentCategory)?.name}
+                        {selectedSubcategory && ` → ${subcategories.find(c => c.id === selectedSubcategory)?.name}`}
+                      </FormHelperText>
+                    </FormControl>
+                  )}
+                </>
               )}
             </Paper>
 
@@ -681,7 +854,11 @@ const ProductFormPage: React.FC = () => {
                   startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
                   disabled={saving}
                 >
-                  {saving ? 'Сохранение...' : isEditMode ? 'Сохранить изменения' : 'Добавить товар'}
+                  {saving
+                    ? 'Сохранение...'
+                    : isEditMode
+                    ? 'Сохранить изменения'
+                    : `Добавить ${formData.is_service ? 'услугу' : 'товар'}`}
                 </Button>
 
                 <Button

@@ -17,11 +17,19 @@ from app.schemas.auth import (
     TelegramAuthRequest,
     TelegramVerifyRequest,
     TelegramLoginWidgetRequest,
-    TelegramWebAppRequest
+    TelegramWebAppRequest,
+    EmailRegisterRequest,
+    EmailLoginRequest
 )
 from app.services.google_auth import google_auth_service
 from app.services.telegram_bot import telegram_bot_service
-from app.core.security import create_access_token, create_refresh_token, verify_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    verify_token,
+    hash_password,
+    verify_password
+)
 from app.core.dependencies import get_current_active_user
 from datetime import datetime, timedelta
 
@@ -480,4 +488,135 @@ async def get_me(
         tariff=current_user.tariff,
         role=current_user.role,
         created_at=current_user.created_at
+    )
+
+
+@router.post("/register", response_model=TokenResponse)
+async def register_with_email(
+    request: EmailRegisterRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Register new user with email and password
+
+    This endpoint:
+    1. Validates email format
+    2. Checks if user already exists
+    3. Hashes password
+    4. Creates new user with wallet
+    5. Returns JWT tokens valid for 1 year
+    """
+    # Check if user with this email already exists
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    existing_user = result.scalar_one_or_none()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists"
+        )
+
+    # Validate password length
+    if len(request.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long"
+        )
+
+    # Hash password
+    password_hash = hash_password(request.password)
+
+    # Check referral code if provided
+    referrer_id = None
+    if request.ref_code:
+        referrer_result = await db.execute(
+            select(User).where(User.referral_id == request.ref_code)
+        )
+        referrer = referrer_result.scalar_one_or_none()
+        if referrer:
+            referrer_id = referrer.id
+
+    # Create new user
+    user = User(
+        email=request.email,
+        password_hash=password_hash,
+        full_name=request.full_name,
+        referred_by=referrer_id,
+        referral_expires_at=datetime.utcnow() + timedelta(days=365) if referrer_id else None
+    )
+    db.add(user)
+    await db.flush()  # Flush to get user.id
+
+    # Create wallet for new user
+    wallet = Wallet(user_id=user.id)
+    db.add(wallet)
+
+    await db.commit()
+    await db.refresh(user)
+
+    # Create JWT tokens (valid for 1 year)
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login_with_email(
+    request: EmailLoginRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Login with email and password
+
+    This endpoint:
+    1. Finds user by email
+    2. Verifies password
+    3. Returns JWT tokens valid for 1 year
+    """
+    # Find user by email
+    result = await db.execute(
+        select(User).where(User.email == request.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    # Check if user has password (might be OAuth-only user)
+    if not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This email is registered with Google or Telegram. Please use that login method."
+        )
+
+    # Verify password
+    if not verify_password(request.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    # Check if user is banned
+    if user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Account is banned. Reason: {user.ban_reason}"
+        )
+
+    # Create JWT tokens (valid for 1 year)
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token
     )

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 525600  # 1 год (365 дней * 24 часа * 60 минут)
     REFRESH_TOKEN_EXPIRE_DAYS: int = 365
 
     # Google OAuth

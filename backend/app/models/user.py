@@ -23,12 +23,16 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=True)  # Nullable для поддержки OAuth
     google_id = Column(String(255), unique=True, nullable=True, index=True)
     telegram_id = Column(String(255), unique=True, nullable=True, index=True)
     telegram_username = Column(String(255), nullable=True)
     referral_id = Column(String(20), unique=True, nullable=False, default=generate_referral_id, index=True)
     referred_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    referral_expires_at = Column(DateTime, nullable=True)  # Когда заканчивается реферальная программа (1 год)
     full_name = Column(String(255), nullable=True)
+    avatar = Column(String(500), nullable=True)  # URL аватара пользователя
+    banner = Column(String(500), nullable=True)  # URL баннера профиля
     phone = Column(String(20), nullable=True, index=True)
     phone_verification_code = Column(String(10), nullable=True)
     phone_verification_expires_at = Column(DateTime, nullable=True)

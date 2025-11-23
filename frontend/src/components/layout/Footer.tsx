@@ -29,7 +29,7 @@ const Footer: React.FC = () => {
               Покупателям
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link href="/products" color="text.secondary" underline="hover">
+              <Link href="/" color="text.secondary" underline="hover">
                 Товары
               </Link>
               <Link href="/sellers" color="text.secondary" underline="hover">

@@ -11,6 +11,8 @@ class UserProfileUpdate(BaseModel):
     """User profile update request"""
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    avatar: Optional[str] = None
+    banner: Optional[str] = None
 
 
 class SellerProfileUpdate(BaseModel):
@@ -55,6 +57,8 @@ class UserWithProfileResponse(BaseModel):
     id: str
     email: EmailStr
     full_name: Optional[str]
+    avatar: Optional[str]
+    banner: Optional[str]
     referral_id: str
     tariff: str
     role: str

@@ -50,6 +50,7 @@ import {
   ShoppingCart,
   People,
   AttachMoney,
+  Handshake,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -118,6 +119,12 @@ interface PlatformStats {
   active_users: number;
   pending_reports: number;
   pending_products: number;
+  // Partner program statistics
+  partner_total_sales?: number;
+  partner_total_commission?: number;
+  partner_platform_share?: number;
+  partner_referrer_share?: number;
+  partner_active_products?: number;
 }
 
 const AdminPanelPage: React.FC = () => {
@@ -217,6 +224,12 @@ const AdminPanelPage: React.FC = () => {
         active_users: 890,
         pending_reports: 15,
         pending_products: 23,
+        // Partner program mock data
+        partner_total_sales: 450000,
+        partner_total_commission: 67500,
+        partner_referrer_share: 30375, // 45% of 67500
+        partner_platform_share: 37125, // 55% of 67500
+        partner_active_products: 45,
       });
     } finally {
       setStatsLoading(false);
@@ -851,6 +864,137 @@ const AdminPanelPage: React.FC = () => {
                       Управление пользователями
                     </Button>
                   </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Partner Program Statistics */}
+            <Grid item xs={12}>
+              <Card sx={{ bgcolor: 'success.50', border: 2, borderColor: 'success.main' }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <Handshake sx={{ color: 'success.main', fontSize: 40, mr: 2 }} />
+                    <Box>
+                      <Typography variant="h5" fontWeight={600} color="success.dark">
+                        Партнерская программа
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Статистика выплат и комиссий (тариф Business)
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'white' }}>
+                        <Typography variant="h4" fontWeight={600} color="success.main">
+                          {stats.partner_total_sales ? formatCurrency(stats.partner_total_sales) : '0 сом'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Общие продажи
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          По партнерским ссылкам
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'white' }}>
+                        <Typography variant="h4" fontWeight={600} color="info.main">
+                          {stats.partner_total_commission ? formatCurrency(stats.partner_total_commission) : '0 сом'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Общие комиссии
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Из основного счета продавцов
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'white' }}>
+                        <Typography variant="h4" fontWeight={600} color="warning.main">
+                          {stats.partner_referrer_share ? formatCurrency(stats.partner_referrer_share) : '0 сом'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Доля партнеров
+                        </Typography>
+                        <Typography variant="caption" color="success.main" sx={{ fontWeight: 600 }}>
+                          45% от комиссий
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={3}>
+                      <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'white' }}>
+                        <Typography variant="h4" fontWeight={600} color="primary.main">
+                          {stats.partner_platform_share ? formatCurrency(stats.partner_platform_share) : '0 сом'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          Доля платформы
+                        </Typography>
+                        <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
+                          55% от комиссий
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Paper sx={{ p: 3, bgcolor: 'white' }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          📊 Как работает распределение комиссий
+                        </Typography>
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                          <Grid item xs={12} md={4}>
+                            <Box sx={{ p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                1️⃣ Продажа по партнерской ссылке
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Пользователь покупает товар по реферальной ссылке партнера
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} md={4}>
+                            <Box sx={{ p: 2, bgcolor: 'warning.50', borderRadius: 1 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                2️⃣ Подтверждение заказа
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Продавец подтверждает заказ, после чего из основного счета продавца (Business тариф) списывается установленный процент комиссии
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} md={4}>
+                            <Box sx={{ p: 2, bgcolor: 'info.50', borderRadius: 1 }}>
+                              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                3️⃣ Распределение 45% / 55%
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                <strong>45%</strong> → на реферальный баланс партнера<br />
+                                <strong>55%</strong> → на счет платформы
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        </Grid>
+
+                        <Divider sx={{ my: 3 }} />
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Товаров с партнерской программой:
+                          </Typography>
+                          <Chip
+                            label={`${stats.partner_active_products || 0} активных`}
+                            color="success"
+                            size="small"
+                          />
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  </Grid>
                 </CardContent>
               </Card>
             </Grid>

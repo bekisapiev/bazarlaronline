@@ -13,7 +13,7 @@ from app.database.session import get_db
 from app.models.order import Order
 from app.models.product import Product
 from app.models.user import User
-from app.models.wallet import Wallet, Transaction
+from app.models.wallet import Wallet, Transaction, ProductReferralPurchase
 from app.core.dependencies import get_current_active_user
 from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse
 
@@ -218,6 +218,35 @@ async def create_order(
             )
             db.add(referral_transaction)
 
+    # Process product referral purchases
+    # Create ProductReferralPurchase records for products with referral program enabled
+    for item in order_data.items:
+        if item.product_referrer_id:
+            # Get product to check if referral program is enabled
+            product_result = await db.execute(
+                select(Product).where(Product.id == UUID(item.product_id))
+            )
+            product = product_result.scalar_one_or_none()
+
+            if product and product.is_referral_enabled and product.referral_commission_percent:
+                # Calculate commission amount
+                item_price = item.discount_price if item.discount_price else item.price
+                total_item_price = item_price * item.quantity
+                commission_amount = (total_item_price * product.referral_commission_percent) / Decimal('100')
+
+                # Create ProductReferralPurchase record
+                referral_purchase = ProductReferralPurchase(
+                    referrer_id=UUID(item.product_referrer_id),
+                    buyer_id=current_user.id,
+                    product_id=UUID(item.product_id),
+                    order_id=order.id,
+                    commission_percent=product.referral_commission_percent,
+                    commission_amount=commission_amount,
+                    product_price=total_item_price,
+                    status="pending"  # Will be completed when order is confirmed
+                )
+                db.add(referral_purchase)
+
     await db.commit()
     await db.refresh(order)
 
@@ -348,8 +377,8 @@ async def get_order_by_id(
             detail="Order not found"
         )
 
-    # Check permission - only buyer or seller can view
-    if order.buyer_id != current_user.id and order.seller_id != current_user.id:
+    # Check permission - only buyer or seller can view - convert to string for safe comparison
+    if str(order.buyer_id) != str(current_user.id) and str(order.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to view this order"
@@ -405,8 +434,8 @@ async def update_order_status(
             detail="Order not found"
         )
 
-    # Only seller can update status
-    if order.seller_id != current_user.id:
+    # Only seller can update status - convert to string for safe comparison
+    if str(order.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only seller can update order status"
@@ -415,6 +444,47 @@ async def update_order_status(
     # Update status
     order.status = status_data.status
     order.updated_at = datetime.utcnow()
+
+    # If order is completed, process product referral commissions
+    if status_data.status == "completed":
+        # Find all pending product referral purchases for this order
+        referral_purchases_result = await db.execute(
+            select(ProductReferralPurchase).where(
+                ProductReferralPurchase.order_id == order.id,
+                ProductReferralPurchase.status == "pending"
+            )
+        )
+        referral_purchases = referral_purchases_result.scalars().all()
+
+        for purchase in referral_purchases:
+            # Credit commission to referrer's referral balance
+            referrer_wallet_result = await db.execute(
+                select(Wallet).where(Wallet.user_id == purchase.referrer_id)
+            )
+            referrer_wallet = referrer_wallet_result.scalar_one_or_none()
+
+            if not referrer_wallet:
+                referrer_wallet = Wallet(user_id=purchase.referrer_id)
+                db.add(referrer_wallet)
+                await db.flush()
+
+            referrer_wallet.referral_balance += purchase.commission_amount
+
+            # Create transaction record
+            transaction = Transaction(
+                user_id=purchase.referrer_id,
+                type="product_referral_commission",
+                amount=purchase.commission_amount,
+                balance_type="referral",
+                description=f"Комиссия за реферальную покупку товара (заказ {order.order_number})",
+                reference_id=order.id,
+                status="completed"
+            )
+            db.add(transaction)
+
+            # Update purchase status
+            purchase.status = "completed"
+            purchase.completed_at = datetime.utcnow()
 
     await db.commit()
     await db.refresh(order)

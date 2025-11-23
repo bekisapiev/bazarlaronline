@@ -34,6 +34,7 @@ import {
   Share,
   NavigateNext,
   Star,
+  ContentCopy,
 } from '@mui/icons-material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -43,7 +44,9 @@ import {
   favoritesAPI,
   reviewsAPI,
   recommendationsAPI,
+  usersAPI,
 } from '../services/api';
+import { handleProductReferralCode } from '../utils/referral';
 
 interface Product {
   id: string;
@@ -67,6 +70,10 @@ interface Product {
   location?: string;
   is_promoted: boolean;
   created_at: string;
+  is_referral_enabled: boolean;
+  referral_commission_percent?: number;
+  referral_commission_amount?: number;
+  product_type?: 'product' | 'service';
 }
 
 interface Review {
@@ -100,6 +107,21 @@ const ProductDetailPage: React.FC = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [sellerTariff, setSellerTariff] = useState<string | null>(null);
+  const [partnerLink, setPartnerLink] = useState<string>('');
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [userReferralId, setUserReferralId] = useState<string | null>(null);
+  const [productReferralLink, setProductReferralLink] = useState<string>('');
+
+  // Order modal state
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [orderName, setOrderName] = useState('');
+  const [orderPhone, setOrderPhone] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const [orderQuantity, setOrderQuantity] = useState(1);
+  const [orderAddress, setOrderAddress] = useState('');
+  const [orderDateTime, setOrderDateTime] = useState('');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
 
   const loadProduct = useCallback(async () => {
     try {
@@ -162,6 +184,28 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [id]);
 
+  const loadSellerInfo = useCallback(async (sellerId: string) => {
+    try {
+      // Get seller profile to check tariff
+      const sellerResponse = await productsAPI.getSellerById(sellerId, false);
+      const sellerData = sellerResponse.data;
+
+      if (sellerData.user?.tariff) {
+        setSellerTariff(sellerData.user.tariff);
+
+        // If seller has Business tariff, generate partner link for this product
+        if (sellerData.user.tariff === 'business' && sellerData.user.referral_id) {
+          const baseUrl = window.location.origin;
+          // Create partner link pointing to this product with seller's ref code
+          const link = `${baseUrl}/products/${id}?ref=${sellerData.user.referral_id}`;
+          setPartnerLink(link);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading seller info:', error);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id) {
       loadProduct();
@@ -174,6 +218,46 @@ const ProductDetailPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isAuthenticated]);
+
+  // Load seller info when product is loaded
+  useEffect(() => {
+    if (product?.seller?.id) {
+      loadSellerInfo(product.seller.id);
+    }
+  }, [product, loadSellerInfo]);
+
+  // Handle product referral code from URL
+  useEffect(() => {
+    if (id) {
+      const referralData = handleProductReferralCode(id);
+      if (referralData) {
+        console.log('Product referral saved:', referralData);
+      }
+    }
+  }, [id]);
+
+  // Load user referral ID for sharing
+  useEffect(() => {
+    const loadUserReferralId = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await usersAPI.getReferralLink();
+          setUserReferralId(response.data.referral_code);
+
+          // Generate product referral link if product has referral program enabled
+          if (product?.is_referral_enabled && id) {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/products/${id}?ref=${response.data.referral_code}`;
+            setProductReferralLink(link);
+          }
+        } catch (err) {
+          console.error('Error loading user referral ID:', err);
+        }
+      }
+    };
+
+    loadUserReferralId();
+  }, [isAuthenticated, product, id]);
 
   const toggleFavorite = async () => {
     if (!isAuthenticated) {
@@ -194,9 +278,47 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    // TODO: Implement cart functionality
-    alert('Добавлено в корзину!');
+  const handleOpenOrderDialog = () => {
+    setOrderDialogOpen(true);
+  };
+
+  const handleSubmitOrder = async () => {
+    const isService = product?.product_type === 'service';
+
+    if (!orderPhone.trim()) {
+      alert('Пожалуйста, укажите номер телефона');
+      return;
+    }
+
+    if (!isService && !orderAddress.trim()) {
+      alert('Пожалуйста, укажите адрес доставки');
+      return;
+    }
+
+    if (isService && !orderDateTime.trim()) {
+      alert('Пожалуйста, укажите дату и время записи');
+      return;
+    }
+
+    setSubmittingOrder(true);
+    try {
+      // TODO: Implement actual order API call
+      // For now, just show success message
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      alert(`${isService ? 'Запись' : 'Заказ'} успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
+      setOrderDialogOpen(false);
+      setOrderName('');
+      setOrderPhone('');
+      setOrderNotes('');
+      setOrderQuantity(1);
+      setOrderAddress('');
+      setOrderDateTime('');
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('Ошибка при оформлении заказа');
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   const handleSubmitReview = async () => {
@@ -239,8 +361,8 @@ const ProductDetailPage: React.FC = () => {
       <Container maxWidth="xl">
         <Box sx={{ py: 4 }}>
           <Alert severity="error">{error || 'Товар не найден'}</Alert>
-          <Button sx={{ mt: 2 }} onClick={() => navigate('/products')}>
-            Вернуться к списку товаров
+          <Button sx={{ mt: 2 }} onClick={() => navigate('/')}>
+            Вернуться на главную
           </Button>
         </Box>
       </Container>
@@ -258,13 +380,10 @@ const ProductDetailPage: React.FC = () => {
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             Главная
           </Link>
-          <Link component={RouterLink} to="/products" underline="hover" color="inherit">
-            Товары
-          </Link>
           {product.category && (
             <Link
               component={RouterLink}
-              to={`/products?category=${product.category.slug}`}
+              to={`/?category=${product.category.slug}`}
               underline="hover"
               color="inherit"
             >
@@ -364,16 +483,70 @@ const ProductDetailPage: React.FC = () => {
                 )}
               </Box>
 
+              {/* Referral Commission Info */}
+              {product.is_referral_enabled && product.referral_commission_amount && (
+                <Paper sx={{ p: 2, mb: 3, bgcolor: 'success.50', border: 1, borderColor: 'success.main' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Chip
+                      label="Реферальная программа"
+                      color="success"
+                      size="small"
+                    />
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Поделитесь ссылкой и получите комиссию:
+                  </Typography>
+                  <Typography variant="h5" fontWeight={600} color="success.main">
+                    {product.referral_commission_amount} сом ({product.referral_commission_percent}%)
+                  </Typography>
+                  {productReferralLink && isAuthenticated && (
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={productReferralLink}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontSize: '0.875rem', bgcolor: 'white' }
+                        }}
+                      />
+                      <IconButton
+                        color="success"
+                        onClick={() => {
+                          navigator.clipboard.writeText(productReferralLink);
+                          setCopySuccess(true);
+                          setTimeout(() => setCopySuccess(false), 2000);
+                        }}
+                        sx={{ border: 1, borderColor: 'success.main' }}
+                      >
+                        <ContentCopy />
+                      </IconButton>
+                    </Box>
+                  )}
+                  {!isAuthenticated && (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      size="small"
+                      sx={{ mt: 2 }}
+                      onClick={() => navigate('/login')}
+                    >
+                      Войдите, чтобы делиться ссылкой
+                    </Button>
+                  )}
+                </Paper>
+              )}
+
               {/* Action Buttons */}
               <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                 <Button
                   variant="contained"
                   size="large"
                   startIcon={<ShoppingCart />}
-                  onClick={handleAddToCart}
+                  onClick={handleOpenOrderDialog}
                   sx={{ flexGrow: 1 }}
                 >
-                  Добавить в корзину
+                  {product.product_type === 'service' ? 'Записаться' : 'Заказать'}
                 </Button>
                 <IconButton
                   onClick={toggleFavorite}
@@ -403,31 +576,77 @@ const ProductDetailPage: React.FC = () => {
               <Divider sx={{ my: 3 }} />
 
               {/* Seller Info */}
-              <Typography variant="h6" gutterBottom fontWeight={600}>
-                Продавец
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
-                  <Store />
-                </Avatar>
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {product.seller.full_name}
+              {product.seller && (
+                <>
+                  <Typography variant="h6" gutterBottom fontWeight={600}>
+                    Продавец
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Rating value={product.seller.rating} size="small" readOnly />
-                    <Typography variant="body2" color="text.secondary">
-                      {product.seller.rating.toFixed(1)}
-                    </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
+                      <Store />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        {product.seller.full_name}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Rating value={product.seller.rating || 0} size="small" readOnly />
+                        <Typography variant="body2" color="text.secondary">
+                          {(product.seller.rating || 0).toFixed(1)}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Box>
-                </Box>
-              </Box>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(`/sellers/${product.seller.id}`)}
-              >
-                Посмотреть профиль продавца
-              </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate(`/sellers/${product.seller.id}`)}
+                  >
+                    Посмотреть профиль продавца
+                  </Button>
+                </>
+              )}
+
+              {/* Partner Link for Business Tariff */}
+              {sellerTariff === 'business' && partnerLink && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Paper sx={{ p: 2, bgcolor: 'primary.50' }}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Партнерская ссылка
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                      Поделитесь этой ссылкой и получайте бонусы с покупок по вашей реферальной программе
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={partnerLink}
+                        InputProps={{
+                          readOnly: true,
+                          sx: { fontSize: '0.875rem' }
+                        }}
+                      />
+                      <IconButton
+                        color="primary"
+                        onClick={() => {
+                          navigator.clipboard.writeText(partnerLink);
+                          setCopySuccess(true);
+                          setTimeout(() => setCopySuccess(false), 2000);
+                        }}
+                        sx={{ border: 1, borderColor: 'primary.main' }}
+                      >
+                        <ContentCopy />
+                      </IconButton>
+                    </Box>
+                    {copySuccess && (
+                      <Typography variant="caption" color="success.main" sx={{ display: 'block', mt: 1 }}>
+                        Ссылка скопирована в буфер обмена!
+                      </Typography>
+                    )}
+                  </Paper>
+                </>
+              )}
 
               {/* Location */}
               {product.location && (
@@ -490,11 +709,13 @@ const ProductDetailPage: React.FC = () => {
                 <Card key={review.id}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'start', gap: 2 }}>
-                      <Avatar src={review.user.avatar}>{review.user.full_name[0]}</Avatar>
+                      <Avatar src={review.user?.avatar}>
+                        {review.user?.full_name?.[0] || 'U'}
+                      </Avatar>
                       <Box sx={{ flexGrow: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                           <Typography variant="subtitle1" fontWeight={600}>
-                            {review.user.full_name}
+                            {review.user?.full_name || 'Аноним'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {new Date(review.created_at).toLocaleDateString('ru-RU')}
@@ -626,6 +847,143 @@ const ProductDetailPage: React.FC = () => {
             disabled={submittingReview || !reviewComment.trim()}
           >
             {submittingReview ? <CircularProgress size={24} /> : 'Отправить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Order Dialog */}
+      <Dialog
+        open={orderDialogOpen}
+        onClose={() => setOrderDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {product?.product_type === 'service' ? 'Запись на услугу' : 'Оформление заказа'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {product?.product_type === 'service'
+                ? 'Заполните данные для записи, и продавец свяжется с вами для подтверждения'
+                : 'Заполните контактные данные, и продавец свяжется с вами для уточнения деталей заказа'}
+            </Typography>
+
+            {product?.product_type === 'service' ? (
+              <>
+                {/* Service form fields */}
+                <TextField
+                  label="Дата и время записи"
+                  type="datetime-local"
+                  fullWidth
+                  required
+                  value={orderDateTime}
+                  onChange={(e) => setOrderDateTime(e.target.value)}
+                  sx={{ mb: 2 }}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+
+                <TextField
+                  label="Номер телефона"
+                  fullWidth
+                  required
+                  value={orderPhone}
+                  onChange={(e) => setOrderPhone(e.target.value)}
+                  sx={{ mb: 2 }}
+                  placeholder="+996 XXX XXX XXX"
+                />
+
+                <TextField
+                  label="Примечания или комментарий"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  placeholder="Укажите дополнительные пожелания (необязательно)"
+                />
+              </>
+            ) : (
+              <>
+                {/* Product form fields */}
+                <TextField
+                  label="Количество"
+                  type="number"
+                  fullWidth
+                  required
+                  value={orderQuantity}
+                  onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  sx={{ mb: 2 }}
+                  inputProps={{ min: 1 }}
+                />
+
+                <TextField
+                  label="Адрес доставки"
+                  fullWidth
+                  required
+                  multiline
+                  rows={2}
+                  value={orderAddress}
+                  onChange={(e) => setOrderAddress(e.target.value)}
+                  sx={{ mb: 2 }}
+                  placeholder="Введите адрес доставки"
+                />
+
+                <TextField
+                  label="Номер телефона"
+                  fullWidth
+                  required
+                  value={orderPhone}
+                  onChange={(e) => setOrderPhone(e.target.value)}
+                  sx={{ mb: 2 }}
+                  placeholder="+996 XXX XXX XXX"
+                />
+
+                <TextField
+                  label="Примечания или комментарий"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  value={orderNotes}
+                  onChange={(e) => setOrderNotes(e.target.value)}
+                  placeholder="Укажите дополнительные пожелания (необязательно)"
+                />
+              </>
+            )}
+
+            {product && (
+              <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  {product.product_type === 'service' ? 'Услуга:' : 'Товар:'}
+                </Typography>
+                <Typography variant="body1" fontWeight={600} gutterBottom>
+                  {product.title}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h6" color="primary">
+                    {product.discount_price || product.price} сом
+                    {product.product_type !== 'service' && orderQuantity > 1 && ` × ${orderQuantity}`}
+                  </Typography>
+                  {product.product_type !== 'service' && orderQuantity > 1 && (
+                    <Typography variant="h5" fontWeight={600} color="primary">
+                      = {(product.discount_price || product.price) * orderQuantity} сом
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOrderDialogOpen(false)}>Отмена</Button>
+          <Button
+            onClick={handleSubmitOrder}
+            variant="contained"
+            disabled={submittingOrder || !orderPhone.trim()}
+          >
+            {submittingOrder ? <CircularProgress size={24} /> : product?.product_type === 'service' ? 'Записаться' : 'Отправить заказ'}
           </Button>
         </DialogActions>
       </Dialog>

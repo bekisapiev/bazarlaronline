@@ -69,23 +69,37 @@ export const authAPI = {
 
   telegramWebApp: (init_data: string) =>
     api.post('/auth/telegram/webapp', { init_data }),
+
+  // Email auth methods
+  register: (email: string, password: string, full_name?: string, ref_code?: string) =>
+    api.post('/auth/register', { email, password, full_name, ref_code }),
+
+  login: (email: string, password: string) =>
+    api.post('/auth/login', { email, password }),
 };
 
 export const productsAPI = {
   getProducts: (params: any) => api.get('/products/', { params }),
+  getMyProducts: (params: any) => api.get('/products/my-products', { params }),
   getProductById: (id: string) => api.get(`/products/${id}`),
   createProduct: (data: any) => api.post('/products/', data),
   updateProduct: (id: string, data: any) => api.put(`/products/${id}`, data),
   deleteProduct: (id: string) => api.delete(`/products/${id}`),
   promoteProduct: (id: string) => api.post(`/products/${id}/promote`),
+  boostProduct: (id: string) => api.post(`/products/${id}/boost`),
+  enableAutoBoost: (id: string, interval: number) => api.post(`/products/${id}/auto-boost`, { interval }),
+  disableAutoBoost: (id: string) => api.delete(`/products/${id}/auto-boost`),
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
   getCities: () => api.get('/locations/cities'),
   getMarkets: (params: any) => api.get('/locations/markets', { params }),
-  getSellers: (params: any) => api.get('/sellers/', { params }),
+  getSellers: (params: any) => api.get('/seller-profile/catalog', { params }),
+  getSellerById: (id: string, includeProducts: boolean = true) =>
+    api.get(`/seller-profile/${id}`, { params: { include_products: includeProducts } }),
+  getReferralProducts: (params: any) => api.get('/products/referral/products', { params }),
 };
 
 export const ordersAPI = {
-  getOrders: () => api.get('/orders/'),
+  getOrders: (params?: any) => api.get('/orders/', { params }),
   getOrderById: (id: string) => api.get(`/orders/${id}`),
   createOrder: (data: any) => api.post('/orders/', data),
   updateOrderStatus: (id: string, status: string) => api.put(`/orders/${id}/status`, { status }),
@@ -95,6 +109,7 @@ export const walletAPI = {
   getBalance: () => api.get('/wallet/balance'),
   topup: (amount: number) => api.post('/wallet/topup', { amount }),
   withdraw: (data: any) => api.post('/wallet/withdraw', data),
+  transfer: (data: { amount: number; from: string; to: string }) => api.post('/wallet/transfer', data),
   getTransactions: (limit: number, offset: number) => api.get('/wallet/transactions', { params: { limit, offset } }),
 };
 
@@ -111,6 +126,9 @@ export const usersAPI = {
   updateCurrentUser: (data: any) => api.put('/users/me', data),
   getUserById: (id: string) => api.get(`/users/${id}`),
   getSellerProfile: (userId: string) => api.get(`/users/${userId}/seller-profile`),
+  getReferralLink: () => api.get('/users/me/referral-link'),
+  getReferralStats: () => api.get('/users/me/referral-stats'),
+  activateTariff: (tariffId: string) => api.post(`/users/me/activate-tariff`, { tariff: tariffId }),
 };
 
 export const sellerProfileAPI = {

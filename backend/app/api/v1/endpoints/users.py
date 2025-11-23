@@ -3,13 +3,15 @@ User Endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from app.database.session import get_db
 from app.models.user import User, SellerProfile
+from app.models.wallet import ReferralEarning
 from app.core.dependencies import get_current_active_user
 from app.schemas.user import UserProfileUpdate, SellerProfileUpdate, UserWithProfileResponse, SellerProfileResponse
 
@@ -36,6 +38,8 @@ async def get_current_user(
         id=str(user.id),
         email=user.email,
         full_name=user.full_name,
+        avatar=user.avatar,
+        banner=user.banner,
         referral_id=user.referral_id,
         tariff=user.tariff,
         role=user.role,
@@ -74,6 +78,10 @@ async def update_current_user(
         current_user.full_name = update_data.full_name
     if update_data.phone is not None:
         current_user.phone = update_data.phone
+    if update_data.avatar is not None:
+        current_user.avatar = update_data.avatar
+    if update_data.banner is not None:
+        current_user.banner = update_data.banner
 
     await db.commit()
     await db.refresh(current_user)
@@ -84,7 +92,9 @@ async def update_current_user(
             "id": str(current_user.id),
             "email": current_user.email,
             "full_name": current_user.full_name,
-            "phone": current_user.phone
+            "phone": current_user.phone,
+            "avatar": current_user.avatar,
+            "banner": current_user.banner
         }
     }
 
@@ -143,4 +153,104 @@ async def get_seller_profile(
         "rating": float(profile.rating),
         "reviews_count": profile.reviews_count,
         "is_verified": profile.is_verified
+    }
+
+
+@router.get("/me/referral-link")
+async def get_referral_link(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get user's referral link and code
+    """
+    # В продакшене замените на реальный домен
+    base_url = "http://localhost:3000"
+    referral_link = f"{base_url}?ref={current_user.referral_id}"
+
+    return {
+        "referral_code": current_user.referral_id,
+        "referral_link": referral_link
+    }
+
+
+@router.get("/me/referral-stats")
+async def get_referral_stats(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get referral statistics - how many refs, total earned, active refs
+    """
+    # Количество рефералов
+    referrals_result = await db.execute(
+        select(func.count(User.id))
+        .where(User.referred_by == current_user.id)
+    )
+    total_referrals = referrals_result.scalar()
+
+    # Активные рефералы (срок не истек)
+    active_referrals_result = await db.execute(
+        select(func.count(User.id))
+        .where(
+            User.referred_by == current_user.id,
+            User.referral_expires_at > datetime.utcnow()
+        )
+    )
+    active_referrals = active_referrals_result.scalar()
+
+    # Общая сумма заработка
+    earnings_result = await db.execute(
+        select(func.coalesce(func.sum(ReferralEarning.earning_amount), 0))
+        .where(ReferralEarning.referrer_id == current_user.id)
+    )
+    total_earned = float(earnings_result.scalar())
+
+    # Последние начисления
+    recent_earnings = await db.execute(
+        select(ReferralEarning)
+        .where(ReferralEarning.referrer_id == current_user.id)
+        .order_by(ReferralEarning.created_at.desc())
+        .limit(10)
+    )
+    earnings_list = recent_earnings.scalars().all()
+
+    return {
+        "total_referrals": total_referrals,
+        "active_referrals": active_referrals,
+        "total_earned": total_earned,
+        "recent_earnings": [
+            {
+                "id": str(e.id),
+                "amount": float(e.earning_amount),
+                "topup_amount": float(e.topup_amount),
+                "created_at": e.created_at
+            }
+            for e in earnings_list
+        ]
+    }
+
+
+@router.get("/by-referral/{referral_code}")
+async def get_user_by_referral_code(
+    referral_code: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get user info by referral code (public endpoint for validation)
+    """
+    result = await db.execute(
+        select(User).where(User.referral_id == referral_code)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Referral code not found"
+        )
+
+    return {
+        "id": str(user.id),
+        "full_name": user.full_name,
+        "referral_code": user.referral_id
     }

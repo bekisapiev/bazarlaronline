@@ -77,13 +77,18 @@ const NotificationsPage: React.FC = () => {
 
       const response = await notificationsAPI.getNotifications(params);
 
+      // Handle both array and object with items
+      const notificationsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data.items || []);
+
       if (reset) {
-        dispatch(setNotifications(response.data));
+        dispatch(setNotifications(notificationsData));
       } else {
-        dispatch(addNotifications(response.data));
+        dispatch(addNotifications(notificationsData));
       }
 
-      dispatch(setHasMore(response.data.length === 20));
+      dispatch(setHasMore(notificationsData.length === 20));
 
       if (!reset) {
         setPage(page + 1);
@@ -179,12 +184,15 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+  // Ensure notifications is always an array
+  const notificationsArray = Array.isArray(notifications) ? notifications : [];
+
   const filteredNotifications =
     currentFilter === 'all'
-      ? notifications
-      : notifications.filter((n) => n.type === currentFilter);
+      ? notificationsArray
+      : notificationsArray.filter((n) => n.type === currentFilter);
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const unreadCount = notificationsArray.filter((n) => !n.is_read).length;
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>

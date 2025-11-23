@@ -80,7 +80,7 @@ const SearchBar: React.FC = () => {
     if (value.type === 'product') {
       navigate(`/products/${value.id}`);
     } else if (value.type === 'category') {
-      navigate(`/products?category=${value.id}`);
+      navigate(`/?category=${value.id}`);
     } else if (value.type === 'seller') {
       navigate(`/sellers/${value.id}`);
     }
@@ -89,7 +89,7 @@ const SearchBar: React.FC = () => {
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && inputValue.trim() && !loading) {
-      navigate(`/products?search=${encodeURIComponent(inputValue)}`);
+      navigate(`/?search=${encodeURIComponent(inputValue)}`);
       setInputValue('');
     }
   };

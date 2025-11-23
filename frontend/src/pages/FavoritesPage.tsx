@@ -167,7 +167,7 @@ const FavoritesPage: React.FC = () => {
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/')}
           >
             Смотреть товары
           </Button>

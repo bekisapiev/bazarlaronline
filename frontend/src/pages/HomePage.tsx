@@ -169,6 +169,9 @@ const HomePage: React.FC = () => {
       // Ensure response.data is an array
       if (Array.isArray(response.data)) {
         setCities(response.data);
+      } else if (response.data && Array.isArray(response.data.items)) {
+        // Backend returns {items: [...], total: ...}
+        setCities(response.data.items);
       } else if (response.data && Array.isArray(response.data.cities)) {
         // If data is wrapped in an object with 'cities' property
         setCities(response.data.cities);
@@ -176,6 +179,7 @@ const HomePage: React.FC = () => {
         setCities([]);
       }
     } catch (error) {
+      console.error('Error loading cities:', error);
       setCities([]); // Set to empty array on error
     }
   };
@@ -186,12 +190,16 @@ const HomePage: React.FC = () => {
       // Ensure response.data is an array
       if (Array.isArray(response.data)) {
         setMarkets(response.data);
+      } else if (response.data && Array.isArray(response.data.items)) {
+        // Backend returns {items: [...], total: ...}
+        setMarkets(response.data.items);
       } else if (response.data && Array.isArray(response.data.markets)) {
         setMarkets(response.data.markets);
       } else {
         setMarkets([]);
       }
     } catch (error) {
+      console.error('Error loading markets:', error);
       setMarkets([]); // Set to empty array on error
     }
   };
@@ -351,13 +359,161 @@ const HomePage: React.FC = () => {
     </Card>
   );
 
-  const renderFilters = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Фильтры
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+  const renderFiltersHorizontal = () => (
+    <Grid container spacing={2} sx={{ mb: 3 }}>
+      {/* City Filter */}
+      <Grid item xs={12} sm={6} md={2.4}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Город</InputLabel>
+          <Select
+            value={selectedCity || ''}
+            label="Город"
+            onChange={(e) => setSelectedCity(e.target.value ? Number(e.target.value) : null)}
+          >
+            <MenuItem value="">Все города</MenuItem>
+            {cities.map((city) => (
+              <MenuItem key={city.id} value={city.id}>
+                {city.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
 
+      {/* Market Filter (shown when city is selected and seller type is market) */}
+      {selectedCity && (sellerType === 'market' || !sellerType) && markets.length > 0 && (
+        <Grid item xs={12} sm={6} md={2.4}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Рынок</InputLabel>
+            <Select
+              value={selectedMarket || ''}
+              label="Рынок"
+              onChange={(e) => setSelectedMarket(e.target.value ? Number(e.target.value) : null)}
+            >
+              <MenuItem value="">Все рынки</MenuItem>
+              {markets.map((market) => (
+                <MenuItem key={market.id} value={market.id}>
+                  {market.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      )}
+
+      {/* Seller Type */}
+      <Grid item xs={12} sm={6} md={2.4}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Тип продавца</InputLabel>
+          <Select
+            value={sellerType || ''}
+            label="Тип продавца"
+            onChange={(e) => setSellerType(e.target.value || null)}
+          >
+            <MenuItem value="">Все типы</MenuItem>
+            {SELLER_TYPES.map((type) => (
+              <MenuItem key={type.value} value={type.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {type.icon}
+                  {type.label}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Category Level 1 */}
+      <Grid item xs={12} sm={6} md={2.4}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Категория</InputLabel>
+          <Select
+            value={selectedCategory1 || ''}
+            label="Категория"
+            onChange={(e) => {
+              setSelectedCategory1(e.target.value ? Number(e.target.value) : null);
+              setSelectedCategory2(null);
+              setSelectedCategory3(null);
+            }}
+          >
+            <MenuItem value="">Все категории</MenuItem>
+            {category1Options.map((cat) => (
+              <MenuItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Category Level 2 */}
+      {selectedCategory1 && category2Options.length > 0 && (
+        <Grid item xs={12} sm={6} md={2.4}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Подкатегория</InputLabel>
+            <Select
+              value={selectedCategory2 || ''}
+              label="Подкатегория"
+              onChange={(e) => {
+                setSelectedCategory2(e.target.value ? Number(e.target.value) : null);
+                setSelectedCategory3(null);
+              }}
+            >
+              <MenuItem value="">Все подкатегории</MenuItem>
+              {category2Options.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      )}
+
+      {/* Category Level 3 */}
+      {selectedCategory2 && category3Options.length > 0 && (
+        <Grid item xs={12} sm={6} md={2.4}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Раздел</InputLabel>
+            <Select
+              value={selectedCategory3 || ''}
+              label="Раздел"
+              onChange={(e) => setSelectedCategory3(e.target.value ? Number(e.target.value) : null)}
+            >
+              <MenuItem value="">Все разделы</MenuItem>
+              {category3Options.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+      )}
+
+      {/* Reset Filters Button */}
+      <Grid item xs={12} sm={6} md={2.4} sx={{ display: 'flex', alignItems: 'center' }}>
+        <Button
+          variant="outlined"
+          fullWidth
+          size="small"
+          onClick={() => {
+            setSelectedCity(null);
+            setSelectedMarket(null);
+            setSelectedCategory1(null);
+            setSelectedCategory2(null);
+            setSelectedCategory3(null);
+            setSellerType(null);
+          }}
+        >
+          Сбросить фильтры
+        </Button>
+      </Grid>
+    </Grid>
+  );
+
+  const renderFiltersMobile = () => (
+    <Box>
       <Stack spacing={2}>
         {/* City Filter */}
         <FormControl fullWidth size="small">
@@ -376,7 +532,7 @@ const HomePage: React.FC = () => {
           </Select>
         </FormControl>
 
-        {/* Market Filter (shown when city is selected and seller type is market) */}
+        {/* Market Filter */}
         {selectedCity && (sellerType === 'market' || !sellerType) && markets.length > 0 && (
           <FormControl fullWidth size="small">
             <InputLabel>Рынок</InputLabel>
@@ -479,6 +635,7 @@ const HomePage: React.FC = () => {
 
         <Button
           variant="outlined"
+          fullWidth
           onClick={() => {
             setSelectedCity(null);
             setSelectedMarket(null);
@@ -538,27 +695,25 @@ const HomePage: React.FC = () => {
         </ToggleButtonGroup>
       </Box>
 
-      {/* Filters and Products */}
-      <Grid container spacing={3}>
-        {/* Desktop Filters */}
-        <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' } }}>
-          <Paper sx={{ p: 2, position: 'sticky', top: 80 }}>{renderFilters()}</Paper>
-        </Grid>
+      {/* Desktop Horizontal Filters */}
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        {renderFiltersHorizontal()}
+      </Box>
 
-        {/* Mobile Filter Button */}
-        <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
-          <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
-            fullWidth
-            onClick={() => setDrawerOpen(true)}
-          >
-            Фильтры
-          </Button>
-        </Grid>
+      {/* Mobile Filter Button */}
+      <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 3 }}>
+        <Button
+          variant="outlined"
+          startIcon={<FilterIcon />}
+          fullWidth
+          onClick={() => setDrawerOpen(true)}
+        >
+          Фильтры
+        </Button>
+      </Box>
 
-        {/* Products Grid */}
-        <Grid item xs={12} md={9}>
+      {/* Products Grid */}
+      <Box>
           {error && (
             <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
               {error}
@@ -582,7 +737,7 @@ const HomePage: React.FC = () => {
             <>
               <Grid container spacing={3}>
                 {products.map((product) => (
-                  <Grid item xs={12} sm={6} md={4} key={product.id}>
+                  <Grid item xs={12} sm={6} md={3} key={product.id}>
                     {renderProductCard(product)}
                   </Grid>
                 ))}
@@ -607,8 +762,7 @@ const HomePage: React.FC = () => {
               )}
             </>
           )}
-        </Grid>
-      </Grid>
+      </Box>
 
       {/* Mobile Filter Drawer */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
@@ -619,7 +773,7 @@ const HomePage: React.FC = () => {
               <CloseIcon />
             </IconButton>
           </Box>
-          {renderFilters()}
+          {renderFiltersMobile()}
         </Box>
       </Drawer>
     </Container>

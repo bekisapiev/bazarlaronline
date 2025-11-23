@@ -14,6 +14,7 @@ class OrderItem(BaseModel):
     quantity: int
     price: Decimal
     discount_price: Optional[Decimal] = None
+    product_referrer_id: Optional[str] = None  # User ID who shared the product referral link
 
     class Config:
         json_schema_extra = {
@@ -21,7 +22,8 @@ class OrderItem(BaseModel):
                 "product_id": "123e4567-e89b-12d3-a456-426614174000",
                 "quantity": 2,
                 "price": 1500.00,
-                "discount_price": 1200.00
+                "discount_price": 1200.00,
+                "product_referrer_id": "123e4567-e89b-12d3-a456-426614174002"
             }
         }
 
