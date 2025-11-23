@@ -83,17 +83,25 @@ async def get_products(
     - seller_type: Filter by seller type (market, boutique, shop, office, home, mobile, warehouse)
     - search: Search in product titles
     - min_price/max_price: Filter by price range
+
+    IMPORTANT: Only shows products from sellers with Pro or Business tariff.
+    Free tariff products are NOT displayed in catalog (as per TARIFFS_AND_PARTNER_PROGRAM.md).
     """
     from app.models.user import SellerProfile
 
-    # Base query with join to seller profile for city and seller_type filters
-    if city_id or seller_type:
-        query = select(Product).join(
-            SellerProfile,
-            Product.seller_id == SellerProfile.user_id
-        ).where(Product.status == "active")
-    else:
-        query = select(Product).where(Product.status == "active")
+    # ALWAYS join with User and SellerProfile to:
+    # 1. Filter by tariff (Free products should NOT show in catalog)
+    # 2. Get seller information for response
+    query = select(Product, User, SellerProfile).join(
+        User,
+        Product.seller_id == User.id
+    ).outerjoin(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id
+    ).where(
+        Product.status == "active",
+        User.tariff.in_(["pro", "business"])  # FREE TARIFF EXCLUDED FROM CATALOG
+    )
 
     # Apply filters
     if category_id:
@@ -125,13 +133,16 @@ async def get_products(
     )
 
     # Count total before pagination
-    count_query = select(func.count()).select_from(Product)
-    if city_id or seller_type:
-        count_query = count_query.join(
-            SellerProfile,
-            Product.seller_id == SellerProfile.user_id
-        )
-    count_query = count_query.where(Product.status == "active")
+    count_query = select(func.count()).select_from(Product).join(
+        User,
+        Product.seller_id == User.id
+    ).outerjoin(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id
+    ).where(
+        Product.status == "active",
+        User.tariff.in_(["pro", "business"])  # FREE TARIFF EXCLUDED FROM CATALOG
+    )
 
     if category_id:
         # Use same category_ids list for count query
@@ -154,7 +165,7 @@ async def get_products(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products = result.scalars().all()
+    rows = result.all()
 
     return {
         "items": [
@@ -170,9 +181,23 @@ async def get_products(
                 "views_count": p.views_count,
                 "is_referral_enabled": p.is_referral_enabled,
                 "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
-                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
+                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None,
+                # Seller information
+                "seller": {
+                    "id": str(u.id),
+                    "email": u.email,
+                    "full_name": u.full_name,
+                    "tariff": u.tariff,
+                    "shop_name": sp.shop_name if sp else None,
+                    "logo_url": sp.logo_url if sp else None,
+                    "rating": float(sp.rating) if sp else 0.0,
+                    "reviews_count": sp.reviews_count if sp else 0,
+                    "is_verified": sp.is_verified if sp else False,
+                    "seller_type": sp.seller_type if sp else None,
+                    "city_id": sp.city_id if sp else None
+                }
             }
-            for p in products
+            for p, u, sp in rows
         ],
         "total": total,
         "limit": limit,
@@ -197,12 +222,25 @@ async def get_referral_products(
 
     Products are returned sorted by commission amount by default.
     All users can view and share referral links for these products.
+
+    IMPORTANT: Only shows products from sellers with Business tariff.
+    Referral program is only available for Business tariff.
     """
+    from app.models.user import SellerProfile
+
     # Base query - only products with referral enabled and commission > 1%
-    query = select(Product).where(
+    # Join with User and SellerProfile to filter by tariff and get seller info
+    query = select(Product, User, SellerProfile).join(
+        User,
+        Product.seller_id == User.id
+    ).outerjoin(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id
+    ).where(
         Product.status == "active",
         Product.is_referral_enabled == True,
-        Product.referral_commission_percent > 1
+        Product.referral_commission_percent > 1,
+        User.tariff == "business"  # ONLY BUSINESS TARIFF HAS REFERRAL PROGRAM
     )
 
     # Apply filters
@@ -230,10 +268,14 @@ async def get_referral_products(
         query = query.order_by(desc(Product.created_at))
 
     # Count total before pagination
-    count_query = select(func.count()).select_from(Product).where(
+    count_query = select(func.count()).select_from(Product).join(
+        User,
+        Product.seller_id == User.id
+    ).where(
         Product.status == "active",
         Product.is_referral_enabled == True,
-        Product.referral_commission_percent > 1
+        Product.referral_commission_percent > 1,
+        User.tariff == "business"  # ONLY BUSINESS TARIFF HAS REFERRAL PROGRAM
     )
 
     if category_id:
@@ -253,7 +295,7 @@ async def get_referral_products(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products = result.scalars().all()
+    rows = result.all()
 
     return {
         "items": [
@@ -268,9 +310,21 @@ async def get_referral_products(
                 "is_promoted": p.is_promoted,
                 "is_referral_enabled": p.is_referral_enabled,
                 "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
-                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
+                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None,
+                # Seller information
+                "seller": {
+                    "id": str(u.id),
+                    "email": u.email,
+                    "full_name": u.full_name,
+                    "tariff": u.tariff,
+                    "shop_name": sp.shop_name if sp else None,
+                    "logo_url": sp.logo_url if sp else None,
+                    "rating": float(sp.rating) if sp else 0.0,
+                    "reviews_count": sp.reviews_count if sp else 0,
+                    "is_verified": sp.is_verified if sp else False
+                }
             }
-            for p in products
+            for p, u, sp in rows
         ],
         "total": total,
         "limit": limit,
@@ -349,18 +403,29 @@ async def get_product_by_id(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get product details by ID
+    Get product details by ID with seller information
     """
-    result = await db.execute(
-        select(Product).where(Product.id == product_id)
-    )
-    product = result.scalar_one_or_none()
+    from app.models.user import SellerProfile
 
-    if not product:
+    # Join with User and SellerProfile to get seller information
+    result = await db.execute(
+        select(Product, User, SellerProfile).join(
+            User,
+            Product.seller_id == User.id
+        ).outerjoin(
+            SellerProfile,
+            Product.seller_id == SellerProfile.user_id
+        ).where(Product.id == product_id)
+    )
+    row = result.one_or_none()
+
+    if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
+
+    product, user, seller_profile = row
 
     # Increment views
     product.views_count += 1
@@ -368,6 +433,7 @@ async def get_product_by_id(
 
     return {
         "id": str(product.id),
+        "seller_id": str(product.seller_id),
         "title": product.title,
         "description": product.description,
         "price": float(product.price),
@@ -381,7 +447,24 @@ async def get_product_by_id(
         "created_at": product.created_at,
         "is_referral_enabled": product.is_referral_enabled,
         "referral_commission_percent": float(product.referral_commission_percent) if product.referral_commission_percent else None,
-        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None
+        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None,
+        # Seller information
+        "seller": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "tariff": user.tariff,
+            "shop_name": seller_profile.shop_name if seller_profile else None,
+            "logo_url": seller_profile.logo_url if seller_profile else None,
+            "banner_url": seller_profile.banner_url if seller_profile else None,
+            "description": seller_profile.description if seller_profile else None,
+            "rating": float(seller_profile.rating) if seller_profile else 0.0,
+            "reviews_count": seller_profile.reviews_count if seller_profile else 0,
+            "is_verified": seller_profile.is_verified if seller_profile else False,
+            "seller_type": seller_profile.seller_type if seller_profile else None,
+            "city_id": seller_profile.city_id if seller_profile else None,
+            "address": seller_profile.address if seller_profile else None
+        }
     }
 
 
