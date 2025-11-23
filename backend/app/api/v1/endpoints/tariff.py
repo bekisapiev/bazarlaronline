@@ -134,10 +134,13 @@ async def upgrade_tariff(
         )
 
     # Calculate required balance (минимальный порог для активации)
-    # Требуем баланс хотя бы на 1 продвижение
-    monthly_price = TARIFF_PRICES[request.tariff]
+    # Pro: >= 2990 сом, Business: >= 29990 сом
+    min_balance_thresholds = {
+        "pro": Decimal("2990.00"),
+        "business": Decimal("29990.00")
+    }
+    min_required_balance = min_balance_thresholds[request.tariff]
     promotion_price = TARIFF_FEATURES[request.tariff]["promotion_price"]
-    min_required_balance = Decimal(promotion_price)
 
     # Get wallet
     result = await db.execute(
@@ -148,7 +151,7 @@ async def upgrade_tariff(
     if not wallet or wallet.main_balance < min_required_balance:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Insufficient balance. Minimum required for activation: {min_required_balance} KGS (price for 1 promotion)"
+            detail=f"Insufficient balance. Minimum required: {min_required_balance} KGS for {request.tariff.capitalize()} tariff"
         )
 
     # Update user tariff (БЕЗ списания средств)
@@ -179,6 +182,7 @@ async def upgrade_tariff(
         "tariff": current_user.tariff,
         "expires_at": current_user.tariff_expires_at,
         "amount_paid": 0.0,
+        "min_balance_required": float(min_required_balance),
         "promotion_price": float(promotion_price),
         "info": "Средства списываются только при продвижении товаров/услуг и оплате партнерских комиссий"
     }

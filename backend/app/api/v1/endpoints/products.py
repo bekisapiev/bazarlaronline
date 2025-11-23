@@ -84,14 +84,11 @@ async def get_products(
     - search: Search in product titles
     - min_price/max_price: Filter by price range
 
-    IMPORTANT: Only shows products from sellers with Pro or Business tariff.
-    Free tariff products are NOT displayed in catalog (as per TARIFFS_AND_PARTNER_PROGRAM.md).
+    Shows ALL products (including Free tariff) with seller information.
     """
     from app.models.user import SellerProfile
 
-    # ALWAYS join with User and SellerProfile to:
-    # 1. Filter by tariff (Free products should NOT show in catalog)
-    # 2. Get seller information for response
+    # Join with User and SellerProfile to get seller information for response
     query = select(Product, User, SellerProfile).join(
         User,
         Product.seller_id == User.id
@@ -99,8 +96,7 @@ async def get_products(
         SellerProfile,
         Product.seller_id == SellerProfile.user_id
     ).where(
-        Product.status == "active",
-        User.tariff.in_(["pro", "business"])  # FREE TARIFF EXCLUDED FROM CATALOG
+        Product.status == "active"
     )
 
     # Apply filters
@@ -140,8 +136,7 @@ async def get_products(
         SellerProfile,
         Product.seller_id == SellerProfile.user_id
     ).where(
-        Product.status == "active",
-        User.tariff.in_(["pro", "business"])  # FREE TARIFF EXCLUDED FROM CATALOG
+        Product.status == "active"
     )
 
     if category_id:

@@ -101,8 +101,17 @@ async def get_sellers_catalog(
     Get catalog of all sellers
 
     Returns list of seller profiles with filters
+
+    IMPORTANT: Only shows sellers with Pro or Business tariff.
+    Free tariff sellers are NOT displayed in sellers catalog.
     """
-    query = select(SellerProfile)
+    # Join with User to filter by tariff - Free sellers should NOT show
+    query = select(SellerProfile).join(
+        User,
+        SellerProfile.user_id == User.id
+    ).where(
+        User.tariff.in_(["pro", "business"])  # FREE SELLERS EXCLUDED FROM CATALOG
+    )
 
     # Apply filters
     if city_id:
@@ -128,7 +137,13 @@ async def get_sellers_catalog(
     )
 
     # Count total before pagination
-    count_query = select(func.count()).select_from(SellerProfile)
+    count_query = select(func.count()).select_from(SellerProfile).join(
+        User,
+        SellerProfile.user_id == User.id
+    ).where(
+        User.tariff.in_(["pro", "business"])  # FREE SELLERS EXCLUDED FROM CATALOG
+    )
+
     if city_id:
         count_query = count_query.where(SellerProfile.city_id == city_id)
     if seller_type:
