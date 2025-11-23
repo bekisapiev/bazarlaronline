@@ -11,6 +11,7 @@ from app.database.session import get_db
 from app.models.product import Product, Category
 from app.models.user import User, SellerProfile
 from app.core.config import settings
+from app.api.v1.endpoints.products import get_category_ids_with_children
 
 router = APIRouter()
 
@@ -127,7 +128,9 @@ async def search_all(
 
         # Apply filters
         if category_id:
-            query = query.where(Product.category_id == category_id)
+            # Get all child categories to include products from subcategories
+            category_ids = await get_category_ids_with_children(category_id, db)
+            query = query.where(Product.category_id.in_(category_ids))
 
         if min_price is not None:
             query = query.where(Product.price >= min_price)
@@ -173,7 +176,8 @@ async def search_all(
         )
 
         if category_id:
-            count_query = count_query.where(Product.category_id == category_id)
+            # Use same category_ids list for count query
+            count_query = count_query.where(Product.category_id.in_(category_ids))
         if min_price is not None:
             count_query = count_query.where(Product.price >= min_price)
         if max_price is not None:

@@ -35,6 +35,33 @@ PROMOTION_PRICES = {
 }
 
 
+async def get_category_ids_with_children(category_id: int, db: AsyncSession) -> list[int]:
+    """
+    Get category ID and all its children IDs recursively
+
+    Args:
+        category_id: Parent category ID
+        db: Database session
+
+    Returns:
+        List of category IDs including parent and all descendants
+    """
+    category_ids = [category_id]
+
+    # Get direct children
+    result = await db.execute(
+        select(Category).where(Category.parent_id == category_id)
+    )
+    children = result.scalars().all()
+
+    # Recursively get children of children
+    for child in children:
+        child_ids = await get_category_ids_with_children(child.id, db)
+        category_ids.extend(child_ids)
+
+    return category_ids
+
+
 @router.get("/")
 async def get_products(
     category_id: Optional[int] = Query(None, description="Filter by category"),
@@ -70,7 +97,9 @@ async def get_products(
 
     # Apply filters
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        # Get all child categories to include products from subcategories
+        category_ids = await get_category_ids_with_children(category_id, db)
+        query = query.where(Product.category_id.in_(category_ids))
 
     if search:
         query = query.where(Product.title.ilike(f"%{search}%"))
@@ -105,7 +134,8 @@ async def get_products(
     count_query = count_query.where(Product.status == "active")
 
     if category_id:
-        count_query = count_query.where(Product.category_id == category_id)
+        # Use same category_ids list for count query
+        count_query = count_query.where(Product.category_id.in_(category_ids))
     if search:
         count_query = count_query.where(Product.title.ilike(f"%{search}%"))
     if min_price is not None:
@@ -176,7 +206,9 @@ async def get_referral_products(
 
     # Apply filters
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        # Get all child categories to include products from subcategories
+        category_ids = await get_category_ids_with_children(category_id, db)
+        query = query.where(Product.category_id.in_(category_ids))
 
     if search:
         query = query.where(Product.title.ilike(f"%{search}%"))
@@ -203,7 +235,8 @@ async def get_referral_products(
     )
 
     if category_id:
-        count_query = count_query.where(Product.category_id == category_id)
+        # Use same category_ids list for count query
+        count_query = count_query.where(Product.category_id.in_(category_ids))
     if search:
         count_query = count_query.where(Product.title.ilike(f"%{search}%"))
     if min_price is not None:

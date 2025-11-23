@@ -12,6 +12,7 @@ from app.models.product import Product
 from app.models.favorite import ViewHistory
 from app.models.user import User
 from app.core.dependencies import get_current_active_user
+from app.api.v1.endpoints.products import get_category_ids_with_children
 
 router = APIRouter()
 
@@ -221,7 +222,9 @@ async def get_trending_products(
 
     # Apply filters
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        # Get all child categories to include products from subcategories
+        category_ids = await get_category_ids_with_children(category_id, db)
+        query = query.where(Product.category_id.in_(category_ids))
 
     if city_id:
         query = query.where(SellerProfile.city_id == city_id)
@@ -276,7 +279,9 @@ async def get_new_arrivals(
     query = select(Product).where(Product.status == "active")
 
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        # Get all child categories to include products from subcategories
+        category_ids = await get_category_ids_with_children(category_id, db)
+        query = query.where(Product.category_id.in_(category_ids))
 
     query = query.order_by(desc(Product.created_at)).limit(limit)
 
@@ -325,7 +330,9 @@ async def get_deals(
     )
 
     if category_id:
-        query = query.where(Product.category_id == category_id)
+        # Get all child categories to include products from subcategories
+        category_ids = await get_category_ids_with_children(category_id, db)
+        query = query.where(Product.category_id.in_(category_ids))
 
     query = query.order_by(
         desc(Product.is_promoted),
