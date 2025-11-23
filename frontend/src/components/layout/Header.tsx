@@ -19,7 +19,6 @@ import {
 import {
   Notifications as NotificationsIcon,
   Favorite as FavoriteIcon,
-  ShoppingCart as CartIcon,
   AccountCircle as AccountIcon,
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
@@ -31,7 +30,6 @@ import { RootState } from '../../store';
 import { notificationsAPI } from '../../services/api';
 import { setUnreadCount } from '../../store/slices/notificationsSlice';
 import { logout } from '../../store/slices/authSlice';
-import SearchBar from '../common/SearchBar';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -39,7 +37,6 @@ const Header: React.FC = () => {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const { unreadCount } = useSelector((state: RootState) => state.notifications);
   const { favoriteIds } = useSelector((state: RootState) => state.favorites);
-  const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
 
@@ -106,13 +103,8 @@ const Header: React.FC = () => {
             </Typography>
           </Link>
 
-          {/* Search Bar */}
-          <Box sx={{ flex: 1, mx: 4, maxWidth: 600 }}>
-            <SearchBar />
-          </Box>
-
           {/* Navigation */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 'auto' }}>
             <Button color="inherit" onClick={() => navigate('/sellers')}>
               Продавцы
             </Button>
@@ -138,17 +130,6 @@ const Header: React.FC = () => {
                 >
                   <Badge badgeContent={favoriteIds.size} color="primary">
                     <FavoriteIcon />
-                  </Badge>
-                </IconButton>
-
-                {/* Cart */}
-                <IconButton
-                  color="inherit"
-                  onClick={() => navigate('/cart')}
-                  aria-label="cart"
-                >
-                  <Badge badgeContent={cartItems.length} color="secondary">
-                    <CartIcon />
                   </Badge>
                 </IconButton>
 

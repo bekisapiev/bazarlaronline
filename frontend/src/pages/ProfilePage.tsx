@@ -580,7 +580,7 @@ const ProfilePage: React.FC = () => {
           scrollButtons="auto"
         >
           <Tab icon={<Person />} iconPosition="start" label="Мой профиль" />
-          <Tab icon={<Storefront />} iconPosition="start" label="Мои товары" />
+          <Tab icon={<Storefront />} iconPosition="start" label="Мои товары и услуги" />
           <Tab icon={<ShoppingBag />} iconPosition="start" label="Заказы" />
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
           <Tab icon={<Favorite />} iconPosition="start" label="Избранное" />
@@ -861,14 +861,14 @@ const ProfilePage: React.FC = () => {
           <Paper sx={{ p: 8, textAlign: 'center' }}>
             <Storefront sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              У вас пока нет товаров
+              У вас пока нет товаров и услуг
             </Typography>
             <Button
               variant="contained"
               sx={{ mt: 2 }}
               onClick={() => navigate('/add')}
             >
-              Добавить товар
+              Добавить товар или услугу
             </Button>
           </Paper>
         ) : (
