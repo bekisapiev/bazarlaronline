@@ -288,9 +288,13 @@ async def activate_tariff(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Activate a paid tariff (Pro or Business) with payment from main balance
+    Activate a paid tariff (Pro or Business) - subscription model
+
+    Money is NOT deducted immediately. System will check balance monthly:
+    - If sufficient: deduct and renew for next month
+    - If insufficient: downgrade to Free
     """
-    from app.models.wallet import Wallet, Transaction
+    from app.models.wallet import Wallet
     from datetime import timedelta
     from decimal import Decimal
 
@@ -314,7 +318,7 @@ async def activate_tariff(
         if current_user.tariff_expires_at > datetime.utcnow():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Tariff '{tariff_name}' is already active until {current_user.tariff_expires_at.strftime('%Y-%m-%d %H:%M')}"
+                detail=f"Тариф '{tariff_name}' уже активен до {current_user.tariff_expires_at.strftime('%Y-%m-%d %H:%M')}"
             )
 
     # Get tariff price
@@ -329,43 +333,29 @@ async def activate_tariff(
     if not wallet:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Wallet not found"
+            detail="Кошелек не найден"
         )
 
-    # Check if user has enough balance
+    # Check if user has enough balance (but DON'T deduct yet)
     if wallet.main_balance < price:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Insufficient balance. Required: {price} сом, Available: {wallet.main_balance} сом"
+            detail=f"Недостаточно средств. Требуется: {price} сом, Доступно: {wallet.main_balance} сом. Для подписки необходимо иметь достаточный баланс."
         )
 
-    # Deduct amount from main balance
-    wallet.main_balance -= price
-
-    # Create transaction record
-    transaction = Transaction(
-        user_id=current_user.id,
-        type="purchase",
-        amount=-price,  # Negative for deduction
-        balance_type="main",
-        description=f"Активация тарифа {tariff_name.upper()}",
-        status="completed"
-    )
-    db.add(transaction)
-
-    # Activate tariff
+    # Activate tariff WITHOUT deducting money
+    # Money will be deducted monthly by automatic renewal system
     current_user.tariff = tariff_name
     current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=TARIFF_DURATION_DAYS)
 
-    # Commit all changes
     await db.commit()
     await db.refresh(current_user)
-    await db.refresh(wallet)
 
     return {
-        "message": f"Tariff '{tariff_name}' successfully activated",
+        "message": f"Тариф '{tariff_name.upper()}' успешно активирован! Подписка будет автоматически продлеваться каждый месяц.",
         "tariff": tariff_name,
         "expires_at": current_user.tariff_expires_at,
-        "amount_paid": float(price),
-        "remaining_balance": float(wallet.main_balance)
+        "monthly_cost": float(price),
+        "current_balance": float(wallet.main_balance),
+        "note": "Деньги будут списываться автоматически каждый месяц при продлении"
     }
