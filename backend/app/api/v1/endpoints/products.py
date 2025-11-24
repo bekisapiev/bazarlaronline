@@ -176,19 +176,38 @@ async def get_products(
     result = await db.execute(query)
     products_list = result.scalars().all()
 
-    # Decrement promotion views for promoted products (they are being shown)
-    # This happens in background to not slow down the response
-    from sqlalchemy import update as sql_update
-
-    # Safely collect promoted product IDs using getattr to avoid attribute errors
+    # Extract all data from products BEFORE any commit/detach
+    # This avoids SQLAlchemy lazy loading issues
+    products_data = []
     promoted_product_ids = []
-    for product in products_list:
-        promotion_views = getattr(product, 'promotion_views_remaining', 0)
-        if promotion_views > 0:
-            promoted_product_ids.append(product.id)
 
+    for p in products_list:
+        # Access all attributes while object is still attached to session
+        promotion_views = p.promotion_views_remaining or 0
+
+        products_data.append({
+            "id": str(p.id),
+            "seller_id": str(p.seller_id),
+            "title": p.title,
+            "price": float(p.price),
+            "discount_price": float(p.discount_price) if p.discount_price else None,
+            "discount_percent": p.discount_percent,
+            "images": p.images or [],
+            "is_promoted": promotion_views > 0,
+            "views_count": p.views_count,
+            "promotion_views_remaining": promotion_views,
+            "is_referral_enabled": p.is_referral_enabled,
+            "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
+            "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
+        })
+
+        if promotion_views > 0:
+            promoted_product_ids.append(p.id)
+
+    # Decrement promotion views for promoted products (they are being shown)
     if promoted_product_ids:
         try:
+            from sqlalchemy import update as sql_update
             await db.execute(
                 sql_update(Product)
                 .where(Product.id.in_(promoted_product_ids))
@@ -202,24 +221,7 @@ async def get_products(
             await db.rollback()
 
     return {
-        "items": [
-            {
-                "id": str(p.id),
-                "seller_id": str(p.seller_id),
-                "title": p.title,
-                "price": float(p.price),
-                "discount_price": float(p.discount_price) if p.discount_price else None,
-                "discount_percent": p.discount_percent,
-                "images": p.images or [],
-                "is_promoted": getattr(p, 'promotion_views_remaining', 0) > 0,
-                "views_count": p.views_count,
-                "promotion_views_remaining": getattr(p, 'promotion_views_remaining', 0),
-                "is_referral_enabled": p.is_referral_enabled,
-                "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
-                "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
-            }
-            for p in products_list
-        ],
+        "items": products_data,
         "total": total,
         "limit": limit,
         "offset": offset,
