@@ -78,28 +78,37 @@ async def update_current_user(
     logger = logging.getLogger(__name__)
 
     logger.info(f"Updating user {current_user.id} profile")
-    logger.info(f"Received data: full_name={update_data.full_name}, phone={update_data.phone}")
-    logger.info(f"Current phone value: {current_user.phone}")
+    logger.info(f"Received data: full_name={update_data.full_name}, phone={update_data.phone}, avatar={update_data.avatar}, banner={update_data.banner}")
+    logger.info(f"Current values - phone: {current_user.phone}, full_name: {current_user.full_name}")
 
-    # Update user fields
+    # Update user fields - ALWAYS update if provided (even if None to clear the field)
     if update_data.full_name is not None:
         current_user.full_name = update_data.full_name
-        logger.info(f"Updated full_name to: {current_user.full_name}")
+        logger.info(f"Set full_name to: {current_user.full_name}")
 
-    if update_data.phone is not None:
+    # For phone, we want to update it even if it's None (to clear it)
+    # The field is present in the request, so update it
+    if hasattr(update_data, 'phone'):
         current_user.phone = update_data.phone
-        logger.info(f"Updated phone to: {current_user.phone}")
+        logger.info(f"Set phone to: {current_user.phone}")
 
     if update_data.avatar is not None:
         current_user.avatar = update_data.avatar
+        logger.info(f"Set avatar to: {current_user.avatar}")
 
     if update_data.banner is not None:
         current_user.banner = update_data.banner
+        logger.info(f"Set banner to: {current_user.banner}")
+
+    # Force update to ensure changes are tracked
+    from sqlalchemy.orm import attributes
+    attributes.flag_modified(current_user, "phone")
+    attributes.flag_modified(current_user, "full_name")
 
     await db.commit()
     await db.refresh(current_user)
 
-    logger.info(f"After commit - phone value: {current_user.phone}")
+    logger.info(f"After commit - phone: {current_user.phone}, full_name: {current_user.full_name}")
 
     return {
         "message": "User profile updated successfully",
