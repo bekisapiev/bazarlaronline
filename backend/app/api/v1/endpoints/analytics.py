@@ -205,7 +205,7 @@ async def get_products_performance(
                 Product.price,
                 Product.views_count,
                 Product.status,
-                Product.is_promoted,
+                Product.promotion_views_remaining,
                 func.count(Order.id).label("orders_count"),
                 func.sum(Order.total_amount).label("total_revenue")
             )
@@ -235,7 +235,7 @@ async def get_products_performance(
                     "orders_count": row.orders_count or 0,
                     "total_revenue": float(row.total_revenue) if row.total_revenue else 0.0,
                     "status": row.status,
-                    "is_promoted": row.is_promoted
+                    "is_promoted": (row.promotion_views_remaining or 0) > 0
                 }
                 for row in rows
             ],

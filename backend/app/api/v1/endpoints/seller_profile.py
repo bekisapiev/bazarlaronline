@@ -264,7 +264,7 @@ async def get_seller_profile_details(
         products_result = await db.execute(
             select(Product)
             .where(Product.seller_id == seller_id, Product.status == "active")
-            .order_by(desc(Product.is_promoted), desc(Product.created_at))
+            .order_by(desc(func.coalesce(Product.promotion_views_remaining, 0)), desc(Product.created_at))
             .limit(products_limit)
         )
         products = products_result.scalars().all()
@@ -276,7 +276,7 @@ async def get_seller_profile_details(
                 "price": float(p.price),
                 "discount_price": float(p.discount_price) if p.discount_price else None,
                 "images": p.images or [],
-                "is_promoted": p.is_promoted,
+                "is_promoted": getattr(p, 'promotion_views_remaining', 0) > 0,
                 "views_count": p.views_count
             }
             for p in products
@@ -530,7 +530,7 @@ async def get_seller_profile_details(
         products_result = await db.execute(
             select(Product)
             .where(Product.seller_id == seller_id, Product.status == "active")
-            .order_by(desc(Product.is_promoted), desc(Product.created_at))
+            .order_by(desc(func.coalesce(Product.promotion_views_remaining, 0)), desc(Product.created_at))
             .limit(products_limit)
         )
         products = products_result.scalars().all()
@@ -542,7 +542,7 @@ async def get_seller_profile_details(
                 "price": float(p.price),
                 "discount_price": float(p.discount_price) if p.discount_price else None,
                 "images": p.images or [],
-                "is_promoted": p.is_promoted,
+                "is_promoted": getattr(p, 'promotion_views_remaining', 0) > 0,
                 "views_count": p.views_count
             }
             for p in products

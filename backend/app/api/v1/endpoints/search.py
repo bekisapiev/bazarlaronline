@@ -153,7 +153,7 @@ async def search_all(
         else:  # relevance (default)
             # Order by promoted first, then by views
             query = query.order_by(
-                desc(Product.is_promoted),
+                desc(func.coalesce(Product.promotion_views_remaining, 0)),
                 desc(Product.views_count)
             )
 

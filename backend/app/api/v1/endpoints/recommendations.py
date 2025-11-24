@@ -63,7 +63,7 @@ async def get_personalized_recommendations(
                 ~Product.id.in_(viewed_product_ids) if viewed_product_ids else True
             )
         ).order_by(
-            desc(Product.is_promoted),
+            desc(func.coalesce(Product.promotion_views_remaining, 0)),
             desc(Product.views_count),
             desc(Product.created_at)
         ).limit(limit)
@@ -82,7 +82,7 @@ async def get_personalized_recommendations(
                 )
             ).order_by(
                 desc(Product.views_count),
-                desc(Product.is_promoted)
+                desc(func.coalesce(Product.promotion_views_remaining, 0))
             ).limit(remaining)
 
             trending_result = await db.execute(trending_query)
@@ -95,7 +95,7 @@ async def get_personalized_recommendations(
             Product.status == "active"
         ).order_by(
             desc(Product.views_count),
-            desc(Product.is_promoted)
+            desc(func.coalesce(Product.promotion_views_remaining, 0))
         ).limit(limit)
 
         result = await db.execute(query)
@@ -166,7 +166,7 @@ async def get_similar_products(
             Product.price.between(min_price, max_price)
         )
     ).order_by(
-        desc(Product.is_promoted),
+        desc(func.coalesce(Product.promotion_views_remaining, 0)),
         desc(Product.views_count)
     ).limit(limit)
 
@@ -231,7 +231,7 @@ async def get_trending_products(
 
     # Order by trending score (promoted + views)
     query = query.order_by(
-        desc(Product.is_promoted),
+        desc(func.coalesce(Product.promotion_views_remaining, 0)),
         desc(Product.views_count),
         desc(Product.created_at)
     ).limit(limit)
@@ -335,7 +335,7 @@ async def get_deals(
         query = query.where(Product.category_id.in_(category_ids))
 
     query = query.order_by(
-        desc(Product.is_promoted),
+        desc(func.coalesce(Product.promotion_views_remaining, 0)),
         desc(Product.created_at)
     ).limit(limit * 2)  # Get more to filter by discount percentage
 
