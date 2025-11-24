@@ -118,6 +118,7 @@ const ProductFormPage: React.FC = () => {
   // Load categories
   useEffect(() => {
     loadCategories();
+    loadPromotionPackages(); // Load for both create and edit modes
   }, []);
 
   const loadProduct = useCallback(async (productId: string) => {
@@ -422,12 +423,12 @@ const ProductFormPage: React.FC = () => {
       } else {
         const response = await productsAPI.createProduct(productData);
         setSuccess(
-          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'добавлена' : 'добавлен'}`
+          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'добавлена' : 'добавлен'}! Теперь вы можете продвинуть его.`
         );
 
-        // Redirect to product page after 1.5 seconds
+        // Redirect to edit page after 1.5 seconds so user can promote
         setTimeout(() => {
-          navigate(`/products/${response.data.id}`);
+          navigate(`/products/${response.data.id}/edit`);
         }, 1500);
       }
     } catch (err: any) {
