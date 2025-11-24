@@ -105,6 +105,16 @@ const ProductFormPage: React.FC = () => {
   const [newCharKey, setNewCharKey] = useState('');
   const [newCharValue, setNewCharValue] = useState('');
 
+  // Promotion
+  const [promotionPackages, setPromotionPackages] = useState<any[]>([]);
+  const [selectedPromotionViews, setSelectedPromotionViews] = useState<number>(0);
+  const [promoting, setPromoting] = useState(false);
+  const [promotionStats, setPromotionStats] = useState<{
+    views_remaining: number;
+    views_total: number;
+    is_promoted: boolean;
+  }>({ views_remaining: 0, views_total: 0, is_promoted: false });
+
   // Load categories
   useEffect(() => {
     loadCategories();
@@ -138,7 +148,7 @@ const ProductFormPage: React.FC = () => {
         price: product.price,
         category_id: product.category_id,
         images: product.images || [],
-        is_service: product.is_service || false,
+        is_service: product.product_type === 'service',
         discount_price: product.discount_price,
         discount_percent: product.discount_percent,
         stock_quantity: product.stock_quantity,
@@ -147,6 +157,13 @@ const ProductFormPage: React.FC = () => {
         partner_percentage: product.partner_percent,
         is_referral_enabled: product.is_referral_enabled || false,
         referral_commission_percent: product.referral_commission_percent,
+      });
+
+      // Set promotion stats
+      setPromotionStats({
+        views_remaining: product.promotion_views_remaining || 0,
+        views_total: product.promotion_views_total || 0,
+        is_promoted: product.is_promoted || false,
       });
 
       // Set category hierarchy
@@ -171,9 +188,36 @@ const ProductFormPage: React.FC = () => {
   useEffect(() => {
     if (isEditMode && id) {
       loadProduct(id);
+      loadPromotionPackages();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, id]);
+
+  const loadPromotionPackages = async () => {
+    try {
+      const response = await productsAPI.getPromotionPackages();
+      setPromotionPackages(response.data.packages || []);
+    } catch (err) {
+      console.error('Failed to load promotion packages:', err);
+    }
+  };
+
+  const handlePromote = async () => {
+    if (!id || selectedPromotionViews === 0) return;
+
+    setPromoting(true);
+    try {
+      await productsAPI.promoteProduct(id, selectedPromotionViews);
+      setSuccess(`Товар продвигается! Добавлено ${selectedPromotionViews} просмотров.`);
+      setSelectedPromotionViews(0);
+      // Reload product to get updated promotion stats
+      await loadProduct(id);
+    } catch (err: any) {
+      setError(formatErrorMessage(err, 'Ошибка при продвижении'));
+    } finally {
+      setPromoting(false);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -361,6 +405,7 @@ const ProductFormPage: React.FC = () => {
         price: formData.price,
         category_id: formData.category_id!,
         images: formData.images,
+        product_type: formData.is_service ? 'service' : 'product',
         characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
         discount_price: formData.discount_price || undefined,
         partner_percent: formData.partner_percentage || undefined,
@@ -840,6 +885,73 @@ const ProductFormPage: React.FC = () => {
                     inputProps: { min: 0, max: 100 },
                   }}
                 />
+              </Paper>
+            )}
+
+            {/* Promotion (Edit mode only) */}
+            {isEditMode && (
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'primary.50' }}>
+                <Typography variant="h6" gutterBottom>
+                  Продвижение товара
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Alert
+                  severity={promotionStats.is_promoted ? 'success' : 'info'}
+                  sx={{ mb: 2 }}
+                >
+                  <Typography variant="body2">
+                    {promotionStats.is_promoted ? (
+                      <>
+                        <strong>Товар продвигается!</strong><br />
+                        Осталось просмотров: {promotionStats.views_remaining} из {promotionStats.views_total}
+                      </>
+                    ) : (
+                      <>
+                        <strong>Товар не продвигается.</strong><br />
+                        Купите пакет просмотров для продвижения
+                      </>
+                    )}
+                  </Typography>
+                </Alert>
+
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Выберите пакет просмотров</InputLabel>
+                  <Select
+                    value={selectedPromotionViews}
+                    label="Выберите пакет просмотров"
+                    onChange={(e) => setSelectedPromotionViews(Number(e.target.value))}
+                  >
+                    <MenuItem value={0}>
+                      <em>Не выбрано</em>
+                    </MenuItem>
+                    {promotionPackages.map((pkg) => (
+                      <MenuItem key={pkg.views} value={pkg.views}>
+                        {pkg.views} просмотров — {pkg.price.toFixed(2)} сом
+                        {pkg.price_per_view > 0 && ` (${pkg.price_per_view.toFixed(2)} сом/просмотр)`}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>
+                    {user?.tariff === 'pro' && 'Скидка 33% для PRO тарифа'}
+                    {user?.tariff === 'business' && 'Скидка 50% для BUSINESS тарифа'}
+                  </FormHelperText>
+                </FormControl>
+
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  onClick={handlePromote}
+                  disabled={promoting || selectedPromotionViews === 0}
+                  startIcon={promoting ? <CircularProgress size={20} /> : undefined}
+                >
+                  {promoting ? 'Продвижение...' : 'Продвинуть товар'}
+                </Button>
+
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                  Продвинутые товары показываются выше в списке и получают больше просмотров
+                </Typography>
               </Paper>
             )}
 

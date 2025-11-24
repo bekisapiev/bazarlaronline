@@ -15,6 +15,7 @@ class ProductCreate(BaseModel):
     price: Decimal
     discount_price: Optional[Decimal] = None
     partner_percent: Optional[Decimal] = 0
+    product_type: Optional[str] = "product"  # "product" or "service"
     delivery_type: Optional[str] = "pickup"
     delivery_methods: Optional[List[str]] = None
     characteristics: Optional[List[Dict[str, str]]] = None
@@ -51,6 +52,7 @@ class ProductUpdate(BaseModel):
     price: Optional[Decimal] = None
     discount_price: Optional[Decimal] = None
     partner_percent: Optional[Decimal] = None
+    product_type: Optional[str] = None  # "product" or "service"
     delivery_type: Optional[str] = None
     delivery_methods: Optional[List[str]] = None
     characteristics: Optional[List[Dict[str, str]]] = None

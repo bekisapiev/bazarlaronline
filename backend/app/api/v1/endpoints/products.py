@@ -402,6 +402,7 @@ async def create_product(
         price=product_data.price,
         discount_price=product_data.discount_price,
         partner_percent=product_data.partner_percent or 0,
+        product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
         characteristics=product_data.characteristics,
@@ -488,6 +489,13 @@ async def update_product(
         product.price = product_data.price
     if product_data.discount_price is not None:
         product.discount_price = product_data.discount_price
+    if product_data.product_type is not None:
+        if product_data.product_type not in ["product", "service"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Product type must be 'product' or 'service'"
+            )
+        product.product_type = product_data.product_type
     if product_data.delivery_type is not None:
         product.delivery_type = product_data.delivery_type
     if product_data.delivery_methods is not None:
@@ -505,6 +513,26 @@ async def update_product(
                 detail="Partner program is only available for Business tariff"
             )
         product.partner_percent = product_data.partner_percent
+
+    # Referral program fields
+    if product_data.is_referral_enabled is not None:
+        if product_data.is_referral_enabled and current_user.tariff != "business":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Product referral program is only available for Business tariff"
+            )
+        product.is_referral_enabled = product_data.is_referral_enabled
+
+    if product_data.referral_commission_percent is not None:
+        if product.is_referral_enabled:
+            if product_data.referral_commission_percent < 1 or product_data.referral_commission_percent > 50:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Referral commission percent must be between 1 and 50"
+                )
+            product.referral_commission_percent = product_data.referral_commission_percent
+        else:
+            product.referral_commission_percent = None
 
     await db.commit()
     await db.refresh(product)
