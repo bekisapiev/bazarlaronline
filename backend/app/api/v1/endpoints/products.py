@@ -323,48 +323,6 @@ async def get_referral_products(
     }
 
 
-@router.get("/{product_id}")
-async def get_product_by_id(
-    product_id: UUID,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get product details by ID
-    """
-    result = await db.execute(
-        select(Product).where(Product.id == product_id)
-    )
-    product = result.scalar_one_or_none()
-
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
-
-    # Increment views
-    product.views_count += 1
-    await db.commit()
-
-    return {
-        "id": str(product.id),
-        "title": product.title,
-        "description": product.description,
-        "price": float(product.price),
-        "discount_price": float(product.discount_price) if product.discount_price else None,
-        "discount_percent": product.discount_percent,
-        "images": product.images or [],
-        "characteristics": product.characteristics or [],
-        "delivery_type": product.delivery_type,
-        "delivery_methods": product.delivery_methods,
-        "views_count": product.views_count,
-        "created_at": product.created_at,
-        "is_referral_enabled": product.is_referral_enabled,
-        "referral_commission_percent": float(product.referral_commission_percent) if product.referral_commission_percent else None,
-        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None
-    }
-
-
 @router.post("/", response_model=ProductResponse)
 async def create_product(
     product_data: ProductCreate,
@@ -832,4 +790,46 @@ async def get_categories(
             }
             for c in categories
         ]
+    }
+
+
+@router.get("/{product_id}")
+async def get_product_by_id(
+    product_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get product details by ID
+    """
+    result = await db.execute(
+        select(Product).where(Product.id == product_id)
+    )
+    product = result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    # Increment views
+    product.views_count += 1
+    await db.commit()
+
+    return {
+        "id": str(product.id),
+        "title": product.title,
+        "description": product.description,
+        "price": float(product.price),
+        "discount_price": float(product.discount_price) if product.discount_price else None,
+        "discount_percent": product.discount_percent,
+        "images": product.images or [],
+        "characteristics": product.characteristics or [],
+        "delivery_type": product.delivery_type,
+        "delivery_methods": product.delivery_methods,
+        "views_count": product.views_count,
+        "created_at": product.created_at,
+        "is_referral_enabled": product.is_referral_enabled,
+        "referral_commission_percent": float(product.referral_commission_percent) if product.referral_commission_percent else None,
+        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None
     }
