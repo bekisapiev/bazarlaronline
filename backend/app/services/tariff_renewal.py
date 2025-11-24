@@ -1,10 +1,16 @@
 """
 Tariff Renewal Service - Automatic subscription management
 
+Tariffs require MINIMUM BALANCE but money is NEVER deducted for tariffs.
+Balance is used exclusively for:
+- Product/service promotions
+- Partner commissions
+- Referral commissions
+
 This service handles monthly tariff renewals:
 - Checks expired tariffs
-- Deducts monthly fee if balance is sufficient
-- Downgrades to Free if insufficient balance
+- If balance >= required: Renew for another 30 days (NO money deducted)
+- If balance < required: Downgrade to Free
 - Disables Business features when downgraded
 """
 import logging
@@ -30,6 +36,10 @@ TARIFF_PRICES = {
 async def check_and_renew_tariffs(db: AsyncSession) -> dict:
     """
     Check all users with expired tariffs and renew or downgrade them
+
+    Renewal logic:
+    - If balance >= required: Extend tariff for 30 days (NO deduction)
+    - If balance < required: Downgrade to Free
 
     Returns:
         dict: Statistics about renewals and downgrades
@@ -103,26 +113,15 @@ async def process_tariff_renewal(db: AsyncSession, user: User, stats: dict):
         logger.error(f"Wallet not found for user {user.id}")
         return
 
-    # Check if user has sufficient balance
+    # Check if user has sufficient balance (but DON'T deduct money)
     if user.wallet.main_balance >= price:
-        # RENEW: Deduct money and extend subscription
-        user.wallet.main_balance -= price
-
-        # Create transaction
-        transaction = Transaction(
-            user_id=user.id,
-            type="purchase",
-            amount=-price,
-            balance_type="main",
-            description=f"Автопродление тарифа {tariff.upper()}",
-            status="completed"
-        )
-        db.add(transaction)
+        # RENEW: Balance is sufficient - just extend subscription
+        # Money is NOT deducted - balance is only used for promotions and commissions
 
         # Extend tariff for another 30 days
         user.tariff_expires_at = datetime.utcnow() + timedelta(days=30)
 
-        logger.info(f"Renewed {tariff} for user {user.id}. New expiration: {user.tariff_expires_at}")
+        logger.info(f"Renewed {tariff} for user {user.id}. Balance check passed ({user.wallet.main_balance} >= {price}). New expiration: {user.tariff_expires_at}")
         stats["renewed"] += 1
 
     else:
@@ -131,7 +130,7 @@ async def process_tariff_renewal(db: AsyncSession, user: User, stats: dict):
         user.tariff = "free"
         user.tariff_expires_at = None
 
-        logger.info(f"Downgraded user {user.id} from {old_tariff} to free due to insufficient balance")
+        logger.info(f"Downgraded user {user.id} from {old_tariff} to free due to insufficient balance ({user.wallet.main_balance} < {price})")
         stats["downgraded"] += 1
 
         # If downgraded from Business, disable partner features
