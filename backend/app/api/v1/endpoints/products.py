@@ -138,8 +138,9 @@ async def get_products(
     # Order by promotion views remaining (promoted products first), then by created_at
     # Products with promotion_views_remaining > 0 appear first (in random order for fairness)
     # Then regular products sorted by newest first
+    # Use COALESCE to handle NULL values safely
     query = query.order_by(
-        desc(Product.promotion_views_remaining),
+        desc(func.coalesce(Product.promotion_views_remaining, 0)),
         desc(Product.created_at)
     )
 
@@ -187,13 +188,18 @@ async def get_products(
             promoted_product_ids.append(product.id)
 
     if promoted_product_ids:
-        await db.execute(
-            sql_update(Product)
-            .where(Product.id.in_(promoted_product_ids))
-            .where(Product.promotion_views_remaining > 0)
-            .values(promotion_views_remaining=Product.promotion_views_remaining - 1)
-        )
-        await db.commit()
+        try:
+            await db.execute(
+                sql_update(Product)
+                .where(Product.id.in_(promoted_product_ids))
+                .where(func.coalesce(Product.promotion_views_remaining, 0) > 0)
+                .values(promotion_views_remaining=func.coalesce(Product.promotion_views_remaining, 1) - 1)
+            )
+            await db.commit()
+        except Exception as e:
+            # If decrement fails, just log it and continue (don't block product listing)
+            print(f"Warning: Failed to decrement promotion views: {e}")
+            await db.rollback()
 
     return {
         "items": [
