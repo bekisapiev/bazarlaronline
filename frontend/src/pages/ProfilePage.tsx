@@ -391,14 +391,17 @@ const ProfilePage: React.FC = () => {
     try {
       setLoading(true);
       // Explicitly include phone field in the update
+      // Trim phone and convert empty string to null
+      const phone = editedProfile.phone?.trim();
       const updateData = {
-        full_name: editedProfile.full_name,
-        phone: editedProfile.phone || null,
+        full_name: editedProfile.full_name?.trim(),
+        phone: phone || null,
       };
       await usersAPI.updateCurrentUser(updateData);
-      const updatedProfile = { ...profile, ...updateData } as UserProfile;
-      setProfile(updatedProfile);
-      setEditedProfile(updatedProfile);
+
+      // Reload profile from server to ensure data is in sync
+      await loadProfile();
+
       setIsEditingProfile(false);
       setSuccess('Профиль успешно обновлён');
     } catch (err: any) {
