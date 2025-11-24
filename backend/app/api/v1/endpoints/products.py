@@ -173,12 +173,19 @@ async def get_products(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products = result.scalars().all()
+    products_list = result.scalars().all()
 
     # Decrement promotion views for promoted products (they are being shown)
     # This happens in background to not slow down the response
     from sqlalchemy import update as sql_update
-    promoted_product_ids = [p.id for p in products if p.promotion_views_remaining > 0]
+
+    # Safely collect promoted product IDs using getattr to avoid attribute errors
+    promoted_product_ids = []
+    for product in products_list:
+        promotion_views = getattr(product, 'promotion_views_remaining', 0)
+        if promotion_views > 0:
+            promoted_product_ids.append(product.id)
+
     if promoted_product_ids:
         await db.execute(
             sql_update(Product)
@@ -198,14 +205,14 @@ async def get_products(
                 "discount_price": float(p.discount_price) if p.discount_price else None,
                 "discount_percent": p.discount_percent,
                 "images": p.images or [],
-                "is_promoted": p.is_promoted,
+                "is_promoted": getattr(p, 'promotion_views_remaining', 0) > 0,
                 "views_count": p.views_count,
-                "promotion_views_remaining": p.promotion_views_remaining,
+                "promotion_views_remaining": getattr(p, 'promotion_views_remaining', 0),
                 "is_referral_enabled": p.is_referral_enabled,
                 "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
                 "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
             }
-            for p in products
+            for p in products_list
         ],
         "total": total,
         "limit": limit,
@@ -284,7 +291,7 @@ async def get_referral_products(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products = result.scalars().all()
+    products_list = result.scalars().all()
 
     return {
         "items": [
@@ -296,12 +303,12 @@ async def get_referral_products(
                 "discount_price": float(p.discount_price) if p.discount_price else None,
                 "discount_percent": p.discount_percent,
                 "images": p.images or [],
-                "is_promoted": p.is_promoted,
+                "is_promoted": getattr(p, 'promotion_views_remaining', 0) > 0,
                 "is_referral_enabled": p.is_referral_enabled,
                 "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
                 "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
             }
-            for p in products
+            for p in products_list
         ],
         "total": total,
         "limit": limit,
@@ -460,7 +467,9 @@ async def create_product(
         images=product.images,
         status=product.status,
         is_promoted=product.is_promoted,
-        promoted_at=product.promoted_at,
+        promotion_views_total=product.promotion_views_total,
+        promotion_views_remaining=product.promotion_views_remaining,
+        promotion_started_at=product.promotion_started_at,
         views_count=product.views_count,
         created_at=product.created_at,
         updated_at=product.updated_at,
@@ -552,7 +561,9 @@ async def update_product(
         images=product.images,
         status=product.status,
         is_promoted=product.is_promoted,
-        promoted_at=product.promoted_at,
+        promotion_views_total=product.promotion_views_total,
+        promotion_views_remaining=product.promotion_views_remaining,
+        promotion_started_at=product.promotion_started_at,
         views_count=product.views_count,
         created_at=product.created_at,
         updated_at=product.updated_at,
@@ -737,7 +748,7 @@ async def get_my_products(
     query = query.order_by(desc(Product.created_at)).limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products = result.scalars().all()
+    products_list = result.scalars().all()
 
     # Count total
     count_result = await db.execute(
@@ -764,13 +775,18 @@ async def get_my_products(
                 characteristics=p.characteristics,
                 images=p.images,
                 status=p.status,
-                is_promoted=p.is_promoted,
-                promoted_at=p.promoted_at,
+                is_promoted=getattr(p, 'promotion_views_remaining', 0) > 0,
+                promotion_views_total=getattr(p, 'promotion_views_total', 0),
+                promotion_views_remaining=getattr(p, 'promotion_views_remaining', 0),
+                promotion_started_at=getattr(p, 'promotion_started_at', None),
                 views_count=p.views_count,
                 created_at=p.created_at,
-                updated_at=p.updated_at
+                updated_at=p.updated_at,
+                is_referral_enabled=p.is_referral_enabled,
+                referral_commission_percent=p.referral_commission_percent,
+                referral_commission_amount=p.referral_commission_amount
             )
-            for p in products
+            for p in products_list
         ],
         "total": total,
         "limit": limit,

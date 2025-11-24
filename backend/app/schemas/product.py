@@ -78,7 +78,9 @@ class ProductResponse(BaseModel):
     images: Optional[List[str]]
     status: str
     is_promoted: bool
-    promoted_at: Optional[datetime]
+    promotion_views_total: Optional[int] = 0
+    promotion_views_remaining: Optional[int] = 0
+    promotion_started_at: Optional[datetime] = None
     views_count: int
     created_at: datetime
     updated_at: datetime
