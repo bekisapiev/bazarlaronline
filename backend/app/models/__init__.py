@@ -9,7 +9,6 @@ from app.models.wallet import Wallet, Transaction, WithdrawalRequest
 from app.models.chat import Chat, Message
 from app.models.review import Review
 from app.models.location import City, Market
-from app.models.promotion import AutoPromotion
 from app.models.notification import Notification
 from app.models.favorite import Favorite, ViewHistory
 from app.models.report import Report
@@ -30,7 +29,6 @@ __all__ = [
     "Review",
     "City",
     "Market",
-    "AutoPromotion",
     "Notification",
     "Favorite",
     "ViewHistory",

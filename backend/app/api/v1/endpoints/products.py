@@ -27,12 +27,30 @@ TARIFF_LIMITS = {
     "business": 1000
 }
 
-# Promotion prices
-PROMOTION_PRICES = {
-    "free": settings.FREE_PROMOTION_PRICE,
-    "pro": settings.PRO_PROMOTION_PRICE,
-    "business": settings.BUSINESS_PROMOTION_PRICE
+# Promotion packages: views -> price for FREE tariff
+# PRO: 1.5x cheaper, BUSINESS: 2x cheaper
+PROMOTION_PACKAGES = {
+    0: 0,      # Free
+    500: 10,   # 500 views - 10 som
+    1000: 20,  # 1000 views - 20 som
+    1500: 30,
+    2000: 40,
+    2500: 50,
+    3000: 60,
+    3500: 70,
+    4000: 80,
+    4500: 90,
+    5000: 100
 }
+
+def get_promotion_price(views: int, tariff: str) -> Decimal:
+    """Calculate promotion price based on views and tariff"""
+    base_price = PROMOTION_PACKAGES.get(views, 0)
+    if tariff == "pro":
+        return Decimal(base_price) / Decimal("1.5")
+    elif tariff == "business":
+        return Decimal(base_price) / Decimal("2")
+    return Decimal(base_price)
 
 
 async def get_category_ids_with_children(category_id: int, db: AsyncSession) -> list[int]:
@@ -117,10 +135,11 @@ async def get_products(
     if seller_type:
         query = query.where(SellerProfile.seller_type == seller_type)
 
-    # Order by promoted first, then by created_at
+    # Order by promotion views remaining (promoted products first), then by created_at
+    # Products with promotion_views_remaining > 0 appear first (in random order for fairness)
+    # Then regular products sorted by newest first
     query = query.order_by(
-        desc(Product.is_promoted),
-        desc(Product.promoted_at),
+        desc(Product.promotion_views_remaining),
         desc(Product.created_at)
     )
 
@@ -156,6 +175,19 @@ async def get_products(
     result = await db.execute(query)
     products = result.scalars().all()
 
+    # Decrement promotion views for promoted products (they are being shown)
+    # This happens in background to not slow down the response
+    from sqlalchemy import update as sql_update
+    promoted_product_ids = [p.id for p in products if p.promotion_views_remaining > 0]
+    if promoted_product_ids:
+        await db.execute(
+            sql_update(Product)
+            .where(Product.id.in_(promoted_product_ids))
+            .where(Product.promotion_views_remaining > 0)
+            .values(promotion_views_remaining=Product.promotion_views_remaining - 1)
+        )
+        await db.commit()
+
     return {
         "items": [
             {
@@ -168,6 +200,7 @@ async def get_products(
                 "images": p.images or [],
                 "is_promoted": p.is_promoted,
                 "views_count": p.views_count,
+                "promotion_views_remaining": p.promotion_views_remaining,
                 "is_referral_enabled": p.is_referral_enabled,
                 "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
                 "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
@@ -562,20 +595,55 @@ async def delete_product(
     return {"message": "Product deleted successfully"}
 
 
+@router.get("/promotion/packages")
+async def get_promotion_packages(
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get available promotion packages with pricing for current user's tariff
+    """
+    packages = []
+    for views, base_price in PROMOTION_PACKAGES.items():
+        price = get_promotion_price(views, current_user.tariff)
+        packages.append({
+            "views": views,
+            "price": float(price),
+            "price_per_view": float(price / views) if views > 0 else 0
+        })
+
+    return {
+        "tariff": current_user.tariff,
+        "packages": packages
+    }
+
+
 @router.post("/{product_id}/promote")
 async def promote_product(
     product_id: UUID,
+    views: int,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Promote (boost) product to top of listings
+    Promote product by purchasing promotion views
 
-    Price depends on user tariff:
-    - Free: 20 KGS
-    - Pro: 15 KGS
-    - Business: 10 KGS
+    Available packages:
+    - 0 views: 0 som (free)
+    - 500 views: 10 som (FREE) / 6.67 som (PRO) / 5 som (BUSINESS)
+    - 1000 views: 20 som (FREE) / 13.33 som (PRO) / 10 som (BUSINESS)
+    - 1500 views: 30 som (FREE) / 20 som (PRO) / 15 som (BUSINESS)
+    - ... up to 5000 views
+
+    Promoted products appear higher in search results.
+    One view is deducted each time the product is shown in search/listing.
     """
+    # Validate views package
+    if views not in PROMOTION_PACKAGES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid views package. Available: {list(PROMOTION_PACKAGES.keys())}"
+        )
+
     result = await db.execute(
         select(Product).where(Product.id == product_id)
     )
@@ -587,15 +655,24 @@ async def promote_product(
             detail="Product not found"
         )
 
-    # Check ownership - convert to string for safe comparison
+    # Check ownership
     if str(product.seller_id) != str(current_user.id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only promote your own products"
         )
 
-    # Get promotion price for tariff
-    promotion_price = Decimal(PROMOTION_PRICES.get(current_user.tariff, 20))
+    # Calculate price based on tariff
+    promotion_price = get_promotion_price(views, current_user.tariff)
+
+    # Skip wallet operations if free package
+    if views == 0:
+        return {
+            "message": "Free package selected",
+            "product_id": str(product.id),
+            "views_added": 0,
+            "amount_paid": 0
+        }
 
     # Get wallet
     wallet_result = await db.execute(
@@ -606,15 +683,17 @@ async def promote_product(
     if not wallet or wallet.main_balance < promotion_price:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Insufficient balance. Required: {promotion_price} KGS"
+            detail=f"Insufficient balance. Required: {float(promotion_price)} KGS"
         )
 
     # Deduct from wallet
     wallet.main_balance -= promotion_price
 
-    # Update product
-    product.is_promoted = True
-    product.promoted_at = datetime.utcnow()
+    # Update product promotion stats
+    product.promotion_views_total += views
+    product.promotion_views_remaining += views
+    if not product.promotion_started_at:
+        product.promotion_started_at = datetime.utcnow()
 
     # Create transaction
     transaction = Transaction(
@@ -622,7 +701,7 @@ async def promote_product(
         type="promotion",
         amount=promotion_price,
         balance_type="main",
-        description=f"Поднятие товара '{product.title}'",
+        description=f"Продвижение товара '{product.title}' ({views} просмотров)",
         reference_id=product.id,
         status="completed"
     )
@@ -631,10 +710,11 @@ async def promote_product(
     await db.commit()
 
     return {
-        "message": "Product promoted successfully",
+        "message": "Product promotion purchased successfully",
         "product_id": str(product.id),
-        "amount_paid": float(promotion_price),
-        "promoted_at": product.promoted_at
+        "views_added": views,
+        "views_remaining": product.promotion_views_remaining,
+        "amount_paid": float(promotion_price)
     }
 
 

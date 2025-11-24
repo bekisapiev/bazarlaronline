@@ -55,8 +55,12 @@ class Product(Base):
     images = Column(JSONB, nullable=True)  # ['url1', 'url2', ...]
     status = Column(String(20), default="moderation")  # moderation, active, inactive, rejected
     moderation_result = Column(JSONB, nullable=True)
-    is_promoted = Column(Boolean, default=False)
-    promoted_at = Column(DateTime, nullable=True)
+
+    # New promotion system based on views
+    promotion_views_total = Column(Integer, default=0)  # Total purchased promotion views
+    promotion_views_remaining = Column(Integer, default=0)  # Remaining promotion views
+    promotion_started_at = Column(DateTime, nullable=True)  # When promotion started
+
     views_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -64,7 +68,6 @@ class Product(Base):
     # Relationships
     seller = relationship("User", back_populates="products")
     category = relationship("Category", back_populates="products")
-    auto_promotions = relationship("AutoPromotion", back_populates="product")
     favorited_by = relationship("Favorite", back_populates="product", cascade="all, delete-orphan")
     views = relationship("ViewHistory", back_populates="product", cascade="all, delete-orphan")
 
@@ -95,3 +98,8 @@ class Product(Base):
                 from decimal import Decimal
                 return (Decimal(str(effective_price)) * Decimal(str(self.referral_commission_percent)) / Decimal('100')).quantize(Decimal('0.01'))
         return None
+
+    @property
+    def is_promoted(self):
+        """Check if product is currently promoted (has remaining promotion views)"""
+        return self.promotion_views_remaining > 0
