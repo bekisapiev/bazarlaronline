@@ -892,7 +892,7 @@ const ProductDetailPage: React.FC = () => {
                   value={orderPhone}
                   onChange={(e) => setOrderPhone(e.target.value)}
                   sx={{ mb: 2 }}
-                  placeholder="+996 XXX XXX XXX"
+                  placeholder="0555 00 00 00"
                 />
 
                 <TextField
@@ -938,7 +938,7 @@ const ProductDetailPage: React.FC = () => {
                   value={orderPhone}
                   onChange={(e) => setOrderPhone(e.target.value)}
                   sx={{ mb: 2 }}
-                  placeholder="+996 XXX XXX XXX"
+                  placeholder="0555 00 00 00"
                 />
 
                 <TextField

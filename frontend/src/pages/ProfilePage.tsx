@@ -812,7 +812,7 @@ const ProfilePage: React.FC = () => {
                         setEditedProfile({ ...editedProfile, phone: e.target.value })
                       }
                       disabled={!isEditingProfile}
-                      placeholder="+996 XXX XXX XXX"
+                      placeholder="0555 00 00 00"
                     />
                   </Grid>
                 </Grid>
@@ -1634,7 +1634,7 @@ const ProfilePage: React.FC = () => {
             fullWidth
             value={mbankPhone}
             onChange={(e) => setMbankPhone(e.target.value)}
-            placeholder="+996555123456"
+            placeholder="0555 00 00 00"
           />
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
             Средства будут переведены на указанный номер телефона MBank

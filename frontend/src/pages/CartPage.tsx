@@ -394,7 +394,7 @@ const CartPage: React.FC = () => {
               }}
               error={!!formErrors.phoneNumber}
               helperText={formErrors.phoneNumber}
-              placeholder="+996 XXX XXX XXX"
+              placeholder="0555 00 00 00"
               sx={{ mb: 2 }}
               InputProps={{
                 startAdornment: (

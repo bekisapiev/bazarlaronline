@@ -35,10 +35,10 @@ const TelegramCodeAuth: React.FC = () => {
       return;
     }
 
-    // Validate phone format
-    const phoneRegex = /^\+996\d{9}$/;
+    // Validate phone format (0XXX XX XX XX or 0XXXXXXXXX)
+    const phoneRegex = /^0\d{3}\s?\d{2}\s?\d{2}\s?\d{2}$/;
     if (!phoneRegex.test(phone)) {
-      setError('Неверный формат телефона. Используйте формат: +996XXXXXXXXX');
+      setError('Неверный формат телефона. Используйте формат: 0555 00 00 00');
       return;
     }
 
@@ -157,12 +157,12 @@ const TelegramCodeAuth: React.FC = () => {
           <TextField
             fullWidth
             label="Номер телефона"
-            placeholder="+996XXXXXXXXX"
+            placeholder="0555 00 00 00"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onKeyPress={(e) => handleKeyPress(e, handleRequestCode)}
             sx={{ mb: 2 }}
-            helperText="Формат: +996555123456"
+            helperText="Формат: 0555 00 00 00"
           />
 
           {error && (

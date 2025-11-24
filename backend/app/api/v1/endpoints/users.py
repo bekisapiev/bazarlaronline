@@ -74,18 +74,32 @@ async def update_current_user(
     """
     Update current user profile (basic info)
     """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"Updating user {current_user.id} profile")
+    logger.info(f"Received data: full_name={update_data.full_name}, phone={update_data.phone}")
+    logger.info(f"Current phone value: {current_user.phone}")
+
     # Update user fields
     if update_data.full_name is not None:
         current_user.full_name = update_data.full_name
+        logger.info(f"Updated full_name to: {current_user.full_name}")
+
     if update_data.phone is not None:
         current_user.phone = update_data.phone
+        logger.info(f"Updated phone to: {current_user.phone}")
+
     if update_data.avatar is not None:
         current_user.avatar = update_data.avatar
+
     if update_data.banner is not None:
         current_user.banner = update_data.banner
 
     await db.commit()
     await db.refresh(current_user)
+
+    logger.info(f"After commit - phone value: {current_user.phone}")
 
     return {
         "message": "User profile updated successfully",

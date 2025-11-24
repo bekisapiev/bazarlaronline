@@ -615,7 +615,7 @@ const SellerDetailPage: React.FC = () => {
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 margin="normal"
                 required
-                placeholder="+996555123456"
+                placeholder="0555 00 00 00"
               />
 
               <TextField
