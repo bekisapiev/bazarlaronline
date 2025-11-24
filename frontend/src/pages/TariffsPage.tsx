@@ -129,7 +129,7 @@ const TariffsPage: React.FC = () => {
 
       setCurrentTariff(userResponse.data.tariff || 'free');
       setTariffExpiresAt(userResponse.data.tariff_expires_at || null);
-      setBalance(balanceResponse.data.main_balance || 0);
+      setBalance(Number(balanceResponse.data.main_balance) || 0);
     } catch (err: any) {
       console.error('Error loading user data:', err);
       setError('Не удалось загрузить данные пользователя');
@@ -145,7 +145,7 @@ const TariffsPage: React.FC = () => {
     }
 
     if (balance < tariff.price) {
-      setError(`Недостаточно средств. Необходимо: ${tariff.price} сом, доступно: ${balance.toFixed(2)} сом`);
+      setError(`Недостаточно средств. Необходимо: ${tariff.price} сом, доступно: ${Number(balance).toFixed(2)} сом`);
       return;
     }
 
@@ -219,7 +219,7 @@ const TariffsPage: React.FC = () => {
             Баланс основного счета:
           </Typography>
           <Typography variant="h4" fontWeight={600} color="primary">
-            {balance.toFixed(2)} сом
+            {Number(balance).toFixed(2)} сом
           </Typography>
           <Button
             variant="outlined"
