@@ -166,24 +166,12 @@ const ProductFormPage: React.FC = () => {
         views_total: product.promotion_views_total || 0,
         is_promoted: product.is_promoted || false,
       });
-
-      // Set category hierarchy
-      if (product.category_id) {
-        const category = findCategoryById(categories, product.category_id);
-        if (category?.parent_id) {
-          setSelectedParentCategory(category.parent_id);
-          setSelectedSubcategory(category.id);
-        } else {
-          setSelectedParentCategory(category?.id || null);
-        }
-      }
     } catch (err: any) {
       setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categories, id]);
+  }, [id]);
 
   // Load product if edit mode
   useEffect(() => {
@@ -193,6 +181,24 @@ const ProductFormPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, id]);
+
+  // Set category hierarchy when categories and product are loaded
+  useEffect(() => {
+    if (formData.category_id && categories.length > 0) {
+      const category = findCategoryById(categories, formData.category_id);
+      if (category) {
+        if (category.parent_id) {
+          // This is a subcategory
+          setSelectedParentCategory(category.parent_id);
+          setSelectedSubcategory(category.id);
+        } else {
+          // This is a parent category
+          setSelectedParentCategory(category.id);
+          setSelectedSubcategory(null);
+        }
+      }
+    }
+  }, [formData.category_id, categories]);
 
   const loadPromotionPackages = async () => {
     try {
