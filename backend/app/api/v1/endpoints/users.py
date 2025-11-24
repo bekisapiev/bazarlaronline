@@ -13,7 +13,7 @@ from app.database.session import get_db
 from app.models.user import User, SellerProfile
 from app.models.wallet import ReferralEarning
 from app.core.dependencies import get_current_active_user
-from app.schemas.user import UserProfileUpdate, SellerProfileUpdate, UserWithProfileResponse, SellerProfileResponse
+from app.schemas.user import UserProfileUpdate, SellerProfileUpdate, UserWithProfileResponse, SellerProfileResponse, TariffActivationRequest
 
 router = APIRouter()
 
@@ -42,6 +42,7 @@ async def get_current_user(
         banner=user.banner,
         referral_id=user.referral_id,
         tariff=user.tariff,
+        tariff_expires_at=user.tariff_expires_at,
         role=user.role,
         created_at=user.created_at,
         seller_profile=SellerProfileResponse(
@@ -253,4 +254,94 @@ async def get_user_by_referral_code(
         "id": str(user.id),
         "full_name": user.full_name,
         "referral_code": user.referral_id
+    }
+
+
+@router.post("/me/activate-tariff")
+async def activate_tariff(
+    request: TariffActivationRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Activate a paid tariff (Pro or Business) with payment from main balance
+    """
+    from app.models.wallet import Wallet, Transaction
+    from datetime import timedelta
+    from decimal import Decimal
+
+    # Define tariff prices and durations
+    TARIFF_PRICES = {
+        "pro": Decimal("2990.00"),
+        "business": Decimal("29990.00")
+    }
+    TARIFF_DURATION_DAYS = 30
+
+    # Validate tariff
+    tariff_name = request.tariff.lower()
+    if tariff_name not in ["pro", "business"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid tariff. Must be 'pro' or 'business'"
+        )
+
+    # Check if user already has this tariff and it's not expired
+    if current_user.tariff == tariff_name and current_user.tariff_expires_at:
+        if current_user.tariff_expires_at > datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Tariff '{tariff_name}' is already active until {current_user.tariff_expires_at.strftime('%Y-%m-%d %H:%M')}"
+            )
+
+    # Get tariff price
+    price = TARIFF_PRICES[tariff_name]
+
+    # Get user's wallet
+    wallet_result = await db.execute(
+        select(Wallet).where(Wallet.user_id == current_user.id)
+    )
+    wallet = wallet_result.scalar_one_or_none()
+
+    if not wallet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Wallet not found"
+        )
+
+    # Check if user has enough balance
+    if wallet.main_balance < price:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Insufficient balance. Required: {price} сом, Available: {wallet.main_balance} сом"
+        )
+
+    # Deduct amount from main balance
+    wallet.main_balance -= price
+
+    # Create transaction record
+    transaction = Transaction(
+        user_id=current_user.id,
+        type="purchase",
+        amount=-price,  # Negative for deduction
+        balance_type="main",
+        description=f"Активация тарифа {tariff_name.upper()}",
+        status="completed"
+    )
+    db.add(transaction)
+
+    # Activate tariff
+    current_user.tariff = tariff_name
+    current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=TARIFF_DURATION_DAYS)
+
+    # Commit all changes
+    await db.commit()
+    await db.refresh(current_user)
+    await db.refresh(wallet)
+
+    return {
+        "message": f"Tariff '{tariff_name}' successfully activated",
+        "tariff": tariff_name,
+        "expires_at": current_user.tariff_expires_at,
+        "amount_paid": float(price),
+        "remaining_balance": float(wallet.main_balance)
     }

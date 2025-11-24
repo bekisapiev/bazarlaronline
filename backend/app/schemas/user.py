@@ -61,9 +61,18 @@ class UserWithProfileResponse(BaseModel):
     banner: Optional[str]
     referral_id: str
     tariff: str
+    tariff_expires_at: Optional[datetime] = None
     role: str
     created_at: datetime
     seller_profile: Optional[SellerProfileResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TariffActivationRequest(BaseModel):
+    """Tariff activation request"""
+    tariff: str  # "pro" or "business"
 
     class Config:
         from_attributes = True
