@@ -288,11 +288,14 @@ async def activate_tariff(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Activate a paid tariff (Pro or Business) - subscription model
+    Activate or switch tariff (Free, Pro, Business) - subscription model
 
-    Money is NOT deducted immediately. System will check balance monthly:
-    - If sufficient: deduct and renew for next month
-    - If insufficient: downgrade to Free
+    Switching rules:
+    - Free → Pro/Business: Requires sufficient balance
+    - Pro → Free/Business: Allowed (Free doesn't check balance)
+    - Business → Free/Pro: Allowed (Free doesn't check balance)
+
+    Money is NOT deducted on activation. Monthly auto-renewal will deduct.
     """
     from app.models.wallet import Wallet
     from datetime import timedelta
@@ -300,6 +303,7 @@ async def activate_tariff(
 
     # Define tariff prices and durations
     TARIFF_PRICES = {
+        "free": Decimal("0.00"),
         "pro": Decimal("2990.00"),
         "business": Decimal("29990.00")
     }
@@ -307,55 +311,88 @@ async def activate_tariff(
 
     # Validate tariff
     tariff_name = request.tariff.lower()
-    if tariff_name not in ["pro", "business"]:
+    if tariff_name not in ["free", "pro", "business"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid tariff. Must be 'pro' or 'business'"
+            detail="Неверный тариф. Доступны: 'free', 'pro', 'business'"
         )
 
-    # Check if user already has this tariff and it's not expired
-    if current_user.tariff == tariff_name and current_user.tariff_expires_at:
-        if current_user.tariff_expires_at > datetime.utcnow():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Тариф '{tariff_name}' уже активен до {current_user.tariff_expires_at.strftime('%Y-%m-%d %H:%M')}"
-            )
+    # Check if already on this tariff
+    if current_user.tariff == tariff_name:
+        # If already on this tariff and it's active, just inform user
+        if tariff_name == "free":
+            return {
+                "message": "Тариф FREE уже активен",
+                "tariff": "free",
+                "current_balance": float((await get_user_wallet(db, current_user.id)).main_balance) if await get_user_wallet(db, current_user.id) else 0
+            }
+        elif current_user.tariff_expires_at and current_user.tariff_expires_at > datetime.utcnow():
+            return {
+                "message": f"Тариф {tariff_name.upper()} уже активен до {current_user.tariff_expires_at.strftime('%Y-%m-%d %H:%M')}",
+                "tariff": tariff_name,
+                "expires_at": current_user.tariff_expires_at,
+                "monthly_cost": float(TARIFF_PRICES[tariff_name]),
+                "current_balance": float((await get_user_wallet(db, current_user.id)).main_balance) if await get_user_wallet(db, current_user.id) else 0
+            }
 
     # Get tariff price
     price = TARIFF_PRICES[tariff_name]
 
-    # Get user's wallet
-    wallet_result = await db.execute(
-        select(Wallet).where(Wallet.user_id == current_user.id)
-    )
-    wallet = wallet_result.scalar_one_or_none()
+    # For paid tariffs (Pro, Business), check balance
+    if tariff_name in ["pro", "business"]:
+        # Get user's wallet
+        wallet = await get_user_wallet(db, current_user.id)
 
-    if not wallet:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Кошелек не найден"
-        )
+        if not wallet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Кошелек не найден"
+            )
 
-    # Check if user has enough balance (but DON'T deduct yet)
-    if wallet.main_balance < price:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Недостаточно средств. Требуется: {price} сом, Доступно: {wallet.main_balance} сом. Для подписки необходимо иметь достаточный баланс."
-        )
+        # Check if user has enough balance (but DON'T deduct yet)
+        if wallet.main_balance < price:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Недостаточно средств. Требуется: {price} сом, Доступно: {wallet.main_balance} сом. Для подписки необходимо иметь достаточный баланс."
+            )
 
-    # Activate tariff WITHOUT deducting money
-    # Money will be deducted monthly by automatic renewal system
+    # Activate/switch tariff WITHOUT deducting money
+    old_tariff = current_user.tariff
     current_user.tariff = tariff_name
-    current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=TARIFF_DURATION_DAYS)
+
+    if tariff_name == "free":
+        # Free tariff - no expiration
+        current_user.tariff_expires_at = None
+        message = f"Тариф переключен с {old_tariff.upper()} на FREE"
+    else:
+        # Paid tariff - set expiration date
+        current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=TARIFF_DURATION_DAYS)
+        message = f"Тариф {tariff_name.upper()} успешно активирован! Подписка будет автоматически продлеваться каждый месяц."
 
     await db.commit()
     await db.refresh(current_user)
 
-    return {
-        "message": f"Тариф '{tariff_name.upper()}' успешно активирован! Подписка будет автоматически продлеваться каждый месяц.",
-        "tariff": tariff_name,
-        "expires_at": current_user.tariff_expires_at,
-        "monthly_cost": float(price),
-        "current_balance": float(wallet.main_balance),
-        "note": "Деньги будут списываться автоматически каждый месяц при продлении"
+    # Prepare response
+    wallet = await get_user_wallet(db, current_user.id)
+    response = {
+        "message": message,
+        "old_tariff": old_tariff,
+        "new_tariff": tariff_name,
+        "current_balance": float(wallet.main_balance) if wallet else 0
     }
+
+    if tariff_name != "free":
+        response["expires_at"] = current_user.tariff_expires_at
+        response["monthly_cost"] = float(price)
+        response["note"] = "Деньги будут списываться автоматически каждый месяц при продлении"
+
+    return response
+
+
+async def get_user_wallet(db: AsyncSession, user_id) -> Wallet:
+    """Helper function to get user's wallet"""
+    from app.models.wallet import Wallet
+    wallet_result = await db.execute(
+        select(Wallet).where(Wallet.user_id == user_id)
+    )
+    return wallet_result.scalar_one_or_none()

@@ -139,12 +139,14 @@ const TariffsPage: React.FC = () => {
   };
 
   const handleActivateTariff = async (tariff: TariffPlan) => {
-    if (tariff.id === 'free') {
-      setError('Тариф Free активен по умолчанию');
+    // Allow switching to Free (downgrade from paid plans)
+    if (tariff.id === 'free' && currentTariff === 'free') {
+      setError('Тариф Free уже активен');
       return;
     }
 
-    if (balance < tariff.price) {
+    // For paid tariffs, check balance
+    if (tariff.id !== 'free' && balance < tariff.price) {
       setError(`Недостаточно средств. Необходимо: ${tariff.price} сом, доступно: ${Number(balance).toFixed(2)} сом`);
       return;
     }
