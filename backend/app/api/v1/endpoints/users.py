@@ -362,11 +362,11 @@ async def activate_tariff(
     if tariff_name == "free":
         # Free tariff - no expiration
         current_user.tariff_expires_at = None
-        message = f"Тариф переключен с {old_tariff.upper()} на FREE"
+        message = f"Тариф переключен с {old_tariff.upper()} на FREE. Нет требований к балансу."
     else:
         # Paid tariff - set expiration date
         current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=TARIFF_DURATION_DAYS)
-        message = f"Тариф {tariff_name.upper()} успешно активирован! Подписка будет автоматически продлеваться каждый месяц."
+        message = f"Тариф {tariff_name.upper()} успешно активирован! Требуется поддерживать баланс не ниже {price} сом для автоматического продления."
 
     await db.commit()
     await db.refresh(current_user)
@@ -383,7 +383,7 @@ async def activate_tariff(
     if tariff_name != "free":
         response["expires_at"] = current_user.tariff_expires_at
         response["monthly_cost"] = float(price)
-        response["note"] = "Деньги будут списываться автоматически каждый месяц при продлении"
+        response["note"] = f"Баланс НЕ списывается за тариф. Требуется минимум {price} сом для продления. Баланс используется только для продвижения товаров и комиссий."
 
     return response
 
