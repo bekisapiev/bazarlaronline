@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.database.session import get_db
 from app.models.user import User, SellerProfile
-from app.models.wallet import ReferralEarning
+from app.models.wallet import ReferralEarning, Wallet
 from app.core.dependencies import get_current_active_user
 from app.schemas.user import UserProfileUpdate, SellerProfileUpdate, UserWithProfileResponse, SellerProfileResponse, TariffActivationRequest
 
@@ -297,7 +297,6 @@ async def activate_tariff(
 
     Money is NOT deducted on activation. Monthly auto-renewal will deduct.
     """
-    from app.models.wallet import Wallet
     from datetime import timedelta
     from decimal import Decimal
 
@@ -391,7 +390,6 @@ async def activate_tariff(
 
 async def get_user_wallet(db: AsyncSession, user_id) -> Wallet:
     """Helper function to get user's wallet"""
-    from app.models.wallet import Wallet
     wallet_result = await db.execute(
         select(Wallet).where(Wallet.user_id == user_id)
     )
