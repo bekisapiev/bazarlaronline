@@ -38,6 +38,7 @@ async def get_current_user(
         id=str(user.id),
         email=user.email,
         full_name=user.full_name,
+        phone=user.phone,
         avatar=user.avatar,
         banner=user.banner,
         referral_id=user.referral_id,

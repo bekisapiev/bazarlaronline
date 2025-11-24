@@ -57,6 +57,7 @@ class UserWithProfileResponse(BaseModel):
     id: str
     email: EmailStr
     full_name: Optional[str]
+    phone: Optional[str] = None
     avatar: Optional[str]
     banner: Optional[str]
     referral_id: str
