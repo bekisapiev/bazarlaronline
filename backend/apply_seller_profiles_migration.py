@@ -44,7 +44,7 @@ async def apply_migration():
                     INSERT INTO seller_profiles
                     (user_id, shop_name, description, seller_type, rating, reviews_count, is_verified, created_at, updated_at)
                     VALUES
-                    (:user_id, :shop_name, '', 'individual', 0, 0, false, NOW(), NOW())
+                    (:user_id, :shop_name, '', 'shop', 0, 0, false, NOW(), NOW())
                 """),
                 {
                     "user_id": str(user_id),

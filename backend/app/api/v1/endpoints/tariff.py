@@ -169,7 +169,7 @@ async def upgrade_tariff(
                 user_id=current_user.id,
                 shop_name=default_shop_name,
                 description="",
-                seller_type="individual"
+                seller_type="shop"  # Default: shop (allowed: market, boutique, shop, office, home, mobile, warehouse)
             )
             db.add(seller_profile)
 
