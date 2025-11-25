@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from app.database.session import get_db
-from app.models.user import User
+from app.models.user import User, SellerProfile
 from app.models.wallet import Wallet, Transaction
 from app.core.dependencies import get_current_active_user
 from app.core.config import settings
@@ -153,6 +153,25 @@ async def upgrade_tariff(
         # New subscription
         current_user.tariff = request.tariff
         current_user.tariff_expires_at = datetime.utcnow() + timedelta(days=30 * request.duration_months)
+
+    # Auto-create SellerProfile for Pro/Business users if it doesn't exist
+    if request.tariff in ["pro", "business"]:
+        # Check if seller profile already exists
+        seller_profile_result = await db.execute(
+            select(SellerProfile).where(SellerProfile.user_id == current_user.id)
+        )
+        existing_profile = seller_profile_result.scalar_one_or_none()
+
+        if not existing_profile:
+            # Create default seller profile
+            default_shop_name = current_user.full_name if current_user.full_name else f"Магазин {current_user.phone}"
+            seller_profile = SellerProfile(
+                user_id=current_user.id,
+                shop_name=default_shop_name,
+                description="",
+                seller_type="individual"
+            )
+            db.add(seller_profile)
 
     # Create transaction record
     transaction = Transaction(
