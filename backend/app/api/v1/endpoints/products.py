@@ -105,12 +105,17 @@ async def get_products(
     - min_price/max_price: Filter by price range
     """
     from app.models.user import SellerProfile
+    from sqlalchemy.orm import joinedload
 
     # Always join with SellerProfile to get seller information (city, market, seller_type)
     # Select both Product and SellerProfile to avoid additional queries
+    # Use joinedload to eagerly load city and market relationships
     query = select(Product, SellerProfile).join(
         SellerProfile,
         Product.seller_id == SellerProfile.user_id
+    ).options(
+        joinedload(SellerProfile.city),
+        joinedload(SellerProfile.market)
     ).where(Product.status == "active")
 
     # Apply filters
@@ -832,13 +837,18 @@ async def get_product_by_id(
     """
     from app.models.user import User, SellerProfile
     from app.models.category import Category
+    from sqlalchemy.orm import joinedload
 
     # Get product with seller profile info
+    # Use joinedload to eagerly load city and market relationships
     result = await db.execute(
         select(Product, SellerProfile, User).join(
             SellerProfile, Product.seller_id == SellerProfile.user_id
         ).join(
             User, Product.seller_id == User.id
+        ).options(
+            joinedload(SellerProfile.city),
+            joinedload(SellerProfile.market)
         ).where(Product.id == product_id)
     )
     row = result.first()
