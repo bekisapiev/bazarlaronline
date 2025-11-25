@@ -70,10 +70,14 @@ interface Product {
     seller_type: string;
     city_name: string | null;
     market_name: string | null;
+    address: string | null;
+    latitude: number | null;
+    longitude: number | null;
     logo_url: string | null;
     rating: number;
     reviews_count: number;
   };
+  views_count: number;
   location?: string;
   is_promoted: boolean;
   created_at: string;
@@ -487,6 +491,20 @@ const ProductDetailPage: React.FC = () => {
                 {product.title}
               </Typography>
 
+              {/* Views and Date */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                <Typography variant="body2" color="text.secondary">
+                  👁 {product.views_count} просмотров
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  📅 {new Date(product.created_at).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </Typography>
+              </Box>
+
               {/* Location Info */}
               {product.seller.city_name && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
@@ -669,12 +687,40 @@ const ProductDetailPage: React.FC = () => {
                     </Box>
 
                     {product.seller.city_name && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                        <LocationOn fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          {product.seller.city_name}
-                          {product.seller.market_name && ` • ${product.seller.market_name}`}
-                        </Typography>
+                      <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                          <LocationOn fontSize="small" color="action" />
+                          <Typography variant="body2" color="text.secondary">
+                            {product.seller.city_name}
+                            {product.seller.market_name && ` • ${product.seller.market_name}`}
+                          </Typography>
+                        </Box>
+                        {product.seller.address && (
+                          <Typography variant="body2" color="text.secondary" sx={{ ml: 3 }}>
+                            {product.seller.address}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Map if coordinates available */}
+                    {product.seller.latitude && product.seller.longitude && (
+                      <Box sx={{ mb: 1 }}>
+                        <a
+                          href={`https://www.google.com/maps?q=${product.seller.latitude},${product.seller.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none' }}
+                        >
+                          <Button
+                            variant="text"
+                            size="small"
+                            startIcon={<LocationOn />}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            Показать на карте
+                          </Button>
+                        </a>
                       </Box>
                     )}
 
