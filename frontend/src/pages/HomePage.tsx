@@ -36,6 +36,7 @@ import {
   Business as OfficeIcon,
   LocalShipping as MobileIcon,
   Warehouse as WarehouseIcon,
+  LocationOn,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { productsAPI, categoriesAPI } from '../services/api';
@@ -369,7 +370,7 @@ const HomePage: React.FC = () => {
         {/* Seller location info */}
         {product.seller.city_name && (
           <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-            <LocationIcon fontSize="small" />
+            <LocationOn fontSize="small" />
             {product.seller.city_name}
             {product.seller.market_name && `, ${product.seller.market_name}`}
           </Typography>
