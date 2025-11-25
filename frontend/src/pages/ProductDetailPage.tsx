@@ -56,16 +56,23 @@ interface Product {
   discount_price?: number;
   discount_percent?: number;
   images: string[];
-  category: {
-    id: string;
+  category: Array<{
+    id: number;
     name: string;
     slug: string;
-  };
+  }>;
   seller: {
     id: string;
     full_name: string;
     avatar?: string;
+    tariff: string;
+    shop_name: string;
+    seller_type: string;
+    city_name: string | null;
+    market_name: string | null;
+    logo_url: string | null;
     rating: number;
+    reviews_count: number;
   };
   location?: string;
   is_promoted: boolean;
@@ -73,7 +80,7 @@ interface Product {
   is_referral_enabled: boolean;
   referral_commission_percent?: number;
   referral_commission_amount?: number;
-  product_type?: 'product' | 'service';
+  product_type: 'product' | 'service';
 }
 
 interface Review {
@@ -97,6 +104,7 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const [sellerProducts, setSellerProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -167,6 +175,23 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [id]);
 
+  const loadSellerProducts = useCallback(async (sellerId: string) => {
+    try {
+      const response = await productsAPI.getProducts({
+        seller_id: sellerId,
+        limit: 8,
+        offset: 0,
+      });
+      // Filter out current product
+      const otherProducts = (response.data.items || response.data).filter(
+        (p: any) => p.id !== id
+      );
+      setSellerProducts(otherProducts);
+    } catch (error) {
+      console.error('Error loading seller products:', error);
+    }
+  }, [id]);
+
   const checkFavoriteStatus = useCallback(async () => {
     try {
       const response = await favoritesAPI.checkFavorite(id!);
@@ -210,7 +235,6 @@ const ProductDetailPage: React.FC = () => {
     if (id) {
       loadProduct();
       loadReviews();
-      loadSimilarProducts();
       if (isAuthenticated) {
         checkFavoriteStatus();
         recordView();
@@ -218,6 +242,17 @@ const ProductDetailPage: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isAuthenticated]);
+
+  // Load seller products or similar products based on tariff
+  useEffect(() => {
+    if (product?.seller) {
+      if (product.seller.tariff === 'pro' || product.seller.tariff === 'business') {
+        loadSellerProducts(product.seller.id);
+      } else {
+        loadSimilarProducts();
+      }
+    }
+  }, [product, loadSellerProducts, loadSimilarProducts]);
 
   // Load seller info when product is loaded
   useEffect(() => {
@@ -380,16 +415,17 @@ const ProductDetailPage: React.FC = () => {
           <Link component={RouterLink} to="/" underline="hover" color="inherit">
             Главная
           </Link>
-          {product.category && (
+          {product.category && product.category.length > 0 && product.category.map((cat, index) => (
             <Link
+              key={cat.id}
               component={RouterLink}
-              to={`/?category=${product.category.slug}`}
+              to={`/?category=${cat.slug}`}
               underline="hover"
               color="inherit"
             >
-              {product.category.name}
+              {cat.name}
             </Link>
-          )}
+          ))}
           <Typography color="text.primary">{product.title}</Typography>
         </Breadcrumbs>
 
@@ -436,13 +472,31 @@ const ProductDetailPage: React.FC = () => {
           {/* Right Column - Details */}
           <Grid item xs={12} md={6}>
             <Box>
-              {product.is_promoted && (
-                <Chip label="Поднято" color="primary" size="small" sx={{ mb: 2 }} />
-              )}
+              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                {product.is_promoted && (
+                  <Chip label="Поднято" color="primary" size="small" />
+                )}
+                <Chip
+                  label={product.product_type === 'product' ? 'Товар' : 'Услуга'}
+                  size="small"
+                  color={product.product_type === 'product' ? 'primary' : 'secondary'}
+                />
+              </Box>
 
               <Typography variant="h4" gutterBottom fontWeight={700}>
                 {product.title}
               </Typography>
+
+              {/* Location Info */}
+              {product.seller.city_name && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
+                  <LocationOn fontSize="small" color="action" />
+                  <Typography variant="body2" color="text.secondary">
+                    {product.seller.city_name}
+                    {product.seller.market_name && `, ${product.seller.market_name}`}
+                  </Typography>
+                </Box>
+              )}
 
               {/* Rating */}
               {totalReviews > 0 && (
@@ -579,30 +633,60 @@ const ProductDetailPage: React.FC = () => {
               {product.seller && (
                 <>
                   <Typography variant="h6" gutterBottom fontWeight={600}>
-                    Продавец
+                    Информация о продавце
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar src={product.seller.avatar} sx={{ width: 56, height: 56 }}>
-                      <Store />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {product.seller.full_name}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <Rating value={product.seller.rating || 0} size="small" readOnly />
+                  <Paper sx={{ p: 2, mb: 2, border: 1, borderColor: 'grey.200' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Avatar
+                        src={product.seller.logo_url || product.seller.avatar}
+                        sx={{ width: 64, height: 64 }}
+                      >
+                        <Store />
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight={600}>
+                          {product.seller.shop_name}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                          <Rating value={product.seller.rating || 0} size="small" readOnly />
+                          <Typography variant="body2" color="text.secondary">
+                            {(product.seller.rating || 0).toFixed(1)} ({product.seller.reviews_count} отзывов)
+                          </Typography>
+                        </Box>
                         <Typography variant="body2" color="text.secondary">
-                          {(product.seller.rating || 0).toFixed(1)}
+                          Тип: {
+                            product.seller.seller_type === 'shop' ? 'Магазин' :
+                            product.seller.seller_type === 'market' ? 'Рынок' :
+                            product.seller.seller_type === 'boutique' ? 'Бутик' :
+                            product.seller.seller_type === 'office' ? 'Офис' :
+                            product.seller.seller_type === 'home' ? 'На дому' :
+                            product.seller.seller_type === 'mobile' ? 'Выездная' :
+                            product.seller.seller_type === 'warehouse' ? 'Склад' :
+                            product.seller.seller_type
+                          }
                         </Typography>
                       </Box>
                     </Box>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigate(`/sellers/${product.seller.id}`)}
-                  >
-                    Посмотреть профиль продавца
-                  </Button>
+
+                    {product.seller.city_name && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                        <LocationOn fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          {product.seller.city_name}
+                          {product.seller.market_name && ` • ${product.seller.market_name}`}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      onClick={() => navigate(`/sellers/${product.seller.id}`)}
+                      sx={{ mt: 1 }}
+                    >
+                      Посмотреть профиль продавца
+                    </Button>
+                  </Paper>
                 </>
               )}
 
@@ -744,70 +828,139 @@ const ProductDetailPage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Similar Products */}
-        {similarProducts.length > 0 && (
-          <Box sx={{ mt: 6 }}>
-            <Typography variant="h5" gutterBottom fontWeight={600} sx={{ mb: 3 }}>
-              Похожие товары
-            </Typography>
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 3,
-                overflowX: 'auto',
-                pb: 2,
-                '&::-webkit-scrollbar': {
-                  height: 8,
-                },
-                '&::-webkit-scrollbar-track': {
-                  backgroundColor: '#f1f1f1',
-                  borderRadius: 10,
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: '#888',
-                  borderRadius: 10,
-                  '&:hover': {
-                    backgroundColor: '#555',
+        {/* Related Products - Seller Products or Similar Products */}
+        {(product?.seller.tariff === 'pro' || product?.seller.tariff === 'business') ? (
+          // Show seller's other products for Pro/Business sellers
+          sellerProducts.length > 0 && (
+            <Box sx={{ mt: 6 }}>
+              <Typography variant="h5" gutterBottom fontWeight={600} sx={{ mb: 3 }}>
+                Другие товары продавца
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 3,
+                  overflowX: 'auto',
+                  pb: 2,
+                  '&::-webkit-scrollbar': {
+                    height: 8,
                   },
-                },
-              }}
-            >
-              {similarProducts.map((product) => (
-                <Box key={product.id} sx={{ flexShrink: 0, width: 250 }}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: 4 },
-                    }}
-                    onClick={() => navigate(`/products/${product.id}`)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={product.images?.[0] || 'https://via.placeholder.com/350'}
-                      alt={product.title}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography gutterBottom variant="h6" component="div" noWrap>
-                        {product.title}
-                      </Typography>
-                      <Typography variant="h6" fontWeight={600}>
-                        {product.discount_price || product.price} сом
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button size="small" color="primary" fullWidth>
-                        Посмотреть
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Box>
-              ))}
+                  '&::-webkit-scrollbar-track': {
+                    backgroundColor: '#f1f1f1',
+                    borderRadius: 10,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: '#888',
+                    borderRadius: 10,
+                    '&:hover': {
+                      backgroundColor: '#555',
+                    },
+                  },
+                }}
+              >
+                {sellerProducts.map((prod) => (
+                  <Box key={prod.id} sx={{ flexShrink: 0, width: 250 }}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        '&:hover': { boxShadow: 4 },
+                      }}
+                      onClick={() => navigate(`/products/${prod.id}`)}
+                    >
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={prod.images?.[0] || 'https://via.placeholder.com/350'}
+                        alt={prod.title}
+                      />
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography gutterBottom variant="h6" component="div" noWrap>
+                          {prod.title}
+                        </Typography>
+                        <Typography variant="h6" fontWeight={600}>
+                          {prod.discount_price || prod.price} сом
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small" color="primary" fullWidth>
+                          Посмотреть
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-          </Box>
+          )
+        ) : (
+          // Show similar products for Free sellers
+          similarProducts.length > 0 && (
+            <Box sx={{ mt: 6 }}>
+              <Typography variant="h5" gutterBottom fontWeight={600} sx={{ mb: 3 }}>
+                Похожие товары и услуги
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 3,
+                  overflowX: 'auto',
+                  pb: 2,
+                  '&::-webkit-scrollbar': {
+                    height: 8,
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    backgroundColor: '#f1f1f1',
+                    borderRadius: 10,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: '#888',
+                    borderRadius: 10,
+                    '&:hover': {
+                      backgroundColor: '#555',
+                    },
+                  },
+                }}
+              >
+                {similarProducts.map((prod) => (
+                  <Box key={prod.id} sx={{ flexShrink: 0, width: 250 }}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        '&:hover': { boxShadow: 4 },
+                      }}
+                      onClick={() => navigate(`/products/${prod.id}`)}
+                    >
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={prod.images?.[0] || 'https://via.placeholder.com/350'}
+                        alt={prod.title}
+                      />
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Typography gutterBottom variant="h6" component="div" noWrap>
+                          {prod.title}
+                        </Typography>
+                        <Typography variant="h6" fontWeight={600}>
+                          {prod.discount_price || prod.price} сом
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small" color="primary" fullWidth>
+                          Посмотреть
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )
         )}
       </Box>
 

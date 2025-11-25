@@ -48,7 +48,15 @@ interface Product {
   discount_percent?: number;
   images: string[];
   is_promoted: boolean;
-  is_service: boolean;
+  product_type: 'product' | 'service';
+  seller: {
+    shop_name: string;
+    seller_type: string;
+    city_id: number | null;
+    city_name: string | null;
+    market_id: number | null;
+    market_name: string | null;
+  };
 }
 
 interface Category {
@@ -329,7 +337,15 @@ const HomePage: React.FC = () => {
           {product.title}
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* Product type badge */}
+        <Chip
+          label={product.product_type === 'product' ? 'Товар' : 'Услуга'}
+          size="small"
+          color={product.product_type === 'product' ? 'primary' : 'secondary'}
+          sx={{ mb: 1 }}
+        />
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           {product.discount_price ? (
             <>
               <Typography
@@ -349,13 +365,16 @@ const HomePage: React.FC = () => {
             </Typography>
           )}
         </Box>
-      </CardContent>
 
-      <CardActions>
-        <Button size="small" color="primary" fullWidth variant="outlined">
-          Подробнее
-        </Button>
-      </CardActions>
+        {/* Seller location info */}
+        {product.seller.city_name && (
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+            <LocationIcon fontSize="small" />
+            {product.seller.city_name}
+            {product.seller.market_name && `, ${product.seller.market_name}`}
+          </Typography>
+        )}
+      </CardContent>
     </Card>
   );
 

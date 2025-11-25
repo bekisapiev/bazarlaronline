@@ -106,14 +106,12 @@ async def get_products(
     """
     from app.models.user import SellerProfile
 
-    # Base query with join to seller profile for city and seller_type filters
-    if city_id or seller_type:
-        query = select(Product).join(
-            SellerProfile,
-            Product.seller_id == SellerProfile.user_id
-        ).where(Product.status == "active")
-    else:
-        query = select(Product).where(Product.status == "active")
+    # Always join with SellerProfile to get seller information (city, market, seller_type)
+    # Select both Product and SellerProfile to avoid additional queries
+    query = select(Product, SellerProfile).join(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id
+    ).where(Product.status == "active")
 
     # Apply filters
     if category_id:
@@ -150,14 +148,11 @@ async def get_products(
         desc(Product.created_at)
     )
 
-    # Count total before pagination
-    count_query = select(func.count()).select_from(Product)
-    if city_id or seller_type:
-        count_query = count_query.join(
-            SellerProfile,
-            Product.seller_id == SellerProfile.user_id
-        )
-    count_query = count_query.where(Product.status == "active")
+    # Count total before pagination - also join with SellerProfile for consistency
+    count_query = select(func.count()).select_from(Product).join(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id
+    ).where(Product.status == "active")
 
     if category_id:
         # Use same category_ids list for count query
@@ -182,20 +177,25 @@ async def get_products(
     query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
-    products_list = result.scalars().all()
+    products_with_sellers = result.all()  # Returns list of (Product, SellerProfile) tuples
 
     # Extract all data from products BEFORE any commit/detach
     # This avoids SQLAlchemy lazy loading issues
     products_data = []
     promoted_product_ids = []
 
-    for p in products_list:
-        # Access all attributes while object is still attached to session
+    for p, seller_profile in products_with_sellers:
+        # Access all attributes while objects are still attached to session
         promotion_views = p.promotion_views_remaining or 0
+
+        # Get city and market names
+        city_name = seller_profile.city.name if seller_profile.city else None
+        market_name = seller_profile.market.name if seller_profile.market else None
 
         products_data.append({
             "id": str(p.id),
             "seller_id": str(p.seller_id),
+            "product_type": p.product_type,
             "title": p.title,
             "price": float(p.price),
             "discount_price": float(p.discount_price) if p.discount_price else None,
@@ -206,7 +206,16 @@ async def get_products(
             "promotion_views_remaining": promotion_views,
             "is_referral_enabled": p.is_referral_enabled,
             "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
-            "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None
+            "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None,
+            # Seller information
+            "seller": {
+                "shop_name": seller_profile.shop_name,
+                "seller_type": seller_profile.seller_type,
+                "city_id": seller_profile.city_id,
+                "city_name": city_name,
+                "market_id": seller_profile.market_id,
+                "market_name": market_name,
+            }
         })
 
         if promotion_views > 0:
@@ -819,25 +828,60 @@ async def get_product_by_id(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get product details by ID
+    Get product details by ID with full seller and category information
     """
-    result = await db.execute(
-        select(Product).where(Product.id == product_id)
-    )
-    product = result.scalar_one_or_none()
+    from app.models.user import User, SellerProfile
+    from app.models.category import Category
 
-    if not product:
+    # Get product with seller profile info
+    result = await db.execute(
+        select(Product, SellerProfile, User).join(
+            SellerProfile, Product.seller_id == SellerProfile.user_id
+        ).join(
+            User, Product.seller_id == User.id
+        ).where(Product.id == product_id)
+    )
+    row = result.first()
+
+    if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
 
+    product, seller_profile, user = row
+
     # Increment views
     product.views_count += 1
     await db.commit()
 
+    # Get category hierarchy
+    category_hierarchy = []
+    if product.category_id:
+        category = product.category
+        category_hierarchy = []
+        while category:
+            category_hierarchy.insert(0, {
+                "id": category.id,
+                "name": category.name,
+                "slug": category.slug
+            })
+            if category.parent_id:
+                parent_result = await db.execute(
+                    select(Category).where(Category.id == category.parent_id)
+                )
+                category = parent_result.scalar_one_or_none()
+            else:
+                category = None
+
+    # Get city and market names
+    city_name = seller_profile.city.name if seller_profile.city else None
+    market_name = seller_profile.market.name if seller_profile.market else None
+
     return {
         "id": str(product.id),
+        "seller_id": str(product.seller_id),
+        "product_type": product.product_type,
         "title": product.title,
         "description": product.description,
         "price": float(product.price),
@@ -851,5 +895,23 @@ async def get_product_by_id(
         "created_at": product.created_at,
         "is_referral_enabled": product.is_referral_enabled,
         "referral_commission_percent": float(product.referral_commission_percent) if product.referral_commission_percent else None,
-        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None
+        "referral_commission_amount": float(product.referral_commission_amount) if product.referral_commission_amount else None,
+        # Category hierarchy
+        "category": category_hierarchy,
+        # Seller information
+        "seller": {
+            "id": str(user.id),
+            "full_name": user.full_name,
+            "avatar": user.avatar,
+            "tariff": user.tariff,
+            "shop_name": seller_profile.shop_name,
+            "seller_type": seller_profile.seller_type,
+            "city_id": seller_profile.city_id,
+            "city_name": city_name,
+            "market_id": seller_profile.market_id,
+            "market_name": market_name,
+            "logo_url": seller_profile.logo_url,
+            "rating": float(seller_profile.rating),
+            "reviews_count": seller_profile.reviews_count,
+        }
     }
