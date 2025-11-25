@@ -836,7 +836,7 @@ async def get_product_by_id(
     Get product details by ID with full seller and category information
     """
     from app.models.user import User, SellerProfile
-    from app.models.category import Category
+    from app.models.product import Category
     from sqlalchemy.orm import joinedload
 
     # Get product with seller profile info
