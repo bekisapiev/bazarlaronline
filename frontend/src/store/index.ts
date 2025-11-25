@@ -15,13 +15,6 @@ export const store = configureStore({
     favorites: favoritesReducer,
     settings: settingsReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        // Ignore Set objects in favorites
-        ignoredPaths: ['favorites.favoriteIds'],
-      },
-    }),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

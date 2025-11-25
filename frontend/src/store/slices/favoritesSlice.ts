@@ -12,14 +12,14 @@ export interface FavoriteProduct {
 
 interface FavoritesState {
   items: FavoriteProduct[];
-  favoriteIds: Set<string>;
+  favoriteIds: string[];
   loading: boolean;
   hasMore: boolean;
 }
 
 const initialState: FavoritesState = {
   items: [],
-  favoriteIds: new Set(),
+  favoriteIds: [],
   loading: false,
   hasMore: true,
 };
@@ -30,27 +30,27 @@ const favoritesSlice = createSlice({
   reducers: {
     setFavorites: (state, action: PayloadAction<FavoriteProduct[]>) => {
       state.items = action.payload;
-      state.favoriteIds = new Set(action.payload.map(p => p.id));
+      state.favoriteIds = action.payload.map(p => p.id);
       state.loading = false;
     },
     addFavorite: (state, action: PayloadAction<FavoriteProduct>) => {
-      if (!state.favoriteIds.has(action.payload.id)) {
+      if (!state.favoriteIds.includes(action.payload.id)) {
         state.items = [action.payload, ...state.items];
-        state.favoriteIds.add(action.payload.id);
+        state.favoriteIds.push(action.payload.id);
       }
     },
     removeFavorite: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(p => p.id !== action.payload);
-      state.favoriteIds.delete(action.payload);
+      state.favoriteIds = state.favoriteIds.filter(id => id !== action.payload);
     },
     toggleFavorite: (state, action: PayloadAction<{ id: string; product?: FavoriteProduct }>) => {
       const { id, product } = action.payload;
-      if (state.favoriteIds.has(id)) {
+      if (state.favoriteIds.includes(id)) {
         state.items = state.items.filter(p => p.id !== id);
-        state.favoriteIds.delete(id);
+        state.favoriteIds = state.favoriteIds.filter(fid => fid !== id);
       } else if (product) {
         state.items = [product, ...state.items];
-        state.favoriteIds.add(id);
+        state.favoriteIds.push(id);
       }
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -61,7 +61,7 @@ const favoritesSlice = createSlice({
     },
     clearFavorites: (state) => {
       state.items = [];
-      state.favoriteIds.clear();
+      state.favoriteIds = [];
       state.hasMore = true;
     },
   },

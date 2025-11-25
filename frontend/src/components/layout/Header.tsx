@@ -131,7 +131,7 @@ const Header: React.FC = () => {
                   onClick={() => navigate('/favorites')}
                   aria-label="favorites"
                 >
-                  <Badge badgeContent={favoriteIds.size} color="primary">
+                  <Badge badgeContent={favoriteIds.length} color="primary">
                     <FavoriteIcon />
                   </Badge>
                 </IconButton>
