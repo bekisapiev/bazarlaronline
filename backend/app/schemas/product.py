@@ -14,7 +14,6 @@ class ProductCreate(BaseModel):
     category_id: Optional[int] = None
     price: Decimal
     discount_price: Optional[Decimal] = None
-    partner_percent: Optional[Decimal] = 0
     product_type: Optional[str] = "product"  # "product" or "service"
     delivery_type: Optional[str] = "pickup"
     delivery_methods: Optional[List[str]] = None
@@ -32,7 +31,6 @@ class ProductCreate(BaseModel):
                 "category_id": 1,
                 "price": 120000,
                 "discount_price": 110000,
-                "partner_percent": 5,
                 "delivery_type": "paid",
                 "delivery_methods": ["taxi", "express"],
                 "characteristics": [
@@ -51,7 +49,6 @@ class ProductUpdate(BaseModel):
     category_id: Optional[int] = None
     price: Optional[Decimal] = None
     discount_price: Optional[Decimal] = None
-    partner_percent: Optional[Decimal] = None
     product_type: Optional[str] = None  # "product" or "service"
     delivery_type: Optional[str] = None
     delivery_methods: Optional[List[str]] = None
@@ -73,7 +70,6 @@ class ProductResponse(BaseModel):
     price: Decimal
     discount_price: Optional[Decimal]
     discount_percent: Optional[int]
-    partner_percent: Decimal
     delivery_type: Optional[str]
     delivery_methods: Optional[List[str]]
     characteristics: Optional[List[Dict[str, str]]]

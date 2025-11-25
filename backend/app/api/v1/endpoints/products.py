@@ -364,19 +364,6 @@ async def create_product(
             detail="Title must be less than 100 characters"
         )
 
-    # Validate partner percent (only for Business tariff)
-    if product_data.partner_percent and product_data.partner_percent > 0:
-        if current_user.tariff != "business":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Partner program is only available for Business tariff"
-            )
-        if product_data.partner_percent < 2 or product_data.partner_percent > 100:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Partner percent must be between 2 and 100"
-            )
-
     # Validate referral program (only for Business tariff)
     if product_data.is_referral_enabled:
         if current_user.tariff != "business":
@@ -403,7 +390,6 @@ async def create_product(
         category_id=product_data.category_id,
         price=product_data.price,
         discount_price=product_data.discount_price,
-        partner_percent=product_data.partner_percent or 0,
         product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
@@ -427,7 +413,6 @@ async def create_product(
         price=product.price,
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
-        partner_percent=product.partner_percent,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,
@@ -507,15 +492,6 @@ async def update_product(
     if product_data.images is not None:
         product.images = product_data.images
 
-    # Partner percent
-    if product_data.partner_percent is not None:
-        if current_user.tariff != "business" and product_data.partner_percent > 0:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Partner program is only available for Business tariff"
-            )
-        product.partner_percent = product_data.partner_percent
-
     # Referral program fields
     if product_data.is_referral_enabled is not None:
         if product_data.is_referral_enabled and current_user.tariff != "business":
@@ -548,7 +524,6 @@ async def update_product(
         price=product.price,
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
-        partner_percent=product.partner_percent,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,

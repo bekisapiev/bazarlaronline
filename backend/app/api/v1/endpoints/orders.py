@@ -56,7 +56,6 @@ async def create_order(
     # Validate products and calculate total
     total_amount = Decimal(0)
     order_items = []
-    partner_percent = Decimal(0)
 
     for item in order_data.items:
         product_result = await db.execute(
@@ -86,10 +85,6 @@ async def create_order(
         item_price = item.discount_price if item.discount_price else item.price
         total_amount += item_price * item.quantity
 
-        # Store partner percent from product
-        if product.partner_percent and product.partner_percent > partner_percent:
-            partner_percent = product.partner_percent
-
         order_items.append({
             "product_id": str(product.id),
             "product_title": product.title,
@@ -97,24 +92,6 @@ async def create_order(
             "price": float(item.price),
             "discount_price": float(item.discount_price) if item.discount_price else None
         })
-
-    # Process referral commission
-    referral_user_id = None
-    referral_commission = Decimal(0)
-    platform_commission = Decimal(0)
-
-    if order_data.referral_code and partner_percent > 0:
-        # Find referral user by referral_id
-        referral_result = await db.execute(
-            select(User).where(User.referral_id == order_data.referral_code)
-        )
-        referral_user = referral_result.scalar_one_or_none()
-
-        if referral_user:
-            referral_user_id = referral_user.id
-            # Calculate commission: partner gets partner_percent, platform gets rest
-            referral_commission = (total_amount * partner_percent) / 100
-            platform_commission = total_amount - referral_commission
 
     # Create order first
     order = Order(
@@ -126,10 +103,7 @@ async def create_order(
         delivery_address=order_data.delivery_address,
         phone_number=order_data.phone_number,
         payment_method=order_data.payment_method,
-        status="pending" if order_data.payment_method == "mbank" else "processing",
-        referral_id=referral_user_id,
-        referral_commission=referral_commission if referral_commission > 0 else None,
-        platform_commission=platform_commission if platform_commission > 0 else None
+        status="pending" if order_data.payment_method == "mbank" else "processing"
     )
 
     db.add(order)
@@ -164,7 +138,7 @@ async def create_order(
         )
         db.add(buyer_transaction)
 
-        # Credit seller's wallet
+        # Credit seller's wallet (full amount)
         seller_wallet_result = await db.execute(
             select(Wallet).where(Wallet.user_id == seller.id)
         )
@@ -175,48 +149,20 @@ async def create_order(
             db.add(seller_wallet)
             await db.flush()
 
-        # Seller gets full amount minus commissions
-        seller_amount = total_amount - referral_commission - platform_commission
-        seller_wallet.main_balance += seller_amount
+        # Seller gets full amount
+        seller_wallet.main_balance += total_amount
 
         # Create seller transaction
         seller_transaction = Transaction(
             user_id=seller.id,
             type="order_received",
-            amount=seller_amount,
+            amount=total_amount,
             balance_type="main",
             description=f"Получен платеж за заказ {order.order_number}",
             reference_id=order.id,
             status="completed"
         )
         db.add(seller_transaction)
-
-        # If referral commission exists, credit to referral user
-        if referral_commission > 0 and referral_user_id:
-            referral_wallet_result = await db.execute(
-                select(Wallet).where(Wallet.user_id == referral_user_id)
-            )
-            referral_wallet = referral_wallet_result.scalar_one_or_none()
-
-            if not referral_wallet:
-                referral_wallet = Wallet(user_id=referral_user_id)
-                db.add(referral_wallet)
-                await db.flush()
-
-            # Partner commission goes to referral_balance (can be withdrawn)
-            referral_wallet.referral_balance += referral_commission
-
-            # Create referral transaction
-            referral_transaction = Transaction(
-                user_id=referral_user_id,
-                type="referral_commission",
-                amount=referral_commission,
-                balance_type="referral",
-                description=f"Партнерская комиссия от заказа {order.order_number}",
-                reference_id=order.id,
-                status="completed"
-            )
-            db.add(referral_transaction)
 
     # Process product referral purchases
     # Create ProductReferralPurchase records for products with referral program enabled
@@ -261,9 +207,6 @@ async def create_order(
         phone_number=order.phone_number,
         payment_method=order.payment_method,
         status=order.status,
-        referral_id=str(order.referral_id) if order.referral_id else None,
-        referral_commission=order.referral_commission,
-        platform_commission=order.platform_commission,
         created_at=order.created_at,
         updated_at=order.updated_at
     )
@@ -340,9 +283,6 @@ async def get_orders(
                 phone_number=o.phone_number,
                 payment_method=o.payment_method,
                 status=o.status,
-                referral_id=str(o.referral_id) if o.referral_id else None,
-                referral_commission=o.referral_commission,
-                platform_commission=o.platform_commission,
                 created_at=o.created_at,
                 updated_at=o.updated_at
             )
@@ -395,9 +335,6 @@ async def get_order_by_id(
         phone_number=order.phone_number,
         payment_method=order.payment_method,
         status=order.status,
-        referral_id=str(order.referral_id) if order.referral_id else None,
-        referral_commission=order.referral_commission,
-        platform_commission=order.platform_commission,
         created_at=order.created_at,
         updated_at=order.updated_at
     )
@@ -457,7 +394,49 @@ async def update_order_status(
         referral_purchases = referral_purchases_result.scalars().all()
 
         for purchase in referral_purchases:
-            # Credit commission to referrer's referral balance
+            # Get product to find owner
+            product_result = await db.execute(
+                select(Product).where(Product.id == purchase.product_id)
+            )
+            product = product_result.scalar_one_or_none()
+
+            if not product:
+                continue
+
+            # Get product owner's wallet
+            owner_wallet_result = await db.execute(
+                select(Wallet).where(Wallet.user_id == product.seller_id)
+            )
+            owner_wallet = owner_wallet_result.scalar_one_or_none()
+
+            if not owner_wallet:
+                owner_wallet = Wallet(user_id=product.seller_id)
+                db.add(owner_wallet)
+                await db.flush()
+
+            # Check if owner has enough balance to pay commission
+            if owner_wallet.main_balance < purchase.commission_amount:
+                # Insufficient balance - skip this commission
+                purchase.status = "failed"
+                purchase.completed_at = datetime.utcnow()
+                continue
+
+            # Deduct commission from product owner's main balance
+            owner_wallet.main_balance -= purchase.commission_amount
+
+            # Create transaction for product owner (deduction)
+            owner_transaction = Transaction(
+                user_id=product.seller_id,
+                type="product_referral_commission_deducted",
+                amount=purchase.commission_amount,
+                balance_type="main",
+                description=f"Комиссия реферальной программы за товар (заказ {order.order_number})",
+                reference_id=order.id,
+                status="completed"
+            )
+            db.add(owner_transaction)
+
+            # Get referrer's wallet
             referrer_wallet_result = await db.execute(
                 select(Wallet).where(Wallet.user_id == purchase.referrer_id)
             )
@@ -468,10 +447,11 @@ async def update_order_status(
                 db.add(referrer_wallet)
                 await db.flush()
 
+            # Credit commission to referrer's referral balance
             referrer_wallet.referral_balance += purchase.commission_amount
 
-            # Create transaction record
-            transaction = Transaction(
+            # Create transaction for referrer (credit)
+            referrer_transaction = Transaction(
                 user_id=purchase.referrer_id,
                 type="product_referral_commission",
                 amount=purchase.commission_amount,
@@ -480,7 +460,7 @@ async def update_order_status(
                 reference_id=order.id,
                 status="completed"
             )
-            db.add(transaction)
+            db.add(referrer_transaction)
 
             # Update purchase status
             purchase.status = "completed"
@@ -500,9 +480,6 @@ async def update_order_status(
         phone_number=order.phone_number,
         payment_method=order.payment_method,
         status=order.status,
-        referral_id=str(order.referral_id) if order.referral_id else None,
-        referral_commission=order.referral_commission,
-        platform_commission=order.platform_commission,
         created_at=order.created_at,
         updated_at=order.updated_at
     )

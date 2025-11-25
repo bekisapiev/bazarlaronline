@@ -45,7 +45,6 @@ class Product(Base):
     price = Column(Numeric(10, 2), nullable=False)
     discount_price = Column(Numeric(10, 2), nullable=True)
     # discount_percent will be calculated as computed column
-    partner_percent = Column(Numeric(5, 2), default=0)
     # Referral program fields (Business tariff only)
     is_referral_enabled = Column(Boolean, default=False)
     referral_commission_percent = Column(Numeric(5, 2), nullable=True)  # 1-50%
@@ -73,7 +72,6 @@ class Product(Base):
 
     # Constraints
     __table_args__ = (
-        CheckConstraint('partner_percent >= 0 AND partner_percent <= 100', name='check_partner_percent'),
         CheckConstraint('referral_commission_percent IS NULL OR (referral_commission_percent >= 1 AND referral_commission_percent <= 50)', name='check_referral_commission'),
         CheckConstraint("product_type IN ('product', 'service')", name='check_product_type'),
     )

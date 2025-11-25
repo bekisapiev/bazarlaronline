@@ -24,16 +24,12 @@ class Order(Base):
     phone_number = Column(String(20), nullable=True)
     payment_method = Column(String(20), nullable=True)  # wallet, mbank
     status = Column(String(20), default="pending")  # pending, processing, completed, cancelled
-    referral_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    referral_commission = Column(Numeric(10, 2), nullable=True)
-    platform_commission = Column(Numeric(10, 2), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="orders_as_buyer")
     seller = relationship("User", foreign_keys=[seller_id], back_populates="orders_as_seller")
-    referral_user = relationship("User", foreign_keys=[referral_id])
     review = relationship("Review", back_populates="order", uselist=False)
 
     def __repr__(self):

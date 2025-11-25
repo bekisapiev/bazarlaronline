@@ -35,7 +35,6 @@ class OrderCreate(BaseModel):
     delivery_address: Optional[str] = None
     phone_number: str
     payment_method: str = "wallet"  # wallet or mbank
-    referral_code: Optional[str] = None  # Partner referral code
 
     class Config:
         json_schema_extra = {
@@ -51,8 +50,7 @@ class OrderCreate(BaseModel):
                 ],
                 "delivery_address": "г. Бишкек, ул. Чуй 123",
                 "phone_number": "+996555123456",
-                "payment_method": "wallet",
-                "referral_code": "ABC123DEF456"
+                "payment_method": "wallet"
             }
         }
 
@@ -81,9 +79,6 @@ class OrderResponse(BaseModel):
     phone_number: Optional[str] = None
     payment_method: Optional[str] = None
     status: str
-    referral_id: Optional[str] = None
-    referral_commission: Optional[Decimal] = None
-    platform_commission: Optional[Decimal] = None
     created_at: datetime
     updated_at: datetime
 
