@@ -10,7 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database.session import async_engine
+from sqlalchemy import text
+from app.database.session import engine
 
 async def apply_migration():
     """Apply the partner program removal migration"""
@@ -29,14 +30,14 @@ async def apply_migration():
     print("=" * 60)
 
     try:
-        async with async_engine.begin() as conn:
+        async with engine.begin() as conn:
             # Split by semicolon and execute each statement
             statements = [s.strip() for s in migration_sql.split(';') if s.strip() and not s.strip().startswith('--')]
 
             for statement in statements:
                 if statement:
                     print(f"Executing: {statement[:80]}...")
-                    await conn.execute(statement)
+                    await conn.execute(text(statement))
 
         print("=" * 60)
         print("✅ Migration applied successfully!")
