@@ -84,6 +84,7 @@ async def get_category_ids_with_children(category_id: int, db: AsyncSession) -> 
 async def get_products(
     category_id: Optional[int] = Query(None, description="Filter by category"),
     city_id: Optional[int] = Query(None, description="Filter by seller city"),
+    seller_id: Optional[UUID] = Query(None, description="Filter by seller ID"),
     seller_type: Optional[str] = Query(None, description="Filter by seller type (market, boutique, shop, etc)"),
     product_type: Optional[str] = Query(None, description="Filter by product type (product or service)"),
     search: Optional[str] = Query(None, description="Search in product titles"),
@@ -99,6 +100,7 @@ async def get_products(
     Filters:
     - category_id: Filter by product category
     - city_id: Filter by seller city (from seller profile)
+    - seller_id: Filter by seller user ID
     - seller_type: Filter by seller type (market, boutique, shop, office, home, mobile, warehouse)
     - product_type: Filter by product type (product or service)
     - search: Search in product titles
@@ -133,7 +135,10 @@ async def get_products(
     if max_price is not None:
         query = query.where(Product.price <= max_price)
 
-    # Seller profile filters
+    # Seller filters
+    if seller_id:
+        query = query.where(Product.seller_id == seller_id)
+
     if city_id:
         query = query.where(SellerProfile.city_id == city_id)
 
@@ -168,6 +173,8 @@ async def get_products(
         count_query = count_query.where(Product.price >= min_price)
     if max_price is not None:
         count_query = count_query.where(Product.price <= max_price)
+    if seller_id:
+        count_query = count_query.where(Product.seller_id == seller_id)
     if city_id:
         count_query = count_query.where(SellerProfile.city_id == city_id)
     if seller_type:
