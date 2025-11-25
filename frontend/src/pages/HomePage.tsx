@@ -228,7 +228,7 @@ const HomePage: React.FC = () => {
       const params: any = {
         page: pageNum,
         page_size: 30,
-        is_service: contentType === 'service',
+        product_type: contentType,  // 'product' or 'service'
       };
 
       if (selectedCity) params.city_id = selectedCity;

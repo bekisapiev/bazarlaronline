@@ -85,6 +85,7 @@ async def get_products(
     category_id: Optional[int] = Query(None, description="Filter by category"),
     city_id: Optional[int] = Query(None, description="Filter by seller city"),
     seller_type: Optional[str] = Query(None, description="Filter by seller type (market, boutique, shop, etc)"),
+    product_type: Optional[str] = Query(None, description="Filter by product type (product or service)"),
     search: Optional[str] = Query(None, description="Search in product titles"),
     min_price: Optional[float] = Query(None, description="Minimum price"),
     max_price: Optional[float] = Query(None, description="Maximum price"),
@@ -99,6 +100,7 @@ async def get_products(
     - category_id: Filter by product category
     - city_id: Filter by seller city (from seller profile)
     - seller_type: Filter by seller type (market, boutique, shop, office, home, mobile, warehouse)
+    - product_type: Filter by product type (product or service)
     - search: Search in product titles
     - min_price/max_price: Filter by price range
     """
@@ -135,6 +137,10 @@ async def get_products(
     if seller_type:
         query = query.where(SellerProfile.seller_type == seller_type)
 
+    # Product type filter (product or service)
+    if product_type:
+        query = query.where(Product.product_type == product_type)
+
     # Order by promotion views remaining (promoted products first), then by created_at
     # Products with promotion_views_remaining > 0 appear first (in random order for fairness)
     # Then regular products sorted by newest first
@@ -166,6 +172,8 @@ async def get_products(
         count_query = count_query.where(SellerProfile.city_id == city_id)
     if seller_type:
         count_query = count_query.where(SellerProfile.seller_type == seller_type)
+    if product_type:
+        count_query = count_query.where(Product.product_type == product_type)
 
     count_result = await db.execute(count_query)
     total = count_result.scalar()
