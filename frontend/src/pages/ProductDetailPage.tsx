@@ -630,9 +630,6 @@ const ProductDetailPage: React.FC = () => {
                 >
                   {isFavorite ? <Favorite /> : <FavoriteBorder />}
                 </IconButton>
-                <IconButton sx={{ border: 1, borderColor: 'grey.300' }}>
-                  <Share />
-                </IconButton>
               </Box>
 
               <Divider sx={{ my: 3 }} />

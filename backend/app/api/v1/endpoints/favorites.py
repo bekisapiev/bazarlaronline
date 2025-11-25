@@ -117,10 +117,13 @@ async def get_favorites(
 
     Returns paginated list with product details
     """
-    # Get favorites with product join
+    from app.models.user import SellerProfile
+
+    # Get favorites with product and seller profile join
     query = (
-        select(Favorite, Product)
+        select(Favorite, Product, SellerProfile)
         .join(Product, Favorite.product_id == Product.id)
+        .join(SellerProfile, Product.seller_id == SellerProfile.user_id)
         .where(Favorite.user_id == current_user.id)
         .order_by(desc(Favorite.created_at))
     )
@@ -139,28 +142,26 @@ async def get_favorites(
     result = await db.execute(query)
     rows = result.all()
 
-    return {
-        "items": [
-            {
-                "product_id": str(product.id),
-                "title": product.title,
-                "description": product.description,
-                "price": float(product.price),
-                "discount_price": float(product.discount_price) if product.discount_price else None,
-                "discount_percent": product.discount_percent,
-                "images": product.images or [],
-                "status": product.status,
-                "is_promoted": product.is_promoted,
-                "views_count": product.views_count,
-                "added_at": favorite.created_at
-            }
-            for favorite, product in rows
-        ],
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": (offset + limit) < total
-    }
+    # Return list of products directly (not wrapped in "items")
+    favorites_list = [
+        {
+            "id": str(product.id),
+            "title": product.title,
+            "description": product.description,
+            "price": float(product.price),
+            "discount_price": float(product.discount_price) if product.discount_price else None,
+            "discount_percent": product.discount_percent,
+            "images": product.images or [],
+            "status": product.status,
+            "is_promoted": product.is_promoted,
+            "views_count": product.views_count,
+            "seller_name": seller_profile.shop_name,
+            "created_at": favorite.created_at.isoformat()
+        }
+        for favorite, product, seller_profile in rows
+    ]
+
+    return favorites_list
 
 
 @router.get("/favorites/check/{product_id}")
