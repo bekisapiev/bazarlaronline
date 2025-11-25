@@ -125,6 +125,83 @@ async def create_review(
     )
 
 
+@router.get("/product/{product_id}")
+async def get_product_reviews(
+    product_id: UUID,
+    limit: int = Query(30, le=100),
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get reviews for a specific product
+
+    Returns reviews from orders containing this product
+    """
+    from app.models.product import Product
+    from sqlalchemy.orm import selectinload
+
+    # Verify product exists
+    product_result = await db.execute(
+        select(Product).where(Product.id == product_id)
+    )
+    product = product_result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    # Get reviews for orders containing this product
+    # Join Review with Order to filter by product_id
+    result = await db.execute(
+        select(Review)
+        .join(Order, Review.order_id == Order.id)
+        .options(
+            selectinload(Review.buyer),
+            selectinload(Review.order)
+        )
+        .where(Order.product_id == product_id)
+        .order_by(desc(Review.created_at))
+        .limit(limit)
+        .offset(offset)
+    )
+    reviews = result.scalars().all()
+
+    # Build response with loaded relationships
+    reviews_with_info = [
+        ReviewResponse(
+            id=str(review.id),
+            seller_id=str(review.seller_id),
+            buyer_id=str(review.buyer_id),
+            order_id=str(review.order_id),
+            rating=review.rating,
+            comment=review.comment,
+            created_at=review.created_at,
+            buyer_name=review.buyer.full_name if review.buyer else None,
+            order_number=review.order.order_number if review.order else None
+        )
+        for review in reviews
+    ]
+
+    # Count total
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(Review)
+        .join(Order, Review.order_id == Order.id)
+        .where(Order.product_id == product_id)
+    )
+    total = count_result.scalar()
+
+    return {
+        "items": reviews_with_info,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": (offset + limit) < total
+    }
+
+
 @router.get("/seller/{seller_id}")
 async def get_seller_reviews(
     seller_id: UUID,

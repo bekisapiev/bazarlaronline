@@ -149,7 +149,7 @@ export const favoritesAPI = {
   checkFavorite: (productId: string) => api.get(`/favorites/check/${productId}`),
   recordView: (productId: string) => api.post(`/favorites/view-history/${productId}`),
   getViewHistory: (params: any) => api.get('/favorites/view-history/', { params }),
-  clearViewHistory: () => api.delete('/favorites/view-history/clear'),
+  clearViewHistory: () => api.delete('/favorites/view-history'),
 };
 
 export const searchAPI = {

@@ -17,7 +17,7 @@ from app.core.dependencies import get_current_active_user
 router = APIRouter()
 
 
-@router.post("/favorites/{product_id}")
+@router.post("/{product_id}")
 async def add_to_favorites(
     product_id: UUID,
     current_user: User = Depends(get_current_active_user),
@@ -71,7 +71,7 @@ async def add_to_favorites(
     }
 
 
-@router.delete("/favorites/{product_id}")
+@router.delete("/{product_id}")
 async def remove_from_favorites(
     product_id: UUID,
     current_user: User = Depends(get_current_active_user),
@@ -105,7 +105,7 @@ async def remove_from_favorites(
     }
 
 
-@router.get("/favorites")
+@router.get("/")
 async def get_favorites(
     limit: int = Query(30, le=100),
     offset: int = 0,
@@ -164,7 +164,7 @@ async def get_favorites(
     return favorites_list
 
 
-@router.get("/favorites/check/{product_id}")
+@router.get("/check/{product_id}")
 async def check_is_favorite(
     product_id: UUID,
     current_user: User = Depends(get_current_active_user),
