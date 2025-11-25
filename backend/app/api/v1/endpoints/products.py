@@ -840,7 +840,7 @@ async def get_product_by_id(
     from sqlalchemy.orm import joinedload
 
     # Get product with seller profile info
-    # Use joinedload to eagerly load city and market relationships
+    # Use joinedload to eagerly load all relationships to avoid lazy loading issues
     result = await db.execute(
         select(Product, SellerProfile, User).join(
             SellerProfile, Product.seller_id == SellerProfile.user_id
@@ -848,7 +848,8 @@ async def get_product_by_id(
             User, Product.seller_id == User.id
         ).options(
             joinedload(SellerProfile.city),
-            joinedload(SellerProfile.market)
+            joinedload(SellerProfile.market),
+            joinedload(Product.category)
         ).where(Product.id == product_id)
     )
     row = result.first()
@@ -861,11 +862,11 @@ async def get_product_by_id(
 
     product, seller_profile, user = row
 
-    # Increment views
-    product.views_count += 1
-    await db.commit()
+    # Get city and market names BEFORE commit (while still in session)
+    city_name = seller_profile.city.name if seller_profile.city else None
+    market_name = seller_profile.market.name if seller_profile.market else None
 
-    # Get category hierarchy
+    # Get category hierarchy BEFORE commit (while still in session)
     category_hierarchy = []
     if product.category_id:
         category = product.category
@@ -884,9 +885,9 @@ async def get_product_by_id(
             else:
                 category = None
 
-    # Get city and market names
-    city_name = seller_profile.city.name if seller_profile.city else None
-    market_name = seller_profile.market.name if seller_profile.market else None
+    # Increment views
+    product.views_count += 1
+    await db.commit()
 
     return {
         "id": str(product.id),
