@@ -243,13 +243,17 @@ async def get_referral_products(
     """
     Get list of products with enabled referral program
 
-    Products are returned sorted by commission amount by default.
+    Only products from Business tariff users with commission >= 1% are shown.
     All users can view and share referral links for these products.
     """
-    # Base query - only products with referral enabled
-    query = select(Product).where(
+    # Base query - only products with referral enabled, commission >= 1%, and seller has Business tariff
+    query = select(Product).join(
+        User, Product.seller_id == User.id
+    ).where(
         Product.status == "active",
-        Product.is_referral_enabled == True
+        Product.is_referral_enabled == True,
+        Product.referral_commission_percent >= 1,
+        User.tariff == "business"
     )
 
     # Apply filters
@@ -277,9 +281,13 @@ async def get_referral_products(
         query = query.order_by(desc(Product.created_at))
 
     # Count total before pagination
-    count_query = select(func.count()).select_from(Product).where(
+    count_query = select(func.count()).select_from(Product).join(
+        User, Product.seller_id == User.id
+    ).where(
         Product.status == "active",
-        Product.is_referral_enabled == True
+        Product.is_referral_enabled == True,
+        Product.referral_commission_percent >= 1,
+        User.tariff == "business"
     )
 
     if category_id:

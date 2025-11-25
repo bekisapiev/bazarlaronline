@@ -356,8 +356,7 @@ const ProfilePage: React.FC = () => {
   const loadPartnerProducts = async () => {
     try {
       setPartnerProductsLoading(true);
-      const response = await productsAPI.getProducts({
-        has_referral: true,
+      const response = await productsAPI.getReferralProducts({
         limit: 50,
         offset: 0,
       });
@@ -366,8 +365,8 @@ const ProfilePage: React.FC = () => {
         : (response.data.items || []);
       setPartnerProducts(productsData);
     } catch (err: any) {
-      console.error('Error loading partner products:', err);
-      setError(err.response?.data?.detail || 'Не удалось загрузить партнерские товары');
+      console.error('Error loading referral products:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить реферальные товары');
     } finally {
       setPartnerProductsLoading(false);
     }
@@ -642,7 +641,7 @@ const ProfilePage: React.FC = () => {
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
           <Tab icon={<Favorite />} iconPosition="start" label="Избранное" />
           <Tab icon={<History />} iconPosition="start" label="История" />
-          <Tab icon={<Handshake />} iconPosition="start" label="Партнерские товары" />
+          <Tab icon={<Handshake />} iconPosition="start" label="Реферальные товары и услуги" />
         </Tabs>
       </Paper>
 
