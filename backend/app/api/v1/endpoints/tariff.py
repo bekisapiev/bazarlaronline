@@ -169,6 +169,8 @@ async def upgrade_tariff(
                 user_id=current_user.id,
                 shop_name=default_shop_name,
                 description="",
+                logo_url=current_user.avatar,  # Copy avatar from User
+                banner_url=current_user.banner,  # Copy banner from User
                 seller_type="shop"  # Default: shop (allowed: market, boutique, shop, office, home, mobile, warehouse)
             )
             db.add(seller_profile)

@@ -14,10 +14,10 @@ async def apply_migration():
     """Create seller profiles for Pro/Business users without profiles"""
 
     async with engine.begin() as conn:
-        # Get all Pro/Business users
+        # Get all Pro/Business users with their avatar and banner
         result = await conn.execute(
             text("""
-                SELECT id, full_name, phone
+                SELECT id, full_name, phone, avatar, banner
                 FROM users
                 WHERE tariff IN ('pro', 'business')
                 AND id NOT IN (SELECT user_id FROM seller_profiles)
@@ -34,7 +34,7 @@ async def apply_migration():
 
         # Create seller profiles
         for user in users_without_profiles:
-            user_id, full_name, phone = user
+            user_id, full_name, phone, avatar, banner = user
 
             # Generate default shop name
             shop_name = full_name if full_name else f"Магазин {phone}"
@@ -42,13 +42,15 @@ async def apply_migration():
             await conn.execute(
                 text("""
                     INSERT INTO seller_profiles
-                    (user_id, shop_name, description, seller_type, rating, reviews_count, is_verified, created_at, updated_at)
+                    (user_id, shop_name, description, logo_url, banner_url, seller_type, rating, reviews_count, is_verified, created_at, updated_at)
                     VALUES
-                    (:user_id, :shop_name, '', 'shop', 0, 0, false, NOW(), NOW())
+                    (:user_id, :shop_name, '', :logo_url, :banner_url, 'shop', 0, 0, false, NOW(), NOW())
                 """),
                 {
                     "user_id": str(user_id),
-                    "shop_name": shop_name
+                    "shop_name": shop_name,
+                    "logo_url": avatar,
+                    "banner_url": banner
                 }
             )
 

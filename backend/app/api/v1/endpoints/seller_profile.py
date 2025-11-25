@@ -168,6 +168,7 @@ async def get_sellers_catalog(
                 "shop_name": s.shop_name,
                 "description": s.description,
                 "logo_url": s.logo_url,
+                "banner_url": s.banner_url,
                 "city_id": s.city_id,
                 "seller_type": s.seller_type,
                 "category_id": s.category_id,
