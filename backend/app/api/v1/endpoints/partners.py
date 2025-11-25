@@ -202,28 +202,27 @@ async def get_referral_earnings(
 
 
 @router.get("/top-products")
-async def get_top_performing_products(
+async def get_top_referral_products(
     limit: int = Query(10, le=50),
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get top performing products for partners
+    Get top referral products
 
-    Shows products with highest partner commission that can be promoted
-    (Only available for Business tariff users)
+    Shows products with highest referral commission that users can promote
+    These are products with referral program enabled (Business tariff only)
     """
-    # This endpoint helps partners find the best products to promote
     from app.models.product import Product
 
-    # Get products with partner_percent > 0, ordered by partner_percent desc
+    # Get products with referral program enabled, ordered by commission percent desc
     result = await db.execute(
         select(Product)
         .where(
             Product.status == "active",
-            Product.partner_percent > 0
+            Product.is_referral_enabled == True
         )
-        .order_by(desc(Product.partner_percent), desc(Product.views_count))
+        .order_by(desc(Product.referral_commission_percent), desc(Product.views_count))
         .limit(limit)
     )
     products = result.scalars().all()
@@ -235,9 +234,9 @@ async def get_top_performing_products(
                 "title": p.title,
                 "price": float(p.price),
                 "discount_price": float(p.discount_price) if p.discount_price else None,
-                "partner_percent": float(p.partner_percent),
+                "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else 0,
                 "potential_commission": float(
-                    (p.discount_price if p.discount_price else p.price) * p.partner_percent / 100
+                    (p.discount_price if p.discount_price else p.price) * (p.referral_commission_percent or 0) / 100
                 ),
                 "seller_id": str(p.seller_id),
                 "images": p.images[:1] if p.images else [],
