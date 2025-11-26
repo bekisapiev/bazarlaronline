@@ -235,8 +235,7 @@ const ProfilePage: React.FC = () => {
   const [partnerProducts, setPartnerProducts] = useState<Product[]>([]);
   const [partnerProductsLoading, setPartnerProductsLoading] = useState(false);
 
-  // Orders subtab state
-  const [ordersTab, setOrdersTab] = useState<'my_orders' | 'ordered_from_me'>('my_orders');
+  // Orders state
   const [orderedFromMe, setOrderedFromMe] = useState<Order[]>([]);
 
   // Wallet balances
@@ -261,18 +260,17 @@ const ProfilePage: React.FC = () => {
       loadMyProducts();
     } else if (currentTab === 2 && orders.length === 0) {
       loadOrders();
+    } else if (currentTab === 3 && orderedFromMe.length === 0) {
       loadOrderedFromMe();
-    } else if (currentTab === 3 && transactions.length === 0) {
+    } else if (currentTab === 4 && transactions.length === 0) {
       loadWallet();
-    } else if (currentTab === 4 && favorites.length === 0) {
-      loadFavorites();
     } else if (currentTab === 5 && viewHistory.length === 0) {
       loadViewHistory();
     } else if (currentTab === 6 && partnerProducts.length === 0) {
       loadPartnerProducts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTab, myProducts.length, orders.length, transactions.length, favorites.length, viewHistory.length, partnerProducts.length]);
+  }, [currentTab, myProducts.length, orders.length, orderedFromMe.length, transactions.length, viewHistory.length, partnerProducts.length]);
 
   const loadProfile = async () => {
     try {
@@ -760,7 +758,8 @@ const ProfilePage: React.FC = () => {
         >
           <Tab icon={<Person />} iconPosition="start" label="Мой профиль" />
           <Tab icon={<Storefront />} iconPosition="start" label="Мои товары и услуги" />
-          <Tab icon={<ShoppingBag />} iconPosition="start" label="Заказы" />
+          <Tab icon={<ShoppingCart />} iconPosition="start" label="Я заказал" />
+          <Tab icon={<Receipt />} iconPosition="start" label="Мне заказали" />
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
           <Tab icon={<History />} iconPosition="start" label="История" />
           <Tab icon={<Handshake />} iconPosition="start" label="Реферальные товары и услуги" />
@@ -1174,137 +1173,116 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 2: Orders */}
+      {/* Tab 2: My Orders (Я заказал) */}
       <TabPanel value={currentTab} index={2}>
-        <Box sx={{ mb: 3 }}>
-          <ToggleButtonGroup
-            value={ordersTab}
-            exclusive
-            onChange={(_, value) => {
-              if (value !== null) {
-                setOrdersTab(value);
-              }
-            }}
-            aria-label="orders type"
-          >
-            <ToggleButton value="my_orders" aria-label="my orders">
-              <ShoppingCart sx={{ mr: 1 }} />
-              Мои заказы
-            </ToggleButton>
-            <ToggleButton value="ordered_from_me" aria-label="ordered from me">
-              <Receipt sx={{ mr: 1 }} />
-              Мне заказали
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
-
-        {ordersTab === 'my_orders' ? (
-          ordersLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
-            </Box>
-          ) : orders.length === 0 ? (
-            <Paper sx={{ p: 8, textAlign: 'center' }}>
-              <ShoppingCart sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                У вас пока нет заказов
-              </Typography>
-              <Button
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={() => navigate('/')}
-              >
-                Начать покупки
-              </Button>
-            </Paper>
-          ) : (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID заказа</TableCell>
-                    <TableCell>Товар</TableCell>
-                    <TableCell>Продавец</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Статус</TableCell>
-                    <TableCell>Дата</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {orders.map((order) => (
-                    <TableRow key={order.id} hover>
-                      <TableCell>{order.id.slice(0, 8)}</TableCell>
-                      <TableCell>{order.product_title}</TableCell>
-                      <TableCell>{order.seller_name}</TableCell>
-                      <TableCell>{order.total_price} сом</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getOrderStatusLabel(order.status)}
-                          color={getOrderStatusColor(order.status) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{formatDate(order.created_at)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )
+        {ordersLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : orders.length === 0 ? (
+          <Paper sx={{ p: 8, textAlign: 'center' }}>
+            <ShoppingCart sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              У вас пока нет заказов
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{ mt: 2 }}
+              onClick={() => navigate('/')}
+            >
+              Начать покупки
+            </Button>
+          </Paper>
         ) : (
-          ordersLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-              <CircularProgress />
-            </Box>
-          ) : orderedFromMe.length === 0 ? (
-            <Paper sx={{ p: 8, textAlign: 'center' }}>
-              <Receipt sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                Нет заказов от покупателей
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Когда кто-то закажет ваши товары, они появятся здесь
-              </Typography>
-            </Paper>
-          ) : (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID заказа</TableCell>
-                    <TableCell>Товар</TableCell>
-                    <TableCell>Покупатель</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Статус</TableCell>
-                    <TableCell>Дата</TableCell>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID заказа</TableCell>
+                  <TableCell>Товар</TableCell>
+                  <TableCell>Продавец</TableCell>
+                  <TableCell>Сумма</TableCell>
+                  <TableCell>Статус</TableCell>
+                  <TableCell>Дата</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>{order.id.slice(0, 8)}</TableCell>
+                    <TableCell>{order.product_title || 'Н/Д'}</TableCell>
+                    <TableCell>{order.seller_name || 'Н/Д'}</TableCell>
+                    <TableCell>{order.total_price} сом</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getOrderStatusLabel(order.status)}
+                        color={getOrderStatusColor(order.status) as any}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(order.created_at)}</TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {orderedFromMe.map((order) => (
-                    <TableRow key={order.id} hover>
-                      <TableCell>{order.id.slice(0, 8)}</TableCell>
-                      <TableCell>{order.product_title}</TableCell>
-                      <TableCell>{order.seller_name}</TableCell>
-                      <TableCell>{order.total_price} сом</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getOrderStatusLabel(order.status)}
-                          color={getOrderStatusColor(order.status) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>{formatDate(order.created_at)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </TabPanel>
 
-      {/* Tab 3: Wallet */}
+      {/* Tab 3: Orders from customers (Мне заказали) */}
       <TabPanel value={currentTab} index={3}>
+        {ordersLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : orderedFromMe.length === 0 ? (
+          <Paper sx={{ p: 8, textAlign: 'center' }}>
+            <Receipt sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Нет заказов от покупателей
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Когда кто-то закажет ваши товары, они появятся здесь
+            </Typography>
+          </Paper>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID заказа</TableCell>
+                  <TableCell>Товар</TableCell>
+                  <TableCell>Покупатель</TableCell>
+                  <TableCell>Сумма</TableCell>
+                  <TableCell>Статус</TableCell>
+                  <TableCell>Дата</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orderedFromMe.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>{order.id.slice(0, 8)}</TableCell>
+                    <TableCell>{order.product_title || 'Н/Д'}</TableCell>
+                    <TableCell>{order.seller_name || 'Н/Д'}</TableCell>
+                    <TableCell>{order.total_price} сом</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getOrderStatusLabel(order.status)}
+                        color={getOrderStatusColor(order.status) as any}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(order.created_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </TabPanel>
+
+      {/* Tab 4: Wallet */}
+      <TabPanel value={currentTab} index={4}>
         {walletLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -1454,8 +1432,8 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 4: View History */}
-      <TabPanel value={currentTab} index={4}>
+      {/* Tab 5: View History */}
+      <TabPanel value={currentTab} index={5}>
         {historyLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -1525,8 +1503,8 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 5: Partner Products */}
-      <TabPanel value={currentTab} index={5}>
+      {/* Tab 6: Partner Products */}
+      <TabPanel value={currentTab} index={6}>
         {partnerProductsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
