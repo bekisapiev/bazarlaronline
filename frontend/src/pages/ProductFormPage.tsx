@@ -127,6 +127,9 @@ const ProductFormPage: React.FC = () => {
       const response = await productsAPI.getProductById(productId);
       const product = response.data;
 
+      console.log('Loading product:', product);
+      console.log('Product category_id:', product.category_id);
+
       // Convert characteristics array to object format for form
       const characteristicsObject: Record<string, string> = {};
       if (Array.isArray(product.characteristics)) {
@@ -165,12 +168,18 @@ const ProductFormPage: React.FC = () => {
         views_total: product.promotion_views_total || 0,
         is_promoted: product.is_promoted || false,
       });
+
+      // If categories are already loaded, set them immediately
+      if (flatCategories.length > 0 && product.category_id) {
+        console.log('Categories already loaded, setting category immediately');
+        setCategorySelection(product.category_id, flatCategories);
+      }
     } catch (err: any) {
       setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [flatCategories, setCategorySelection]);
 
   // Load product if edit mode
   useEffect(() => {
@@ -184,30 +193,10 @@ const ProductFormPage: React.FC = () => {
   // Set category hierarchy when categories and product are loaded
   useEffect(() => {
     if (formData.category_id && flatCategories.length > 0) {
-      console.log('Setting category hierarchy for category_id:', formData.category_id);
-      console.log('Available flat categories:', flatCategories);
-
-      // Use flat list for faster lookup
-      const category = flatCategories.find(c => c.id === formData.category_id);
-      console.log('Found category:', category);
-
-      if (category) {
-        if (category.parent_id) {
-          // This is a subcategory
-          console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
-          setSelectedParentCategory(category.parent_id);
-          setSelectedSubcategory(category.id);
-        } else {
-          // This is a parent category
-          console.log('Setting parent category:', category.id);
-          setSelectedParentCategory(category.id);
-          setSelectedSubcategory(null);
-        }
-      } else {
-        console.warn('Category not found for id:', formData.category_id);
-      }
+      console.log('useEffect: Setting category hierarchy for category_id:', formData.category_id);
+      setCategorySelection(formData.category_id, flatCategories);
     }
-  }, [formData.category_id, flatCategories]);
+  }, [formData.category_id, flatCategories, setCategorySelection]);
 
   const loadPromotionPackages = async () => {
     try {
@@ -248,6 +237,30 @@ const ProductFormPage: React.FC = () => {
     flatten(cats);
     return result;
   };
+
+  // Helper function to set category selection based on category_id
+  const setCategorySelection = useCallback((categoryId: number, availableCategories: Category[]) => {
+    console.log('setCategorySelection called with:', categoryId, 'categories count:', availableCategories.length);
+
+    const category = availableCategories.find(c => c.id === categoryId);
+    console.log('Found category:', category);
+
+    if (category) {
+      if (category.parent_id) {
+        // This is a subcategory
+        console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
+        setSelectedParentCategory(category.parent_id);
+        setSelectedSubcategory(category.id);
+      } else {
+        // This is a parent category
+        console.log('Setting parent category:', category.id);
+        setSelectedParentCategory(category.id);
+        setSelectedSubcategory(null);
+      }
+    } else {
+      console.warn('Category not found for id:', categoryId);
+    }
+  }, []);
 
   const loadCategories = async () => {
     try {
