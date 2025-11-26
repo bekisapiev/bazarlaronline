@@ -96,6 +96,11 @@ export const productsAPI = {
   getReferralProducts: (params: any) => api.get('/products/referral/products', { params }),
 };
 
+export const locationsAPI = {
+  getCities: () => api.get('/locations/cities'),
+  getMarkets: (params: any) => api.get('/locations/markets', { params }),
+};
+
 export const ordersAPI = {
   getOrders: (params?: any) => api.get('/orders/', { params }),
   getOrderById: (id: string) => api.get(`/orders/${id}`),
