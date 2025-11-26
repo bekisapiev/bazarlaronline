@@ -126,16 +126,16 @@ async def get_categories_tree(
     result = await db.execute(
         select(Category)
         .where(Category.is_active == True)
-        .order_by(Category.sort_order, Category.name)
+        .order_by(Category.level, Category.sort_order, Category.name)
     )
     all_categories = result.scalars().all()
 
-    # Build tree structure
-    categories_map = {c.id: c for c in all_categories}
-    tree = []
+    # Build tree structure using dictionary for O(1) lookup
+    categories_dict = {}
 
+    # First pass: create dictionary entries for all categories
     for category in all_categories:
-        cat_dict = {
+        categories_dict[category.id] = {
             "id": category.id,
             "parent_id": category.parent_id,
             "name": category.name,
@@ -146,22 +146,19 @@ async def get_categories_tree(
             "children": []
         }
 
+    # Second pass: build tree structure
+    tree = []
+    for category in all_categories:
+        cat_dict = categories_dict[category.id]
+
         if category.parent_id is None:
             # Root category
             tree.append(cat_dict)
         else:
             # Add to parent's children
-            parent = categories_map.get(category.parent_id)
+            parent = categories_dict.get(category.parent_id)
             if parent:
-                # Find parent in tree and add child
-                for root_cat in tree:
-                    if root_cat["id"] == parent.id:
-                        root_cat["children"].append(cat_dict)
-                    else:
-                        # Check second level
-                        for child_cat in root_cat.get("children", []):
-                            if child_cat["id"] == parent.id:
-                                child_cat["children"].append(cat_dict)
+                parent["children"].append(cat_dict)
 
     return {"tree": tree}
 

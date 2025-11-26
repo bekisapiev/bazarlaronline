@@ -94,6 +94,7 @@ const ProductFormPage: React.FC = () => {
 
   // Categories
   const [categories, setCategories] = useState<Category[]>([]);
+  const [flatCategories, setFlatCategories] = useState<Category[]>([]);
   const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
 
@@ -182,21 +183,31 @@ const ProductFormPage: React.FC = () => {
 
   // Set category hierarchy when categories and product are loaded
   useEffect(() => {
-    if (formData.category_id && categories.length > 0) {
-      const category = findCategoryById(categories, formData.category_id);
+    if (formData.category_id && flatCategories.length > 0) {
+      console.log('Setting category hierarchy for category_id:', formData.category_id);
+      console.log('Available flat categories:', flatCategories);
+
+      // Use flat list for faster lookup
+      const category = flatCategories.find(c => c.id === formData.category_id);
+      console.log('Found category:', category);
+
       if (category) {
         if (category.parent_id) {
           // This is a subcategory
+          console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
           setSelectedParentCategory(category.parent_id);
           setSelectedSubcategory(category.id);
         } else {
           // This is a parent category
+          console.log('Setting parent category:', category.id);
           setSelectedParentCategory(category.id);
           setSelectedSubcategory(null);
         }
+      } else {
+        console.warn('Category not found for id:', formData.category_id);
       }
     }
-  }, [formData.category_id, categories]);
+  }, [formData.category_id, flatCategories]);
 
   const loadPromotionPackages = async () => {
     try {
@@ -224,6 +235,20 @@ const ProductFormPage: React.FC = () => {
     }
   };
 
+  const flattenCategories = (cats: Category[]): Category[] => {
+    const result: Category[] = [];
+    const flatten = (categories: Category[]) => {
+      for (const cat of categories) {
+        result.push(cat);
+        if (cat.children && cat.children.length > 0) {
+          flatten(cat.children);
+        }
+      }
+    };
+    flatten(cats);
+    return result;
+  };
+
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategoryTree();
@@ -247,20 +272,32 @@ const ProductFormPage: React.FC = () => {
 
       console.log('Loaded categories:', categoriesData);
       setCategories(categoriesData);
+
+      // Create flat list for easier lookup
+      const flat = flattenCategories(categoriesData);
+      console.log('Flattened categories:', flat);
+      setFlatCategories(flat);
     } catch (err) {
       console.error('Failed to load categories:', err);
       setCategories([]);
+      setFlatCategories([]);
     }
   };
 
   const findCategoryById = (cats: Category[], id: number): Category | null => {
+    // First, try to find in the current level
     for (const cat of cats) {
       if (cat.id === id) return cat;
-      if (cat.children) {
+    }
+
+    // Then search in children recursively
+    for (const cat of cats) {
+      if (cat.children && cat.children.length > 0) {
         const found = findCategoryById(cat.children, id);
         if (found) return found;
       }
     }
+
     return null;
   };
 
