@@ -762,7 +762,6 @@ const ProfilePage: React.FC = () => {
           <Tab icon={<Storefront />} iconPosition="start" label="Мои товары и услуги" />
           <Tab icon={<ShoppingBag />} iconPosition="start" label="Заказы" />
           <Tab icon={<AccountBalanceWallet />} iconPosition="start" label="Кошелёк" />
-          <Tab icon={<Favorite />} iconPosition="start" label="Избранное" />
           <Tab icon={<History />} iconPosition="start" label="История" />
           <Tab icon={<Handshake />} iconPosition="start" label="Реферальные товары и услуги" />
         </Tabs>
@@ -1055,264 +1054,26 @@ const ProfilePage: React.FC = () => {
             {/* Seller Profile Section */}
             <Grid item xs={12}>
               <Paper sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h6" fontWeight={600}>
-                    Настройки продавца
-                  </Typography>
-                  {!isEditingSellerProfile ? (
-                    <Button
-                      startIcon={<Edit />}
-                      onClick={() => {
-                        setIsEditingSellerProfile(true);
-                        if (!sellerProfile) {
-                          setEditedSellerProfile({
-                            shop_name: '',
-                          });
-                        }
-                      }}
-                    >
-                      {sellerProfile ? 'Редактировать' : 'Создать профиль продавца'}
-                    </Button>
-                  ) : (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button
-                        startIcon={<Save />}
-                        variant="contained"
-                        onClick={handleSaveSellerProfile}
-                        disabled={loading}
-                      >
-                        Сохранить
-                      </Button>
-                      <Button
-                        startIcon={<Cancel />}
-                        onClick={() => {
-                          setIsEditingSellerProfile(false);
-                          setEditedSellerProfile(sellerProfile || {});
-                        }}
-                        disabled={loading}
-                      >
-                        Отмена
-                      </Button>
-                    </Box>
-                  )}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} gutterBottom>
+                      Настройки продавца
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {sellerProfile
+                        ? 'Управляйте информацией о вашем магазине'
+                        : 'Создайте профиль продавца, чтобы начать продавать товары и услуги'}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<Storefront />}
+                    onClick={() => navigate('/seller-settings')}
+                    size="large"
+                  >
+                    {sellerProfile ? 'Перейти к настройкам' : 'Создать профиль'}
+                  </Button>
                 </Box>
-
-                {sellerProfile || isEditingSellerProfile ? (
-                  <Grid container spacing={3}>
-                    {/* Logo Upload */}
-                    <Grid item xs={12} md={3}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Avatar
-                          src={editedSellerProfile.logo_url}
-                          sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
-                        >
-                          <Storefront sx={{ fontSize: 60 }} />
-                        </Avatar>
-                        {isEditingSellerProfile && (
-                          <Button
-                            component="label"
-                            variant="outlined"
-                            size="small"
-                            startIcon={uploadingLogo ? <CircularProgress size={16} /> : <CloudUpload />}
-                            disabled={uploadingLogo}
-                            fullWidth
-                          >
-                            {uploadingLogo ? 'Загрузка...' : 'Загрузить логотип'}
-                            <input
-                              type="file"
-                              hidden
-                              accept="image/*"
-                              onChange={handleLogoUpload}
-                            />
-                          </Button>
-                        )}
-                      </Box>
-                    </Grid>
-
-                    {/* Seller Profile Fields */}
-                    <Grid item xs={12} md={9}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Название магазина *"
-                            value={editedSellerProfile.shop_name || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({ ...editedSellerProfile, shop_name: e.target.value })
-                            }
-                            disabled={!isEditingSellerProfile}
-                            required
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            select
-                            label="Тип продавца"
-                            value={editedSellerProfile.seller_type || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({ ...editedSellerProfile, seller_type: e.target.value })
-                            }
-                            disabled={!isEditingSellerProfile}
-                            SelectProps={{
-                              native: true,
-                            }}
-                          >
-                            <option value="">Не выбрано</option>
-                            <option value="market">Рынок</option>
-                            <option value="boutique">Бутик</option>
-                            <option value="shop">Магазин</option>
-                            <option value="office">Офис</option>
-                            <option value="home">Дом</option>
-                            <option value="mobile">Мобильный</option>
-                            <option value="warehouse">Склад</option>
-                          </TextField>
-                        </Grid>
-
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            label="Описание"
-                            value={editedSellerProfile.description || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({ ...editedSellerProfile, description: e.target.value })
-                            }
-                            disabled={!isEditingSellerProfile}
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            select
-                            label="Город"
-                            value={editedSellerProfile.city_id || ''}
-                            onChange={(e) => {
-                              const cityId = parseInt(e.target.value);
-                              setEditedSellerProfile({
-                                ...editedSellerProfile,
-                                city_id: cityId || undefined,
-                                market_id: undefined, // Reset market when city changes
-                              });
-                              if (cityId) {
-                                loadMarkets(cityId);
-                              } else {
-                                setMarkets([]);
-                              }
-                            }}
-                            disabled={!isEditingSellerProfile}
-                            SelectProps={{
-                              native: true,
-                            }}
-                          >
-                            <option value="">Не выбрано</option>
-                            {cities.map((city) => (
-                              <option key={city.id} value={city.id}>
-                                {city.name}
-                              </option>
-                            ))}
-                          </TextField>
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            select
-                            label="Рынок"
-                            value={editedSellerProfile.market_id || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({
-                                ...editedSellerProfile,
-                                market_id: parseInt(e.target.value) || undefined,
-                              })
-                            }
-                            disabled={!isEditingSellerProfile || !editedSellerProfile.city_id}
-                            SelectProps={{
-                              native: true,
-                            }}
-                            helperText={!editedSellerProfile.city_id ? 'Сначала выберите город' : ''}
-                          >
-                            <option value="">Не выбрано</option>
-                            {markets.map((market) => (
-                              <option key={market.id} value={market.id}>
-                                {market.name}
-                              </option>
-                            ))}
-                          </TextField>
-                        </Grid>
-
-                        <Grid item xs={12}>
-                          <TextField
-                            fullWidth
-                            label="Адрес"
-                            value={editedSellerProfile.address || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({ ...editedSellerProfile, address: e.target.value })
-                            }
-                            disabled={!isEditingSellerProfile}
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Широта"
-                            type="number"
-                            value={editedSellerProfile.latitude || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({
-                                ...editedSellerProfile,
-                                latitude: parseFloat(e.target.value) || undefined,
-                              })
-                            }
-                            disabled={!isEditingSellerProfile}
-                            placeholder="42.8746"
-                            helperText="Для отображения на карте"
-                          />
-                        </Grid>
-
-                        <Grid item xs={12} md={6}>
-                          <TextField
-                            fullWidth
-                            label="Долгота"
-                            type="number"
-                            value={editedSellerProfile.longitude || ''}
-                            onChange={(e) =>
-                              setEditedSellerProfile({
-                                ...editedSellerProfile,
-                                longitude: parseFloat(e.target.value) || undefined,
-                              })
-                            }
-                            disabled={!isEditingSellerProfile}
-                            placeholder="74.5698"
-                            helperText="Для отображения на карте"
-                          />
-                        </Grid>
-
-                        {sellerProfile && (
-                          <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                              <Chip
-                                label={sellerProfile.is_verified ? 'Верифицирован' : 'Не верифицирован'}
-                                color={sellerProfile.is_verified ? 'success' : 'default'}
-                              />
-                              <Typography variant="body2" color="text.secondary">
-                                Рейтинг: {sellerProfile.rating || 0} ({sellerProfile.reviews_count || 0} отзывов)
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        )}
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    У вас еще нет профиля продавца. Создайте его, чтобы начать продавать товары и услуги.
-                  </Typography>
-                )}
               </Paper>
             </Grid>
           </Grid>
@@ -1693,87 +1454,8 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 4: Favorites */}
+      {/* Tab 4: View History */}
       <TabPanel value={currentTab} index={4}>
-        {favoritesLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : favorites.length === 0 ? (
-          <Paper sx={{ p: 8, textAlign: 'center' }}>
-            <FavoriteBorder sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Нет избранных товаров
-            </Typography>
-            <Button
-              variant="contained"
-              sx={{ mt: 2 }}
-              onClick={() => navigate('/')}
-            >
-              Смотреть товары
-            </Button>
-          </Paper>
-        ) : (
-          <>
-            <Grid container spacing={3}>
-              {favorites.slice(0, 8).map((product) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
-                  <Card
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      cursor: 'pointer',
-                      '&:hover': { boxShadow: 4 },
-                    }}
-                    onClick={() => navigate(`/products/${product.id}`)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={
-                        product.images && product.images.length > 0
-                          ? product.images[0]
-                          : 'https://via.placeholder.com/200'
-                      }
-                      alt={product.title}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography
-                        variant="subtitle1"
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                        }}
-                      >
-                        {product.title}
-                      </Typography>
-                      <Typography variant="h6" fontWeight={600} sx={{ mt: 1 }}>
-                        {product.discount_price || product.price} сом
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Button
-                variant="outlined"
-                size="large"
-                onClick={() => navigate('/favorites')}
-              >
-                Посмотреть все ({favorites.length})
-              </Button>
-            </Box>
-          </>
-        )}
-      </TabPanel>
-
-      {/* Tab 5: View History */}
-      <TabPanel value={currentTab} index={5}>
         {historyLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
@@ -1843,8 +1525,8 @@ const ProfilePage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 6: Partner Products */}
-      <TabPanel value={currentTab} index={6}>
+      {/* Tab 5: Partner Products */}
+      <TabPanel value={currentTab} index={5}>
         {partnerProductsLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />

@@ -16,6 +16,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import SettingsPage from './pages/SettingsPage';
 import SellerDashboardPage from './pages/SellerDashboardPage';
+import SellerSettingsPage from './pages/SellerSettingsPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
@@ -181,6 +182,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SellerDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/seller-settings"
+            element={
+              <ProtectedRoute>
+                <SellerSettingsPage />
               </ProtectedRoute>
             }
           />
