@@ -167,7 +167,7 @@ const ProductFormPage: React.FC = () => {
       const product = response.data;
 
       console.log('Loading product:', product);
-      console.log('Product category_id:', product.category_id);
+      console.log('Product category_id:', product.category_id, 'type:', typeof product.category_id);
 
       // Convert characteristics array to object format for form
       const characteristicsObject: Record<string, string> = {};
@@ -207,18 +207,12 @@ const ProductFormPage: React.FC = () => {
         views_total: product.promotion_views_total || 0,
         is_promoted: product.is_promoted || false,
       });
-
-      // If categories are already loaded, set them immediately
-      if (flatCategories.length > 0 && product.category_id) {
-        console.log('Categories already loaded, setting category immediately');
-        setCategorySelection(product.category_id, flatCategories);
-      }
     } catch (err: any) {
       setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
     } finally {
       setLoading(false);
     }
-  }, [flatCategories, setCategorySelection]);
+  }, []);
 
   // Load product if edit mode
   useEffect(() => {
@@ -226,14 +220,25 @@ const ProductFormPage: React.FC = () => {
       loadProduct(id);
       loadPromotionPackages();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, id]);
+  }, [isEditMode, id, loadProduct]);
 
   // Set category hierarchy when categories and product are loaded
   useEffect(() => {
+    console.log('Category selection effect triggered');
+    console.log('formData.category_id:', formData.category_id, 'type:', typeof formData.category_id);
+    console.log('flatCategories.length:', flatCategories.length);
+    console.log('flatCategories:', flatCategories);
+
     if (formData.category_id && flatCategories.length > 0) {
-      console.log('useEffect: Setting category hierarchy for category_id:', formData.category_id);
+      console.log('Both values present, calling setCategorySelection');
       setCategorySelection(formData.category_id, flatCategories);
+    } else {
+      if (!formData.category_id) {
+        console.log('Category ID not set yet');
+      }
+      if (flatCategories.length === 0) {
+        console.log('Categories not loaded yet');
+      }
     }
   }, [formData.category_id, flatCategories, setCategorySelection]);
 
