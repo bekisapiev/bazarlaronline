@@ -63,7 +63,6 @@ interface ProductFormData {
   stock_quantity?: number;
   delivery_available: boolean;
   characteristics: Record<string, string>;
-  partner_percentage?: number;
   is_referral_enabled?: boolean;
   referral_commission_percent?: number;
 }
@@ -155,7 +154,6 @@ const ProductFormPage: React.FC = () => {
         stock_quantity: product.stock_quantity,
         delivery_available: product.delivery_type === 'paid',
         characteristics: characteristicsObject,
-        partner_percentage: product.partner_percent,
         is_referral_enabled: product.is_referral_enabled || false,
         referral_commission_percent: product.referral_commission_percent,
       });
@@ -415,7 +413,6 @@ const ProductFormPage: React.FC = () => {
         product_type: formData.is_service ? 'service' : 'product',
         characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
         discount_price: formData.discount_price || undefined,
-        partner_percent: formData.partner_percentage || undefined,
         delivery_type: formData.delivery_available ? 'paid' : 'pickup',
         is_referral_enabled: formData.is_referral_enabled || false,
         referral_commission_percent: formData.is_referral_enabled ? formData.referral_commission_percent : undefined,
@@ -869,31 +866,6 @@ const ProductFormPage: React.FC = () => {
                 </>
               )}
             </Paper>
-
-            {/* Partner percentage (if Business tariff) */}
-            {user?.tariff === 'business' && (
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Партнерская программа
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-
-                <TextField
-                  fullWidth
-                  label="Процент партнеру"
-                  type="number"
-                  value={formData.partner_percentage || ''}
-                  onChange={(e) =>
-                    handleInputChange('partner_percentage', e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  helperText="Процент от продажи для партнеров"
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    inputProps: { min: 0, max: 100 },
-                  }}
-                />
-              </Paper>
-            )}
 
             {/* Promotion (Edit mode only) */}
             {isEditMode && (
