@@ -52,16 +52,16 @@ VALUES (10, 'Электроника', 'elektronika', 2, 'devices', 0, true, 1);
 
 -- Подкатегории Электроники
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(101, 'Телефоны и аксессуары', 'telefony-aksessuary', 3, NULL, 0, true, 10),
-(102, 'Ноутбуки и компьютеры', 'noutbuki-kompyutery', 3, NULL, 1, true, 10),
-(103, 'Планшеты и электронные книги', 'planshety-eknigi', 3, NULL, 2, true, 10),
-(104, 'ТВ, аудио, видео', 'tv-audio-video', 3, NULL, 3, true, 10),
-(105, 'Фото и видеокамеры', 'foto-videokamery', 3, NULL, 4, true, 10),
-(106, 'Игровые приставки', 'igrovye-pristavki', 3, NULL, 5, true, 10),
-(107, 'Техника для дома', 'tekhnika-dlya-doma', 3, NULL, 6, true, 10),
-(108, 'Климатическая техника', 'klimaticheskaya-tekhnika', 3, NULL, 7, true, 10),
-(109, 'Аксессуары и комплектующие', 'aksessuary-komplektuyushchie', 3, NULL, 8, true, 10),
-(110, 'Умная электроника', 'umnaya-elektronika', 3, NULL, 9, true, 10);
+(1001, 'Телефоны и аксессуары', 'telefony-aksessuary', 3, NULL, 0, true, 10),
+(1002, 'Ноутбуки и компьютеры', 'noutbuki-kompyutery', 3, NULL, 1, true, 10),
+(1003, 'Планшеты и электронные книги', 'planshety-eknigi', 3, NULL, 2, true, 10),
+(1004, 'ТВ, аудио, видео', 'tv-audio-video', 3, NULL, 3, true, 10),
+(1005, 'Фото и видеокамеры', 'foto-videokamery', 3, NULL, 4, true, 10),
+(1006, 'Игровые приставки', 'igrovye-pristavki', 3, NULL, 5, true, 10),
+(1007, 'Техника для дома', 'tekhnika-dlya-doma', 3, NULL, 6, true, 10),
+(1008, 'Климатическая техника', 'klimaticheskaya-tekhnika', 3, NULL, 7, true, 10),
+(1009, 'Аксессуары и комплектующие', 'aksessuary-komplektuyushchie', 3, NULL, 8, true, 10),
+(1010, 'Умная электроника', 'umnaya-elektronika', 3, NULL, 9, true, 10);
 
 -- ОДЕЖДА И ОБУВЬ (id: 20)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -69,16 +69,16 @@ VALUES (20, 'Одежда и обувь', 'odezhda-obuv', 2, 'checkroom', 1, tru
 
 -- Подкатегории Одежды и обуви
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(201, 'Женская одежда', 'zhenskaya-odezhda', 3, NULL, 0, true, 20),
-(202, 'Мужская одежда', 'muzhskaya-odezhda', 3, NULL, 1, true, 20),
-(203, 'Детская одежда', 'detskaya-odezhda', 3, NULL, 2, true, 20),
-(204, 'Женская обувь', 'zhenskaya-obuv', 3, NULL, 3, true, 20),
-(205, 'Мужская обувь', 'muzhskaya-obuv', 3, NULL, 4, true, 20),
-(206, 'Детская обувь', 'detskaya-obuv', 3, NULL, 5, true, 20),
-(207, 'Аксессуары', 'aksessuary', 3, NULL, 6, true, 20),
-(208, 'Сумки и чемоданы', 'sumki-chemodany', 3, NULL, 7, true, 20),
-(209, 'Украшения и бижутерия', 'ukrasheniya-bizhuteria', 3, NULL, 8, true, 20),
-(210, 'Часы', 'chasy', 3, NULL, 9, true, 20);
+(2001, 'Женская одежда', 'zhenskaya-odezhda', 3, NULL, 0, true, 20),
+(2002, 'Мужская одежда', 'muzhskaya-odezhda', 3, NULL, 1, true, 20),
+(2003, 'Детская одежда', 'detskaya-odezhda', 3, NULL, 2, true, 20),
+(2004, 'Женская обувь', 'zhenskaya-obuv', 3, NULL, 3, true, 20),
+(2005, 'Мужская обувь', 'muzhskaya-obuv', 3, NULL, 4, true, 20),
+(2006, 'Детская обувь', 'detskaya-obuv', 3, NULL, 5, true, 20),
+(2007, 'Аксессуары', 'aksessuary', 3, NULL, 6, true, 20),
+(2008, 'Сумки и чемоданы', 'sumki-chemodany', 3, NULL, 7, true, 20),
+(2009, 'Украшения и бижутерия', 'ukrasheniya-bizhuteria', 3, NULL, 8, true, 20),
+(2010, 'Часы', 'chasy', 3, NULL, 9, true, 20);
 
 -- СПОРТ И ОТДЫХ (id: 30)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -86,16 +86,16 @@ VALUES (30, 'Спорт и отдых', 'sport-otdykh', 2, 'sports_tennis', 2, t
 
 -- Подкатегории Спорта и отдыха
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(301, 'Тренажеры', 'trenazhery', 3, NULL, 0, true, 30),
-(302, 'Велосипеды', 'velosipedy', 3, NULL, 1, true, 30),
-(303, 'Спортивная одежда и обувь', 'sportivnaya-odezhda-obuv', 3, NULL, 2, true, 30),
-(304, 'Туризм и кемпинг', 'turizm-kemping', 3, NULL, 3, true, 30),
-(305, 'Рыбалка и охота', 'rybalka-okhota', 3, NULL, 4, true, 30),
-(306, 'Зимний спорт', 'zimniy-sport', 3, NULL, 5, true, 30),
-(307, 'Водный спорт', 'vodnyy-sport', 3, NULL, 6, true, 30),
-(308, 'Единоборства', 'edinoborstva', 3, NULL, 7, true, 30),
-(309, 'Командные виды спорта', 'komandnye-vidy-sporta', 3, NULL, 8, true, 30),
-(310, 'Настольные игры', 'nastolnye-igry', 3, NULL, 9, true, 30);
+(3001, 'Тренажеры', 'trenazhery', 3, NULL, 0, true, 30),
+(3002, 'Велосипеды', 'velosipedy', 3, NULL, 1, true, 30),
+(3003, 'Спортивная одежда и обувь', 'sportivnaya-odezhda-obuv', 3, NULL, 2, true, 30),
+(3004, 'Туризм и кемпинг', 'turizm-kemping', 3, NULL, 3, true, 30),
+(3005, 'Рыбалка и охота', 'rybalka-okhota', 3, NULL, 4, true, 30),
+(3006, 'Зимний спорт', 'zimniy-sport', 3, NULL, 5, true, 30),
+(3007, 'Водный спорт', 'vodnyy-sport', 3, NULL, 6, true, 30),
+(3008, 'Единоборства', 'edinoborstva', 3, NULL, 7, true, 30),
+(3009, 'Командные виды спорта', 'komandnye-vidy-sporta', 3, NULL, 8, true, 30),
+(3010, 'Настольные игры', 'nastolnye-igry', 3, NULL, 9, true, 30);
 
 -- КРАСОТА И ЗДОРОВЬЕ (id: 40)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -103,16 +103,16 @@ VALUES (40, 'Красота и здоровье', 'krasota-zdorovie', 2, 'favori
 
 -- Подкатегории Красоты и здоровья
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(401, 'Парфюмерия', 'parfyumeriya', 3, NULL, 0, true, 40),
-(402, 'Косметика', 'kosmetika', 3, NULL, 1, true, 40),
-(403, 'Уход за лицом', 'ukhod-za-litsom', 3, NULL, 2, true, 40),
-(404, 'Уход за телом', 'ukhod-za-telom', 3, NULL, 3, true, 40),
-(405, 'Уход за волосами', 'ukhod-za-volosami', 3, NULL, 4, true, 40),
-(406, 'Медицинская техника', 'meditsinskaya-tekhnika', 3, NULL, 5, true, 40),
-(407, 'БАДы и витамины', 'bady-vitaminy', 3, NULL, 6, true, 40),
-(408, 'Средства гигиены', 'sredstva-gigieny', 3, NULL, 7, true, 40),
-(409, 'Маникюр и педикюр', 'manikyur-pedikyur', 3, NULL, 8, true, 40),
-(410, 'Массажеры', 'massazhery', 3, NULL, 9, true, 40);
+(4001, 'Парфюмерия', 'parfyumeriya', 3, NULL, 0, true, 40),
+(4002, 'Косметика', 'kosmetika', 3, NULL, 1, true, 40),
+(4003, 'Уход за лицом', 'ukhod-za-litsom', 3, NULL, 2, true, 40),
+(4004, 'Уход за телом', 'ukhod-za-telom', 3, NULL, 3, true, 40),
+(4005, 'Уход за волосами', 'ukhod-za-volosami', 3, NULL, 4, true, 40),
+(4006, 'Медицинская техника', 'meditsinskaya-tekhnika', 3, NULL, 5, true, 40),
+(4007, 'БАДы и витамины', 'bady-vitaminy', 3, NULL, 6, true, 40),
+(4008, 'Средства гигиены', 'sredstva-gigieny', 3, NULL, 7, true, 40),
+(4009, 'Маникюр и педикюр', 'manikyur-pedikyur', 3, NULL, 8, true, 40),
+(4010, 'Массажеры', 'massazhery', 3, NULL, 9, true, 40);
 
 -- ДОМ И ИНТЕРЬЕР (id: 50)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -120,16 +120,16 @@ VALUES (50, 'Дом и интерьер', 'dom-interer', 2, 'home', 4, true, 1);
 
 -- Подкатегории Дома и интерьера
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(501, 'Мебель', 'mebel', 3, NULL, 0, true, 50),
-(502, 'Текстиль и ковры', 'tekstil-kovry', 3, NULL, 1, true, 50),
-(503, 'Посуда и кухонные принадлежности', 'posuda-kukhonnye-prinadlezhnosti', 3, NULL, 2, true, 50),
-(504, 'Освещение и декор', 'osveshchenie-dekor', 3, NULL, 3, true, 50),
-(505, 'Хозяйственные товары', 'khozyaystvennye-tovary', 3, NULL, 4, true, 50),
-(506, 'Инструменты', 'instrumenty', 3, NULL, 5, true, 50),
-(507, 'Сад и огород', 'sad-ogorod', 3, NULL, 6, true, 50),
-(508, 'Товары для ремонта', 'tovary-dlya-remonta', 3, NULL, 7, true, 50),
-(509, 'Сантехника', 'santekhnika', 3, NULL, 8, true, 50),
-(510, 'Системы безопасности', 'sistemy-bezopasnosti', 3, NULL, 9, true, 50);
+(5001, 'Мебель', 'mebel', 3, NULL, 0, true, 50),
+(5002, 'Текстиль и ковры', 'tekstil-kovry', 3, NULL, 1, true, 50),
+(5003, 'Посуда и кухонные принадлежности', 'posuda-kukhonnye-prinadlezhnosti', 3, NULL, 2, true, 50),
+(5004, 'Освещение и декор', 'osveshchenie-dekor', 3, NULL, 3, true, 50),
+(5005, 'Хозяйственные товары', 'khozyaystvennye-tovary', 3, NULL, 4, true, 50),
+(5006, 'Инструменты', 'instrumenty', 3, NULL, 5, true, 50),
+(5007, 'Сад и огород', 'sad-ogorod', 3, NULL, 6, true, 50),
+(5008, 'Товары для ремонта', 'tovary-dlya-remonta', 3, NULL, 7, true, 50),
+(5009, 'Сантехника', 'santekhnika', 3, NULL, 8, true, 50),
+(5010, 'Системы безопасности', 'sistemy-bezopasnosti', 3, NULL, 9, true, 50);
 
 -- ДЕТСКИЕ ТОВАРЫ (id: 60)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -137,16 +137,16 @@ VALUES (60, 'Детские товары', 'detskie-tovary', 2, 'child_care', 5,
 
 -- Подкатегории Детских товаров
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(601, 'Коляски и автокресла', 'kolyaski-avtokresla', 3, NULL, 0, true, 60),
-(602, 'Игрушки', 'igrushki', 3, NULL, 1, true, 60),
-(603, 'Детская мебель', 'detskaya-mebel', 3, NULL, 2, true, 60),
-(604, 'Детское питание', 'detskoe-pitanie', 3, NULL, 3, true, 60),
-(605, 'Товары для новорожденных', 'tovary-dlya-novorozhdennykh', 3, NULL, 4, true, 60),
-(606, 'Детская гигиена', 'detskaya-gigiena', 3, NULL, 5, true, 60),
-(607, 'Школьные товары', 'shkolnye-tovary', 3, NULL, 6, true, 60),
-(608, 'Развивающие игры', 'razvivayushchie-igry', 3, NULL, 7, true, 60),
-(609, 'Детский транспорт', 'detskiy-transport', 3, NULL, 8, true, 60),
-(610, 'Одежда для беременных', 'odezhda-dlya-beremennykh', 3, NULL, 9, true, 60);
+(6001, 'Коляски и автокресла', 'kolyaski-avtokresla', 3, NULL, 0, true, 60),
+(6002, 'Игрушки', 'igrushki', 3, NULL, 1, true, 60),
+(6003, 'Детская мебель', 'detskaya-mebel', 3, NULL, 2, true, 60),
+(6004, 'Детское питание', 'detskoe-pitanie', 3, NULL, 3, true, 60),
+(6005, 'Товары для новорожденных', 'tovary-dlya-novorozhdennykh', 3, NULL, 4, true, 60),
+(6006, 'Детская гигиена', 'detskaya-gigiena', 3, NULL, 5, true, 60),
+(6007, 'Школьные товары', 'shkolnye-tovary', 3, NULL, 6, true, 60),
+(6008, 'Развивающие игры', 'razvivayushchie-igry', 3, NULL, 7, true, 60),
+(6009, 'Детский транспорт', 'detskiy-transport', 3, NULL, 8, true, 60),
+(6010, 'Одежда для беременных', 'odezhda-dlya-beremennykh', 3, NULL, 9, true, 60);
 
 -- КНИГИ И ХОББИ (id: 70)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -154,16 +154,16 @@ VALUES (70, 'Книги и хобби', 'knigi-khobbi', 2, 'menu_book', 6, true,
 
 -- Подкатегории Книг и хобби
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(701, 'Книги', 'knigi', 3, NULL, 0, true, 70),
-(702, 'Журналы и газеты', 'zhurnaly-gazety', 3, NULL, 1, true, 70),
-(703, 'Канцелярия', 'kantselyariya', 3, NULL, 2, true, 70),
-(704, 'Музыкальные инструменты', 'muzykalnye-instrumenty', 3, NULL, 3, true, 70),
-(705, 'Творчество и рукоделие', 'tvorchestvo-rukodelie', 3, NULL, 4, true, 70),
-(706, 'Коллекционирование', 'kollektsionirovanie', 3, NULL, 5, true, 70),
-(707, 'Антиквариат', 'antikvariat', 3, NULL, 6, true, 70),
-(708, 'Винил и аудиотехника', 'vinil-audiotekhnika', 3, NULL, 7, true, 70),
-(709, 'Фотография', 'fotografiya', 3, NULL, 8, true, 70),
-(710, 'Художественные материалы', 'khudozhestvennye-materialy', 3, NULL, 9, true, 70);
+(7001, 'Книги', 'knigi', 3, NULL, 0, true, 70),
+(7002, 'Журналы и газеты', 'zhurnaly-gazety', 3, NULL, 1, true, 70),
+(7003, 'Канцелярия', 'kantselyariya', 3, NULL, 2, true, 70),
+(7004, 'Музыкальные инструменты', 'muzykalnye-instrumenty', 3, NULL, 3, true, 70),
+(7005, 'Творчество и рукоделие', 'tvorchestvo-rukodelie', 3, NULL, 4, true, 70),
+(7006, 'Коллекционирование', 'kollektsionirovanie', 3, NULL, 5, true, 70),
+(7007, 'Антиквариат', 'antikvariat', 3, NULL, 6, true, 70),
+(7008, 'Винил и аудиотехника', 'vinil-audiotekhnika', 3, NULL, 7, true, 70),
+(7009, 'Фотография', 'fotografiya', 3, NULL, 8, true, 70),
+(7010, 'Художественные материалы', 'khudozhestvennye-materialy', 3, NULL, 9, true, 70);
 
 -- ПРОДУКТЫ ПИТАНИЯ (id: 80)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -171,16 +171,16 @@ VALUES (80, 'Продукты питания', 'produkty-pitaniya', 2, 'restaura
 
 -- Подкатегории Продуктов питания
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(801, 'Молочные продукты', 'molochnye-produkty', 3, NULL, 0, true, 80),
-(802, 'Мясо и птица', 'myaso-ptitsa', 3, NULL, 1, true, 80),
-(803, 'Рыба и морепродукты', 'ryba-moreprodukty', 3, NULL, 2, true, 80),
-(804, 'Хлебобулочные изделия', 'khlebobulochnye-izdeliya', 3, NULL, 3, true, 80),
-(805, 'Кондитерские изделия', 'konditerskie-izdeliya', 3, NULL, 4, true, 80),
-(806, 'Фрукты и овощи', 'frukty-ovoshchi', 3, NULL, 5, true, 80),
-(807, 'Бакалея', 'bakaleya', 3, NULL, 6, true, 80),
-(808, 'Напитки', 'napitki', 3, NULL, 7, true, 80),
-(809, 'Органические продукты', 'organicheskie-produkty', 3, NULL, 8, true, 80),
-(810, 'Готовая еда', 'gotovaya-eda', 3, NULL, 9, true, 80);
+(8001, 'Молочные продукты', 'molochnye-produkty', 3, NULL, 0, true, 80),
+(8002, 'Мясо и птица', 'myaso-ptitsa', 3, NULL, 1, true, 80),
+(8003, 'Рыба и морепродукты', 'ryba-moreprodukty', 3, NULL, 2, true, 80),
+(8004, 'Хлебобулочные изделия', 'khlebobulochnye-izdeliya', 3, NULL, 3, true, 80),
+(8005, 'Кондитерские изделия', 'konditerskie-izdeliya', 3, NULL, 4, true, 80),
+(8006, 'Фрукты и овощи', 'frukty-ovoshchi', 3, NULL, 5, true, 80),
+(8007, 'Бакалея', 'bakaleya', 3, NULL, 6, true, 80),
+(8008, 'Напитки', 'napitki', 3, NULL, 7, true, 80),
+(8009, 'Органические продукты', 'organicheskie-produkty', 3, NULL, 8, true, 80),
+(8010, 'Готовая еда', 'gotovaya-eda', 3, NULL, 9, true, 80);
 
 -- АВТО И МОТО (id: 90)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -188,16 +188,16 @@ VALUES (90, 'Авто и мото', 'avto-moto', 2, 'directions_car', 8, true, 1
 
 -- Подкатегории Авто и мото
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(901, 'Легковые автомобили', 'legkovye-avtomobili', 3, NULL, 0, true, 90),
-(902, 'Грузовые автомобили', 'gruzovye-avtomobili', 3, NULL, 1, true, 90),
-(903, 'Мотоциклы и мототехника', 'mototsikly-mototekhnika', 3, NULL, 2, true, 90),
-(904, 'Автозапчасти', 'avtozapchasti', 3, NULL, 3, true, 90),
-(905, 'Шины и диски', 'shiny-diski', 3, NULL, 4, true, 90),
-(906, 'Автоэлектроника', 'avtoelektronika', 3, NULL, 5, true, 90),
-(907, 'Автоаксессуары', 'avtoaksessuary', 3, NULL, 6, true, 90),
-(908, 'Автохимия и масла', 'avtokhimiya-masla', 3, NULL, 7, true, 90),
-(909, 'Прицепы и спецтехника', 'pritsey-spetstekhnika', 3, NULL, 8, true, 90),
-(910, 'Велосипеды и самокаты', 'velosipedy-samokaty', 3, NULL, 9, true, 90);
+(9001, 'Легковые автомобили', 'legkovye-avtomobili', 3, NULL, 0, true, 90),
+(9002, 'Грузовые автомобили', 'gruzovye-avtomobili', 3, NULL, 1, true, 90),
+(9003, 'Мотоциклы и мототехника', 'mototsikly-mototekhnika', 3, NULL, 2, true, 90),
+(9004, 'Автозапчасти', 'avtozapchasti', 3, NULL, 3, true, 90),
+(9005, 'Шины и диски', 'shiny-diski', 3, NULL, 4, true, 90),
+(9006, 'Автоэлектроника', 'avtoelektronika', 3, NULL, 5, true, 90),
+(9007, 'Автоаксессуары', 'avtoaksessuary', 3, NULL, 6, true, 90),
+(9008, 'Автохимия и масла', 'avtokhimiya-masla', 3, NULL, 7, true, 90),
+(9009, 'Прицепы и спецтехника', 'pritsey-spetstekhnika', 3, NULL, 8, true, 90),
+(9010, 'Велосипеды и самокаты', 'velosipedy-samokaty', 3, NULL, 9, true, 90);
 
 -- НЕДВИЖИМОСТЬ (id: 100)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -218,20 +218,20 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 
 -- РАБОТА (id: 110)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (110, 'Работа', 'rabota', 2, 'work', 10, true, 1);
+VALUES (1010, 'Работа', 'rabota', 2, 'work', 10, true, 1);
 
 -- Подкатегории Работы
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(1101, 'Вакансии', 'vakansii', 3, NULL, 0, true, 110),
-(1102, 'Резюме', 'rezyume', 3, NULL, 1, true, 110),
-(1103, 'Подработка', 'podrabotka', 3, NULL, 2, true, 110),
-(1104, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 110),
-(1105, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 110),
-(1106, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 110),
-(1107, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 110),
-(1108, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 110),
-(1109, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 110),
-(1110, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 110);
+(1101, 'Вакансии', 'vakansii', 3, NULL, 0, true, 1010),
+(1102, 'Резюме', 'rezyume', 3, NULL, 1, true, 1010),
+(1103, 'Подработка', 'podrabotka', 3, NULL, 2, true, 1010),
+(1104, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 1010),
+(1105, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 1010),
+(1106, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 1010),
+(1107, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 1010),
+(1108, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 1010),
+(1109, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 1010),
+(1110, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 1010);
 
 -- ЖИВОТНЫЕ (id: 120)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -258,20 +258,20 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 
 -- IT И ИНТЕРНЕТ (id: 210)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (210, 'IT и интернет', 'it-internet', 2, 'computer', 0, true, 2);
+VALUES (2010, 'IT и интернет', 'it-internet', 2, 'computer', 0, true, 2);
 
 -- Подкатегории IT и интернет
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(2101, 'Разработка сайтов', 'razrabotka-saytov', 3, NULL, 0, true, 210),
-(2102, 'Разработка мобильных приложений', 'razrabotka-mobilnykh-prilozheniy', 3, NULL, 1, true, 210),
-(2103, 'Дизайн и графика', 'dizayn-grafika', 3, NULL, 2, true, 210),
-(2104, 'SEO и продвижение', 'seo-prodvizhenie', 3, NULL, 3, true, 210),
-(2105, 'Настройка рекламы', 'nastroyka-reklamy', 3, NULL, 4, true, 210),
-(2106, 'Администрирование серверов', 'administrirovanie-serverov', 3, NULL, 5, true, 210),
-(2107, 'Ремонт компьютеров', 'remont-kompyuterov', 3, NULL, 6, true, 210),
-(2108, 'IT-консалтинг', 'it-konsalting', 3, NULL, 7, true, 210),
-(2109, 'Создание игр', 'sozdanie-igr', 3, NULL, 8, true, 210),
-(2110, 'Обучение IT', 'obuchenie-it', 3, NULL, 9, true, 210);
+(2101, 'Разработка сайтов', 'razrabotka-saytov', 3, NULL, 0, true, 2010),
+(2102, 'Разработка мобильных приложений', 'razrabotka-mobilnykh-prilozheniy', 3, NULL, 1, true, 2010),
+(2103, 'Дизайн и графика', 'dizayn-grafika', 3, NULL, 2, true, 2010),
+(2104, 'SEO и продвижение', 'seo-prodvizhenie', 3, NULL, 3, true, 2010),
+(2105, 'Настройка рекламы', 'nastroyka-reklamy', 3, NULL, 4, true, 2010),
+(2106, 'Администрирование серверов', 'administrirovanie-serverov', 3, NULL, 5, true, 2010),
+(2107, 'Ремонт компьютеров', 'remont-kompyuterov', 3, NULL, 6, true, 2010),
+(2108, 'IT-консалтинг', 'it-konsalting', 3, NULL, 7, true, 2010),
+(2109, 'Создание игр', 'sozdanie-igr', 3, NULL, 8, true, 2010),
+(2110, 'Обучение IT', 'obuchenie-it', 3, NULL, 9, true, 2010);
 
 -- СТРОИТЕЛЬСТВО И РЕМОНТ (id: 220)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -428,20 +428,20 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 
 -- УСЛУГИ ДЛЯ ЖИВОТНЫХ (id: 310)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (310, 'Услуги для животных', 'uslugi-dlya-zhivotnykh', 2, 'pets', 10, true, 2);
+VALUES (3010, 'Услуги для животных', 'uslugi-dlya-zhivotnykh', 2, 'pets', 10, true, 2);
 
 -- Подкатегории Услуг для животных
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(3101, 'Ветеринарные услуги', 'veterinarnye-uslugi', 3, NULL, 0, true, 310),
-(3102, 'Груминг', 'gruming', 3, NULL, 1, true, 310),
-(3103, 'Передержка животных', 'perederzyka-zhivotnykh', 3, NULL, 2, true, 310),
-(3104, 'Дрессировка', 'dressirovka', 3, NULL, 3, true, 310),
-(3105, 'Выгул собак', 'vygul-sobak', 3, NULL, 4, true, 310),
-(3106, 'Вязка животных', 'vyazka-zhivotnykh', 3, NULL, 5, true, 310),
-(3107, 'Зоотакси', 'zootaksi', 3, NULL, 6, true, 310),
-(3108, 'Зоогостиницы', 'zoogostinitsy', 3, NULL, 7, true, 310),
-(3109, 'Стерилизация и кастрация', 'sterilizatsiya-kastratsiya', 3, NULL, 8, true, 310),
-(3110, 'Ветеринарная аптека', 'veterinarnaya-apteka', 3, NULL, 9, true, 310);
+(3101, 'Ветеринарные услуги', 'veterinarnye-uslugi', 3, NULL, 0, true, 3010),
+(3102, 'Груминг', 'gruming', 3, NULL, 1, true, 3010),
+(3103, 'Передержка животных', 'perederzyka-zhivotnykh', 3, NULL, 2, true, 3010),
+(3104, 'Дрессировка', 'dressirovka', 3, NULL, 3, true, 3010),
+(3105, 'Выгул собак', 'vygul-sobak', 3, NULL, 4, true, 3010),
+(3106, 'Вязка животных', 'vyazka-zhivotnykh', 3, NULL, 5, true, 3010),
+(3107, 'Зоотакси', 'zootaksi', 3, NULL, 6, true, 3010),
+(3108, 'Зоогостиницы', 'zoogostinitsy', 3, NULL, 7, true, 3010),
+(3109, 'Стерилизация и кастрация', 'sterilizatsiya-kastratsiya', 3, NULL, 8, true, 3010),
+(3110, 'Ветеринарная аптека', 'veterinarnaya-apteka', 3, NULL, 9, true, 3010);
 
 -- РЕКЛАМА И МАРКЕТИНГ (id: 320)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
