@@ -115,6 +115,45 @@ const ProductFormPage: React.FC = () => {
     is_promoted: boolean;
   }>({ views_remaining: 0, views_total: 0, is_promoted: false });
 
+  // Helper functions - must be defined before they are used
+  const flattenCategories = (cats: Category[]): Category[] => {
+    const result: Category[] = [];
+    const flatten = (categories: Category[]) => {
+      for (const cat of categories) {
+        result.push(cat);
+        if (cat.children && cat.children.length > 0) {
+          flatten(cat.children);
+        }
+      }
+    };
+    flatten(cats);
+    return result;
+  };
+
+  // Helper function to set category selection based on category_id
+  const setCategorySelection = useCallback((categoryId: number, availableCategories: Category[]) => {
+    console.log('setCategorySelection called with:', categoryId, 'categories count:', availableCategories.length);
+
+    const category = availableCategories.find(c => c.id === categoryId);
+    console.log('Found category:', category);
+
+    if (category) {
+      if (category.parent_id) {
+        // This is a subcategory
+        console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
+        setSelectedParentCategory(category.parent_id);
+        setSelectedSubcategory(category.id);
+      } else {
+        // This is a parent category
+        console.log('Setting parent category:', category.id);
+        setSelectedParentCategory(category.id);
+        setSelectedSubcategory(null);
+      }
+    } else {
+      console.warn('Category not found for id:', categoryId);
+    }
+  }, []);
+
   // Load categories
   useEffect(() => {
     loadCategories();
@@ -223,44 +262,6 @@ const ProductFormPage: React.FC = () => {
       setPromoting(false);
     }
   };
-
-  const flattenCategories = (cats: Category[]): Category[] => {
-    const result: Category[] = [];
-    const flatten = (categories: Category[]) => {
-      for (const cat of categories) {
-        result.push(cat);
-        if (cat.children && cat.children.length > 0) {
-          flatten(cat.children);
-        }
-      }
-    };
-    flatten(cats);
-    return result;
-  };
-
-  // Helper function to set category selection based on category_id
-  const setCategorySelection = useCallback((categoryId: number, availableCategories: Category[]) => {
-    console.log('setCategorySelection called with:', categoryId, 'categories count:', availableCategories.length);
-
-    const category = availableCategories.find(c => c.id === categoryId);
-    console.log('Found category:', category);
-
-    if (category) {
-      if (category.parent_id) {
-        // This is a subcategory
-        console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
-        setSelectedParentCategory(category.parent_id);
-        setSelectedSubcategory(category.id);
-      } else {
-        // This is a parent category
-        console.log('Setting parent category:', category.id);
-        setSelectedParentCategory(category.id);
-        setSelectedSubcategory(null);
-      }
-    } else {
-      console.warn('Category not found for id:', categoryId);
-    }
-  }, []);
 
   const loadCategories = async () => {
     try {
