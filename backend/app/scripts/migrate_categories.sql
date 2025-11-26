@@ -18,12 +18,9 @@ UPDATE seller_profiles SET category_id = NULL WHERE category_id IS NOT NULL;
 -- Отвязаны все профили продавцов от категорий
 
 -- ШАГ 3: Удаляем все старые категории
-DELETE FROM categories;
--- Удалены все старые категории
-
--- ШАГ 4: Сбрасываем sequence
-ALTER SEQUENCE categories_id_seq RESTART WITH 1;
--- Сброшен счётчик ID категорий
+-- Используем TRUNCATE для полной очистки таблицы и сброса последовательности
+TRUNCATE TABLE categories RESTART IDENTITY CASCADE;
+-- Удалены все старые категории и сброшен счётчик ID
 
 -- ============================================================
 -- ШАГ 5: Вставляем новые категории
