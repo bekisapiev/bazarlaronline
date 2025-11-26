@@ -64,6 +64,9 @@ import {
   favoritesAPI,
   uploadAPI,
   productsAPI,
+  sellerProfileAPI,
+  locationsAPI,
+  categoriesAPI,
 } from '../services/api';
 
 interface TabPanelProps {
@@ -88,6 +91,24 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+interface SellerProfile {
+  id?: string;
+  shop_name: string;
+  description?: string;
+  logo_url?: string;
+  banner_url?: string;
+  category_id?: number;
+  city_id?: number;
+  seller_type?: string;
+  market_id?: number;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  rating?: number;
+  reviews_count?: number;
+  is_verified?: boolean;
+}
+
 interface UserProfile {
   id: string;
   email: string;
@@ -97,6 +118,7 @@ interface UserProfile {
   banner?: string;
   created_at: string;
   tariff?: string;
+  seller_profile?: SellerProfile;
 }
 
 interface Order {
@@ -173,6 +195,17 @@ const ProfilePage: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
+  // Seller profile state
+  const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null);
+  const [isEditingSellerProfile, setIsEditingSellerProfile] = useState(false);
+  const [editedSellerProfile, setEditedSellerProfile] = useState<Partial<SellerProfile>>({});
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Reference data for seller profile
+  const [cities, setCities] = useState<any[]>([]);
+  const [markets, setMarkets] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
   // Orders tab state
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -220,6 +253,7 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     loadProfile();
     loadReferralData();
+    loadReferenceData();
   }, []);
 
   useEffect(() => {
@@ -246,6 +280,12 @@ const ProfilePage: React.FC = () => {
       const response = await usersAPI.getCurrentUser();
       setProfile(response.data);
       setEditedProfile(response.data);
+
+      // Load seller profile if exists
+      if (response.data.seller_profile) {
+        setSellerProfile(response.data.seller_profile);
+        setEditedSellerProfile(response.data.seller_profile);
+      }
     } catch (err: any) {
       console.error('Error loading profile:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить профиль');
@@ -386,6 +426,42 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const loadReferenceData = async () => {
+    try {
+      const [citiesRes, categoriesRes] = await Promise.all([
+        locationsAPI.getCities(),
+        categoriesAPI.getCategoryTree(),
+      ]);
+
+      // Handle cities response
+      const citiesData = Array.isArray(citiesRes.data)
+        ? citiesRes.data
+        : citiesRes.data.items || citiesRes.data.cities || [];
+      setCities(citiesData);
+
+      // Handle categories response
+      const categoriesData = Array.isArray(categoriesRes.data)
+        ? categoriesRes.data
+        : categoriesRes.data.tree || categoriesRes.data.items || categoriesRes.data.categories || [];
+      setCategories(categoriesData);
+    } catch (err: any) {
+      console.error('Error loading reference data:', err);
+    }
+  };
+
+  const loadMarkets = async (cityId: number) => {
+    try {
+      const response = await locationsAPI.getMarkets({ city_id: cityId });
+      const marketsData = Array.isArray(response.data)
+        ? response.data
+        : response.data.items || response.data.markets || [];
+      setMarkets(marketsData);
+    } catch (err: any) {
+      console.error('Error loading markets:', err);
+      setMarkets([]);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
@@ -448,6 +524,53 @@ const ProfilePage: React.FC = () => {
       setError(err.response?.data?.detail || 'Не удалось загрузить баннер');
     } finally {
       setUploadingBanner(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingLogo(true);
+      const response = await uploadAPI.uploadImage(file);
+      const logoUrl = response.data.url;
+      setEditedSellerProfile({ ...editedSellerProfile, logo_url: logoUrl });
+      setSuccess('Логотип загружен');
+    } catch (err: any) {
+      console.error('Error uploading logo:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить логотип');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleSaveSellerProfile = async () => {
+    try {
+      setLoading(true);
+
+      if (!editedSellerProfile.shop_name) {
+        setError('Название магазина обязательно для заполнения');
+        return;
+      }
+
+      // Create or update seller profile
+      if (sellerProfile?.id) {
+        await sellerProfileAPI.updateProfile(editedSellerProfile);
+      } else {
+        await sellerProfileAPI.createProfile(editedSellerProfile);
+      }
+
+      // Reload profile to get updated seller profile
+      await loadProfile();
+
+      setIsEditingSellerProfile(false);
+      setSuccess('Настройки продавца успешно сохранены');
+    } catch (err: any) {
+      console.error('Error saving seller profile:', err);
+      setError(err.response?.data?.detail || 'Не удалось сохранить настройки продавца');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -926,6 +1049,270 @@ const ProfilePage: React.FC = () => {
                     </Grid>
                   )}
                 </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Seller Profile Section */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={600}>
+                    Настройки продавца
+                  </Typography>
+                  {!isEditingSellerProfile ? (
+                    <Button
+                      startIcon={<Edit />}
+                      onClick={() => {
+                        setIsEditingSellerProfile(true);
+                        if (!sellerProfile) {
+                          setEditedSellerProfile({
+                            shop_name: '',
+                          });
+                        }
+                      }}
+                    >
+                      {sellerProfile ? 'Редактировать' : 'Создать профиль продавца'}
+                    </Button>
+                  ) : (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        startIcon={<Save />}
+                        variant="contained"
+                        onClick={handleSaveSellerProfile}
+                        disabled={loading}
+                      >
+                        Сохранить
+                      </Button>
+                      <Button
+                        startIcon={<Cancel />}
+                        onClick={() => {
+                          setIsEditingSellerProfile(false);
+                          setEditedSellerProfile(sellerProfile || {});
+                        }}
+                        disabled={loading}
+                      >
+                        Отмена
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+
+                {sellerProfile || isEditingSellerProfile ? (
+                  <Grid container spacing={3}>
+                    {/* Logo Upload */}
+                    <Grid item xs={12} md={3}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Avatar
+                          src={editedSellerProfile.logo_url}
+                          sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
+                        >
+                          <Storefront sx={{ fontSize: 60 }} />
+                        </Avatar>
+                        {isEditingSellerProfile && (
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            size="small"
+                            startIcon={uploadingLogo ? <CircularProgress size={16} /> : <CloudUpload />}
+                            disabled={uploadingLogo}
+                            fullWidth
+                          >
+                            {uploadingLogo ? 'Загрузка...' : 'Загрузить логотип'}
+                            <input
+                              type="file"
+                              hidden
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                            />
+                          </Button>
+                        )}
+                      </Box>
+                    </Grid>
+
+                    {/* Seller Profile Fields */}
+                    <Grid item xs={12} md={9}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Название магазина *"
+                            value={editedSellerProfile.shop_name || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({ ...editedSellerProfile, shop_name: e.target.value })
+                            }
+                            disabled={!isEditingSellerProfile}
+                            required
+                          />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            select
+                            label="Тип продавца"
+                            value={editedSellerProfile.seller_type || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({ ...editedSellerProfile, seller_type: e.target.value })
+                            }
+                            disabled={!isEditingSellerProfile}
+                            SelectProps={{
+                              native: true,
+                            }}
+                          >
+                            <option value="">Не выбрано</option>
+                            <option value="market">Рынок</option>
+                            <option value="boutique">Бутик</option>
+                            <option value="shop">Магазин</option>
+                            <option value="office">Офис</option>
+                            <option value="home">Дом</option>
+                            <option value="mobile">Мобильный</option>
+                            <option value="warehouse">Склад</option>
+                          </TextField>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            label="Описание"
+                            value={editedSellerProfile.description || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({ ...editedSellerProfile, description: e.target.value })
+                            }
+                            disabled={!isEditingSellerProfile}
+                          />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            select
+                            label="Город"
+                            value={editedSellerProfile.city_id || ''}
+                            onChange={(e) => {
+                              const cityId = parseInt(e.target.value);
+                              setEditedSellerProfile({
+                                ...editedSellerProfile,
+                                city_id: cityId || undefined,
+                                market_id: undefined, // Reset market when city changes
+                              });
+                              if (cityId) {
+                                loadMarkets(cityId);
+                              } else {
+                                setMarkets([]);
+                              }
+                            }}
+                            disabled={!isEditingSellerProfile}
+                            SelectProps={{
+                              native: true,
+                            }}
+                          >
+                            <option value="">Не выбрано</option>
+                            {cities.map((city) => (
+                              <option key={city.id} value={city.id}>
+                                {city.name}
+                              </option>
+                            ))}
+                          </TextField>
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            select
+                            label="Рынок"
+                            value={editedSellerProfile.market_id || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({
+                                ...editedSellerProfile,
+                                market_id: parseInt(e.target.value) || undefined,
+                              })
+                            }
+                            disabled={!isEditingSellerProfile || !editedSellerProfile.city_id}
+                            SelectProps={{
+                              native: true,
+                            }}
+                            helperText={!editedSellerProfile.city_id ? 'Сначала выберите город' : ''}
+                          >
+                            <option value="">Не выбрано</option>
+                            {markets.map((market) => (
+                              <option key={market.id} value={market.id}>
+                                {market.name}
+                              </option>
+                            ))}
+                          </TextField>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                          <TextField
+                            fullWidth
+                            label="Адрес"
+                            value={editedSellerProfile.address || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({ ...editedSellerProfile, address: e.target.value })
+                            }
+                            disabled={!isEditingSellerProfile}
+                          />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Широта"
+                            type="number"
+                            value={editedSellerProfile.latitude || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({
+                                ...editedSellerProfile,
+                                latitude: parseFloat(e.target.value) || undefined,
+                              })
+                            }
+                            disabled={!isEditingSellerProfile}
+                            placeholder="42.8746"
+                            helperText="Для отображения на карте"
+                          />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            fullWidth
+                            label="Долгота"
+                            type="number"
+                            value={editedSellerProfile.longitude || ''}
+                            onChange={(e) =>
+                              setEditedSellerProfile({
+                                ...editedSellerProfile,
+                                longitude: parseFloat(e.target.value) || undefined,
+                              })
+                            }
+                            disabled={!isEditingSellerProfile}
+                            placeholder="74.5698"
+                            helperText="Для отображения на карте"
+                          />
+                        </Grid>
+
+                        {sellerProfile && (
+                          <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                              <Chip
+                                label={sellerProfile.is_verified ? 'Верифицирован' : 'Не верифицирован'}
+                                color={sellerProfile.is_verified ? 'success' : 'default'}
+                              />
+                              <Typography variant="body2" color="text.secondary">
+                                Рейтинг: {sellerProfile.rating || 0} ({sellerProfile.reviews_count || 0} отзывов)
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Grid>
+                  </Grid>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    У вас еще нет профиля продавца. Создайте его, чтобы начать продавать товары и услуги.
+                  </Typography>
+                )}
               </Paper>
             </Grid>
           </Grid>
