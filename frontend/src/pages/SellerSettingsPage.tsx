@@ -383,7 +383,7 @@ const SellerSettingsPage: React.FC = () => {
                   {sellerProfile && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                       <Typography variant="body1" color="text.secondary">
-                        ⭐ {sellerProfile.rating?.toFixed(1) || 0} ({sellerProfile.reviews_count || 0} отзывов)
+                        ⭐ {sellerProfile.rating ? Number(sellerProfile.rating).toFixed(1) : '0.0'} ({sellerProfile.reviews_count || 0} отзывов)
                       </Typography>
                     </Box>
                   )}
