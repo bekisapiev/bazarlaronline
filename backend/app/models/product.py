@@ -18,7 +18,7 @@ class Category(Base):
     parent_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     name = Column(String(100), nullable=False)
     slug = Column(String(100), unique=True, nullable=False)
-    level = Column(Integer, nullable=False)  # 1, 2, or 3
+    level = Column(Integer, nullable=False)  # 1, 2, 3, or 4
     icon = Column(String(100), nullable=True)
     sort_order = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
