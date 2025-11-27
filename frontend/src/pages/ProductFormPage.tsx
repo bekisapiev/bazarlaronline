@@ -48,6 +48,7 @@ interface Category {
   name: string;
   slug: string;
   parent_id: number | null;
+  level: number;
   children?: Category[];
 }
 
@@ -92,11 +93,13 @@ const ProductFormPage: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Categories
+  // Categories - теперь поддерживаем 4 уровня
   const [categories, setCategories] = useState<Category[]>([]);
   const [flatCategories, setFlatCategories] = useState<Category[]>([]);
-  const [selectedParentCategory, setSelectedParentCategory] = useState<number | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
+  const [selectedLevel1, setSelectedLevel1] = useState<number | null>(null); // Товары/Услуги
+  const [selectedLevel2, setSelectedLevel2] = useState<number | null>(null); // Электроника, Одежда и т.д.
+  const [selectedLevel3, setSelectedLevel3] = useState<number | null>(null); // Телефоны, Ноутбуки и т.д.
+  const [selectedLevel4, setSelectedLevel4] = useState<number | null>(null); // Смартфоны, Чехлы и т.д.
 
   // Image upload
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -130,29 +133,46 @@ const ProductFormPage: React.FC = () => {
     return result;
   };
 
+  // Найти путь от категории до корня
+  const findCategoryPath = useCallback((categoryId: number, availableCategories: Category[]): number[] => {
+    const category = availableCategories.find(c => c.id === categoryId);
+    if (!category) return [];
+
+    const path: number[] = [categoryId];
+    let current = category;
+
+    // Идем вверх по иерархии
+    while (current.parent_id) {
+      path.unshift(current.parent_id);
+      const parent = availableCategories.find(c => c.id === current.parent_id);
+      if (!parent) break;
+      current = parent;
+    }
+
+    return path;
+  }, []);
+
   // Helper function to set category selection based on category_id
   const setCategorySelection = useCallback((categoryId: number, availableCategories: Category[]) => {
     console.log('setCategorySelection called with:', categoryId, 'categories count:', availableCategories.length);
 
-    const category = availableCategories.find(c => c.id === categoryId);
-    console.log('Found category:', category);
+    const path = findCategoryPath(categoryId, availableCategories);
+    console.log('Category path:', path);
 
-    if (category) {
-      if (category.parent_id) {
-        // This is a subcategory
-        console.log('Setting subcategory:', category.id, 'with parent:', category.parent_id);
-        setSelectedParentCategory(category.parent_id);
-        setSelectedSubcategory(category.id);
-      } else {
-        // This is a parent category
-        console.log('Setting parent category:', category.id);
-        setSelectedParentCategory(category.id);
-        setSelectedSubcategory(null);
-      }
-    } else {
-      console.warn('Category not found for id:', categoryId);
-    }
-  }, []);
+    // Сбрасываем все уровни
+    setSelectedLevel1(null);
+    setSelectedLevel2(null);
+    setSelectedLevel3(null);
+    setSelectedLevel4(null);
+
+    // Устанавливаем уровни в зависимости от длины пути
+    if (path.length >= 1) setSelectedLevel1(path[0]);
+    if (path.length >= 2) setSelectedLevel2(path[1]);
+    if (path.length >= 3) setSelectedLevel3(path[2]);
+    if (path.length >= 4) setSelectedLevel4(path[3]);
+
+    console.log('Set levels:', { level1: path[0], level2: path[1], level3: path[2], level4: path[3] });
+  }, [findCategoryPath]);
 
   // Load categories
   useEffect(() => {
@@ -227,18 +247,10 @@ const ProductFormPage: React.FC = () => {
     console.log('Category selection effect triggered');
     console.log('formData.category_id:', formData.category_id, 'type:', typeof formData.category_id);
     console.log('flatCategories.length:', flatCategories.length);
-    console.log('flatCategories:', flatCategories);
 
     if (formData.category_id && flatCategories.length > 0) {
       console.log('Both values present, calling setCategorySelection');
       setCategorySelection(formData.category_id, flatCategories);
-    } else {
-      if (!formData.category_id) {
-        console.log('Category ID not set yet');
-      }
-      if (flatCategories.length === 0) {
-        console.log('Categories not loaded yet');
-      }
     }
   }, [formData.category_id, flatCategories, setCategorySelection]);
 
@@ -386,14 +398,30 @@ const ProductFormPage: React.FC = () => {
     });
   };
 
-  const handleParentCategoryChange = (categoryId: number) => {
-    setSelectedParentCategory(categoryId);
-    setSelectedSubcategory(null);
+  // Обработчики для всех 4 уровней категорий
+  const handleLevel1Change = (categoryId: number) => {
+    setSelectedLevel1(categoryId);
+    setSelectedLevel2(null);
+    setSelectedLevel3(null);
+    setSelectedLevel4(null);
     setFormData((prev) => ({ ...prev, category_id: categoryId }));
   };
 
-  const handleSubcategoryChange = (categoryId: number) => {
-    setSelectedSubcategory(categoryId);
+  const handleLevel2Change = (categoryId: number) => {
+    setSelectedLevel2(categoryId);
+    setSelectedLevel3(null);
+    setSelectedLevel4(null);
+    setFormData((prev) => ({ ...prev, category_id: categoryId }));
+  };
+
+  const handleLevel3Change = (categoryId: number) => {
+    setSelectedLevel3(categoryId);
+    setSelectedLevel4(null);
+    setFormData((prev) => ({ ...prev, category_id: categoryId }));
+  };
+
+  const handleLevel4Change = (categoryId: number) => {
+    setSelectedLevel4(categoryId);
     setFormData((prev) => ({ ...prev, category_id: categoryId }));
   };
 
@@ -509,10 +537,39 @@ const ProductFormPage: React.FC = () => {
     );
   }
 
-  const parentCategories = categories.filter((c) => !c.parent_id);
-  const subcategories = selectedParentCategory
-    ? categories.find((c) => c.id === selectedParentCategory)?.children || []
+  // Получаем категории для каждого уровня
+  const level1Categories = categories.filter((c) => c.level === 1);
+  const level2Categories = selectedLevel1
+    ? categories.find((c) => c.id === selectedLevel1)?.children || []
     : [];
+  const level3Categories = selectedLevel2
+    ? flatCategories.find((c) => c.id === selectedLevel2)?.children || []
+    : [];
+  const level4Categories = selectedLevel3
+    ? flatCategories.find((c) => c.id === selectedLevel3)?.children || []
+    : [];
+
+  // Построение хлебных крошек для категорий
+  const buildCategoryBreadcrumb = () => {
+    const parts: string[] = [];
+    if (selectedLevel1) {
+      const cat = flatCategories.find(c => c.id === selectedLevel1);
+      if (cat) parts.push(cat.name);
+    }
+    if (selectedLevel2) {
+      const cat = flatCategories.find(c => c.id === selectedLevel2);
+      if (cat) parts.push(cat.name);
+    }
+    if (selectedLevel3) {
+      const cat = flatCategories.find(c => c.id === selectedLevel3);
+      if (cat) parts.push(cat.name);
+    }
+    if (selectedLevel4) {
+      const cat = flatCategories.find(c => c.id === selectedLevel4);
+      if (cat) parts.push(cat.name);
+    }
+    return parts.join(' → ');
+  };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -858,7 +915,7 @@ const ProductFormPage: React.FC = () => {
 
           {/* Sidebar */}
           <Grid item xs={12} md={4}>
-            {/* Categories */}
+            {/* Categories - 4 УРОВНЯ */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
                 Категория
@@ -875,49 +932,100 @@ const ProductFormPage: React.FC = () => {
                     Выберите категорию для вашего {formData.is_service ? 'услуги' : 'товара'}
                   </Typography>
 
+                  {/* Level 1: Товары/Услуги */}
                   <FormControl fullWidth sx={{ mb: 2 }} error={!!formErrors.category_id}>
-                    <InputLabel>Основная категория *</InputLabel>
+                    <InputLabel>Тип *</InputLabel>
                     <Select
-                      value={selectedParentCategory || ''}
-                      label="Основная категория *"
-                      onChange={(e) => handleParentCategoryChange(Number(e.target.value))}
+                      value={selectedLevel1 || ''}
+                      label="Тип *"
+                      onChange={(e) => handleLevel1Change(Number(e.target.value))}
                     >
                       <MenuItem value="" disabled>
-                        <em>Выберите категорию</em>
+                        <em>Выберите тип</em>
                       </MenuItem>
-                      {parentCategories.map((cat) => (
+                      {level1Categories.map((cat) => (
                         <MenuItem key={cat.id} value={cat.id}>
                           {cat.name}
                         </MenuItem>
                       ))}
                     </Select>
-                    {formErrors.category_id && (
-                      <FormHelperText>{formErrors.category_id}</FormHelperText>
-                    )}
                   </FormControl>
 
-                  {subcategories.length > 0 && (
-                    <FormControl fullWidth>
-                      <InputLabel>Подкатегория (уточнить)</InputLabel>
+                  {/* Level 2: Электроника, Одежда и т.д. */}
+                  {level2Categories.length > 0 && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Категория *</InputLabel>
                       <Select
-                        value={selectedSubcategory || ''}
-                        label="Подкатегория (уточнить)"
-                        onChange={(e) => handleSubcategoryChange(Number(e.target.value))}
+                        value={selectedLevel2 || ''}
+                        label="Категория *"
+                        onChange={(e) => handleLevel2Change(Number(e.target.value))}
                       >
-                        <MenuItem value="">
-                          <em>Не выбрано</em>
+                        <MenuItem value="" disabled>
+                          <em>Выберите категорию</em>
                         </MenuItem>
-                        {subcategories.map((cat) => (
+                        {level2Categories.map((cat) => (
                           <MenuItem key={cat.id} value={cat.id}>
                             {cat.name}
                           </MenuItem>
                         ))}
                       </Select>
-                      <FormHelperText>
-                        Выбрано: {parentCategories.find(c => c.id === selectedParentCategory)?.name}
-                        {selectedSubcategory && ` → ${subcategories.find(c => c.id === selectedSubcategory)?.name}`}
-                      </FormHelperText>
                     </FormControl>
+                  )}
+
+                  {/* Level 3: Телефоны, Ноутбуки и т.д. */}
+                  {level3Categories.length > 0 && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Подкатегория</InputLabel>
+                      <Select
+                        value={selectedLevel3 || ''}
+                        label="Подкатегория"
+                        onChange={(e) => handleLevel3Change(Number(e.target.value))}
+                      >
+                        <MenuItem value="">
+                          <em>Не выбрано</em>
+                        </MenuItem>
+                        {level3Categories.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {/* Level 4: Смартфоны, Чехлы и т.д. */}
+                  {level4Categories.length > 0 && (
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Детальная категория</InputLabel>
+                      <Select
+                        value={selectedLevel4 || ''}
+                        label="Детальная категория"
+                        onChange={(e) => handleLevel4Change(Number(e.target.value))}
+                      >
+                        <MenuItem value="">
+                          <em>Не выбрано</em>
+                        </MenuItem>
+                        {level4Categories.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {/* Показываем выбранный путь категории */}
+                  {buildCategoryBreadcrumb() && (
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      <Typography variant="body2">
+                        <strong>Выбрано:</strong><br />
+                        {buildCategoryBreadcrumb()}
+                      </Typography>
+                    </Alert>
+                  )}
+
+                  {formErrors.category_id && (
+                    <FormHelperText error>{formErrors.category_id}</FormHelperText>
                   )}
                 </>
               )}
