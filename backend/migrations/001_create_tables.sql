@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS categories (
     parent_id INTEGER REFERENCES categories(id),
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
-    level INTEGER NOT NULL CHECK (level IN (1, 2, 3)),
+    level INTEGER NOT NULL CHECK (level IN (1, 2, 3, 4)),
     icon VARCHAR(100),
     sort_order INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true
