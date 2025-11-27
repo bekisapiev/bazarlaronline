@@ -205,33 +205,33 @@ VALUES (100, 'Недвижимость', 'nedvizhimost', 2, 'apartment', 9, true
 
 -- Подкатегории Недвижимости
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(10001, \'Квартиры\', \'kvartiry\', 3, NULL, 0, true, 100),
-(10002, \'Дома и дачи\', \'doma-dachi\', 3, NULL, 1, true, 100),
-(10003, \'Коммерческая недвижимость\', \'kommercheskaya-nedvizhimost\', 3, NULL, 2, true, 100),
-(10004, \'Земельные участки\', \'zemelnye-uchastki\', 3, NULL, 3, true, 100),
-(10005, \'Гаражи и парковки\', \'garazhi-parkovki\', 3, NULL, 4, true, 100),
-(10006, \'Аренда квартир\', \'arenda-kvartir\', 3, NULL, 5, true, 100),
-(10007, \'Аренда домов\', \'arenda-domov\', 3, NULL, 6, true, 100),
-(10008, \'Аренда коммерческой недвижимости\', \'arenda-kommercheskoy-nedvizhimosti\', 3, NULL, 7, true, 100),
-(10009, \'Посуточная аренда\', \'posutochnaya-arenda\', 3, NULL, 8, true, 100),
-(10010, \'Зарубежная недвижимость\', \'zarubezhnaya-nedvizhimost\', 3, NULL, 9, true, 100);
+(10001, 'Квартиры', 'kvartiry', 3, NULL, 0, true, 100),
+(10002, 'Дома и дачи', 'doma-dachi', 3, NULL, 1, true, 100),
+(10003, 'Коммерческая недвижимость', 'kommercheskaya-nedvizhimost', 3, NULL, 2, true, 100),
+(10004, 'Земельные участки', 'zemelnye-uchastki', 3, NULL, 3, true, 100),
+(10005, 'Гаражи и парковки', 'garazhi-parkovki', 3, NULL, 4, true, 100),
+(10006, 'Аренда квартир', 'arenda-kvartir', 3, NULL, 5, true, 100),
+(10007, 'Аренда домов', 'arenda-domov', 3, NULL, 6, true, 100),
+(10008, 'Аренда коммерческой недвижимости', 'arenda-kommercheskoy-nedvizhimosti', 3, NULL, 7, true, 100),
+(10009, 'Посуточная аренда', 'posutochnaya-arenda', 3, NULL, 8, true, 100),
+(10010, 'Зарубежная недвижимость', 'zarubezhnaya-nedvizhimost', 3, NULL, 9, true, 100);
 
--- РАБОТА (id: 110)
+-- РАБОТА (id: 130)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (1010, 'Работа', 'rabota', 2, 'work', 10, true, 1);
+VALUES (130, 'Работа', 'rabota', 2, 'work', 10, true, 1);
 
 -- Подкатегории Работы
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(1101, 'Вакансии', 'vakansii', 3, NULL, 0, true, 1010),
-(1102, 'Резюме', 'rezyume', 3, NULL, 1, true, 1010),
-(1103, 'Подработка', 'podrabotka', 3, NULL, 2, true, 1010),
-(1104, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 1010),
-(1105, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 1010),
-(1106, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 1010),
-(1107, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 1010),
-(1108, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 1010),
-(1109, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 1010),
-(1110, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 1010);
+(13001, 'Вакансии', 'vakansii', 3, NULL, 0, true, 130),
+(13002, 'Резюме', 'rezyume', 3, NULL, 1, true, 130),
+(13003, 'Подработка', 'podrabotka', 3, NULL, 2, true, 130),
+(13004, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 130),
+(13005, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 130),
+(13006, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 130),
+(13007, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 130),
+(13008, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 130),
+(13009, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 130),
+(13010, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 130);
 
 -- ЖИВОТНЫЕ (id: 120)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
@@ -239,16 +239,16 @@ VALUES (120, 'Животные', 'zhivotnye', 2, 'pets', 11, true, 1);
 
 -- Подкатегории Животных
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(12001, \'Собаки\', \'sobaki\', 3, NULL, 0, true, 120),
-(12002, \'Кошки\', \'koshki\', 3, NULL, 1, true, 120),
-(12003, \'Птицы\', \'ptitsy\', 3, NULL, 2, true, 120),
-(12004, \'Аквариумные рыбки\', \'akvariumnye-rybki\', 3, NULL, 3, true, 120),
-(12005, \'Грызуны\', \'gryzuny\', 3, NULL, 4, true, 120),
-(12006, \'Сельскохозяйственные животные\', \'selskokhozyaystvennye-zhivotnye\', 3, NULL, 5, true, 120),
-(12007, \'Экзотические животные\', \'ekzoticheskie-zhivotnye\', 3, NULL, 6, true, 120),
-(12008, \'Товары для животных\', \'tovary-dlya-zhivotnykh\', 3, NULL, 7, true, 120),
-(12009, \'Корма для животных\', \'korma-dlya-zhivotnykh\', 3, NULL, 8, true, 120),
-(12010, \'Ветеринария\', \'veterinariya\', 3, NULL, 9, true, 120);
+(12001, 'Собаки', 'sobaki', 3, NULL, 0, true, 120),
+(12002, 'Кошки', 'koshki', 3, NULL, 1, true, 120),
+(12003, 'Птицы', 'ptitsy', 3, NULL, 2, true, 120),
+(12004, 'Аквариумные рыбки', 'akvariumnye-rybki', 3, NULL, 3, true, 120),
+(12005, 'Грызуны', 'gryzuny', 3, NULL, 4, true, 120),
+(12006, 'Сельскохозяйственные животные', 'selskokhozyaystvennye-zhivotnye', 3, NULL, 5, true, 120),
+(12007, 'Экзотические животные', 'ekzoticheskie-zhivotnye', 3, NULL, 6, true, 120),
+(12008, 'Товары для животных', 'tovary-dlya-zhivotnykh', 3, NULL, 7, true, 120),
+(12009, 'Корма для животных', 'korma-dlya-zhivotnykh', 3, NULL, 8, true, 120),
+(12010, 'Ветеринария', 'veterinariya', 3, NULL, 9, true, 120);
 
 -- Созданы все категории товаров
 
