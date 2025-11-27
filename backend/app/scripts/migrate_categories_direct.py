@@ -482,7 +482,9 @@ def get_subcategory_id_range(parent_id: int) -> int:
     elif parent_id == 130:
         return 13001
     elif 210 <= parent_id <= 320:
-        return parent_id * 10 + 1
+        # Используем 5-значные ID для услуг, чтобы избежать конфликтов с товарами
+        # 210 -> 21001, 220 -> 22001, ..., 300 -> 30001, ..., 320 -> 32001
+        return parent_id * 100 + 1
     else:
         raise ValueError(f"Unknown parent_id: {parent_id}")
 
