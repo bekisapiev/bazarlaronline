@@ -1,6 +1,7 @@
 -- ============================================================
 -- Миграция категорий: удаление старых и применение новых
 -- Bazarlar Online - Полная структура категорий для Кыргызстана
+-- Сгенерировано автоматически через Python
 -- ============================================================
 
 -- Устанавливаем кодировку UTF8 для корректной работы с кириллицей
@@ -9,24 +10,13 @@ SET client_encoding = 'UTF8';
 BEGIN;
 
 -- ШАГ 1: Отвязываем все продукты от категорий
--- (сохраняем продукты, но убираем связи с категориями)
 UPDATE products SET category_id = NULL WHERE category_id IS NOT NULL;
--- Отвязаны все продукты от категорий
 
 -- ШАГ 2: Отвязываем профили продавцов от категорий
 UPDATE seller_profiles SET category_id = NULL WHERE category_id IS NOT NULL;
--- Отвязаны все профили продавцов от категорий
 
 -- ШАГ 3: Удаляем все старые категории
--- Используем TRUNCATE для полной очистки таблицы и сброса последовательности
 TRUNCATE TABLE categories RESTART IDENTITY CASCADE;
--- Удалены все старые категории и сброшен счётчик ID
-
--- ============================================================
--- ШАГ 5: Вставляем новые категории
--- ============================================================
-
--- Начинаем вставку новых категорий...
 
 -- ============================================================
 -- УРОВЕНЬ 1: ОСНОВНЫЕ КАТЕГОРИИ
@@ -40,8 +30,6 @@ VALUES (1, 'Товары', 'tovary', 1, 'shopping_bag', 0, true, NULL);
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (2, 'Услуги', 'uslugi', 1, 'work', 1, true, NULL);
 
--- Созданы основные категории: Товары и Услуги
-
 -- ============================================================
 -- УРОВЕНЬ 2 и 3: ТОВАРЫ
 -- ============================================================
@@ -50,7 +38,7 @@ VALUES (2, 'Услуги', 'uslugi', 1, 'work', 1, true, NULL);
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (10, 'Электроника', 'elektronika', 2, 'devices', 0, true, 1);
 
--- Подкатегории Электроники
+-- Подкатегории Электроника
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (1001, 'Телефоны и аксессуары', 'telefony-aksessuary', 3, NULL, 0, true, 10),
 (1002, 'Ноутбуки и компьютеры', 'noutbuki-kompyutery', 3, NULL, 1, true, 10),
@@ -67,7 +55,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (20, 'Одежда и обувь', 'odezhda-obuv', 2, 'checkroom', 1, true, 1);
 
--- Подкатегории Одежды и обуви
+-- Подкатегории Одежда и обувь
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2001, 'Женская одежда', 'zhenskaya-odezhda', 3, NULL, 0, true, 20),
 (2002, 'Мужская одежда', 'muzhskaya-odezhda', 3, NULL, 1, true, 20),
@@ -84,7 +72,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (30, 'Спорт и отдых', 'sport-otdykh', 2, 'sports_tennis', 2, true, 1);
 
--- Подкатегории Спорта и отдыха
+-- Подкатегории Спорт и отдых
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (3001, 'Тренажеры', 'trenazhery', 3, NULL, 0, true, 30),
 (3002, 'Велосипеды', 'velosipedy', 3, NULL, 1, true, 30),
@@ -101,7 +89,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (40, 'Красота и здоровье', 'krasota-zdorovie', 2, 'favorite', 3, true, 1);
 
--- Подкатегории Красоты и здоровья
+-- Подкатегории Красота и здоровье
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (4001, 'Парфюмерия', 'parfyumeriya', 3, NULL, 0, true, 40),
 (4002, 'Косметика', 'kosmetika', 3, NULL, 1, true, 40),
@@ -118,7 +106,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (50, 'Дом и интерьер', 'dom-interer', 2, 'home', 4, true, 1);
 
--- Подкатегории Дома и интерьера
+-- Подкатегории Дом и интерьер
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (5001, 'Мебель', 'mebel', 3, NULL, 0, true, 50),
 (5002, 'Текстиль и ковры', 'tekstil-kovry', 3, NULL, 1, true, 50),
@@ -135,7 +123,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (60, 'Детские товары', 'detskie-tovary', 2, 'child_care', 5, true, 1);
 
--- Подкатегории Детских товаров
+-- Подкатегории Детские товары
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (6001, 'Коляски и автокресла', 'kolyaski-avtokresla', 3, NULL, 0, true, 60),
 (6002, 'Игрушки', 'igrushki', 3, NULL, 1, true, 60),
@@ -152,7 +140,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (70, 'Книги и хобби', 'knigi-khobbi', 2, 'menu_book', 6, true, 1);
 
--- Подкатегории Книг и хобби
+-- Подкатегории Книги и хобби
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (7001, 'Книги', 'knigi', 3, NULL, 0, true, 70),
 (7002, 'Журналы и газеты', 'zhurnaly-gazety', 3, NULL, 1, true, 70),
@@ -169,7 +157,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (80, 'Продукты питания', 'produkty-pitaniya', 2, 'restaurant', 7, true, 1);
 
--- Подкатегории Продуктов питания
+-- Подкатегории Продукты питания
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (8001, 'Молочные продукты', 'molochnye-produkty', 3, NULL, 0, true, 80),
 (8002, 'Мясо и птица', 'myaso-ptitsa', 3, NULL, 1, true, 80),
@@ -203,7 +191,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (100, 'Недвижимость', 'nedvizhimost', 2, 'apartment', 9, true, 1);
 
--- Подкатегории Недвижимости
+-- Подкатегории Недвижимость
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (10001, 'Квартиры', 'kvartiry', 3, NULL, 0, true, 100),
 (10002, 'Дома и дачи', 'doma-dachi', 3, NULL, 1, true, 100),
@@ -216,28 +204,11 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 (10009, 'Посуточная аренда', 'posutochnaya-arenda', 3, NULL, 8, true, 100),
 (10010, 'Зарубежная недвижимость', 'zarubezhnaya-nedvizhimost', 3, NULL, 9, true, 100);
 
--- РАБОТА (id: 130)
-INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (130, 'Работа', 'rabota', 2, 'work', 10, true, 1);
-
--- Подкатегории Работы
-INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(13001, 'Вакансии', 'vakansii', 3, NULL, 0, true, 130),
-(13002, 'Резюме', 'rezyume', 3, NULL, 1, true, 130),
-(13003, 'Подработка', 'podrabotka', 3, NULL, 2, true, 130),
-(13004, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 130),
-(13005, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 130),
-(13006, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 130),
-(13007, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 130),
-(13008, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 130),
-(13009, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 130),
-(13010, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 130);
-
 -- ЖИВОТНЫЕ (id: 120)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (120, 'Животные', 'zhivotnye', 2, 'pets', 11, true, 1);
+VALUES (120, 'Животные', 'zhivotnye', 2, 'pets', 10, true, 1);
 
--- Подкатегории Животных
+-- Подкатегории Животные
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (12001, 'Собаки', 'sobaki', 3, NULL, 0, true, 120),
 (12002, 'Кошки', 'koshki', 3, NULL, 1, true, 120),
@@ -250,7 +221,22 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 (12009, 'Корма для животных', 'korma-dlya-zhivotnykh', 3, NULL, 8, true, 120),
 (12010, 'Ветеринария', 'veterinariya', 3, NULL, 9, true, 120);
 
--- Созданы все категории товаров
+-- РАБОТА (id: 130)
+INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
+VALUES (130, 'Работа', 'rabota', 2, 'work', 11, true, 1);
+
+-- Подкатегории Работа
+INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
+(13001, 'Вакансии', 'vakansii', 3, NULL, 0, true, 130),
+(13002, 'Резюме', 'rezyume', 3, NULL, 1, true, 130),
+(13003, 'Подработка', 'podrabotka', 3, NULL, 2, true, 130),
+(13004, 'Стажировки', 'stazhirovki', 3, NULL, 3, true, 130),
+(13005, 'Удаленная работа', 'udalennaya-rabota', 3, NULL, 4, true, 130),
+(13006, 'Вахтовый метод', 'vakhtovyy-metod', 3, NULL, 5, true, 130),
+(13007, 'Работа за рубежом', 'rabota-za-rubezhom', 3, NULL, 6, true, 130),
+(13008, 'Волонтерство', 'volonterstvo', 3, NULL, 7, true, 130),
+(13009, 'Бизнес и партнерство', 'biznes-partnerstvo', 3, NULL, 8, true, 130),
+(13010, 'Образование и курсы', 'obrazovanie-kursy', 3, NULL, 9, true, 130);
 
 -- ============================================================
 -- УРОВЕНЬ 2 и 3: УСЛУГИ
@@ -258,26 +244,26 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 
 -- IT И ИНТЕРНЕТ (id: 210)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (2010, 'IT и интернет', 'it-internet', 2, 'computer', 0, true, 2);
+VALUES (210, 'IT и интернет', 'it-internet', 2, 'computer', 0, true, 2);
 
 -- Подкатегории IT и интернет
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(2101, 'Разработка сайтов', 'razrabotka-saytov', 3, NULL, 0, true, 2010),
-(2102, 'Разработка мобильных приложений', 'razrabotka-mobilnykh-prilozheniy', 3, NULL, 1, true, 2010),
-(2103, 'Дизайн и графика', 'dizayn-grafika', 3, NULL, 2, true, 2010),
-(2104, 'SEO и продвижение', 'seo-prodvizhenie', 3, NULL, 3, true, 2010),
-(2105, 'Настройка рекламы', 'nastroyka-reklamy', 3, NULL, 4, true, 2010),
-(2106, 'Администрирование серверов', 'administrirovanie-serverov', 3, NULL, 5, true, 2010),
-(2107, 'Ремонт компьютеров', 'remont-kompyuterov', 3, NULL, 6, true, 2010),
-(2108, 'IT-консалтинг', 'it-konsalting', 3, NULL, 7, true, 2010),
-(2109, 'Создание игр', 'sozdanie-igr', 3, NULL, 8, true, 2010),
-(2110, 'Обучение IT', 'obuchenie-it', 3, NULL, 9, true, 2010);
+(2101, 'Разработка сайтов', 'razrabotka-saytov', 3, NULL, 0, true, 210),
+(2102, 'Разработка мобильных приложений', 'razrabotka-mobilnykh-prilozheniy', 3, NULL, 1, true, 210),
+(2103, 'Дизайн и графика', 'dizayn-grafika', 3, NULL, 2, true, 210),
+(2104, 'SEO и продвижение', 'seo-prodvizhenie', 3, NULL, 3, true, 210),
+(2105, 'Настройка рекламы', 'nastroyka-reklamy', 3, NULL, 4, true, 210),
+(2106, 'Администрирование серверов', 'administrirovanie-serverov', 3, NULL, 5, true, 210),
+(2107, 'Ремонт компьютеров', 'remont-kompyuterov', 3, NULL, 6, true, 210),
+(2108, 'IT-консалтинг', 'it-konsalting', 3, NULL, 7, true, 210),
+(2109, 'Создание игр', 'sozdanie-igr', 3, NULL, 8, true, 210),
+(2110, 'Обучение IT', 'obuchenie-it', 3, NULL, 9, true, 210);
 
 -- СТРОИТЕЛЬСТВО И РЕМОНТ (id: 220)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (220, 'Строительство и ремонт', 'stroitelstvo-remont', 2, 'construction', 1, true, 2);
 
--- Подкатегории Строительства и ремонта
+-- Подкатегории Строительство и ремонт
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2201, 'Ремонт квартир', 'remont-kvartir', 3, NULL, 0, true, 220),
 (2202, 'Ремонт домов', 'remont-domov', 3, NULL, 1, true, 220),
@@ -294,7 +280,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (230, 'Бытовые услуги', 'bytovye-uslugi', 2, 'home_repair_service', 2, true, 2);
 
--- Подкатегории Бытовых услуг
+-- Подкатегории Бытовые услуги
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2301, 'Уборка помещений', 'uborka-pomeshcheniy', 3, NULL, 0, true, 230),
 (2302, 'Химчистка', 'khimchistka', 3, NULL, 1, true, 230),
@@ -307,11 +293,11 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 (2309, 'Мастер на час', 'master-na-chas', 3, NULL, 8, true, 230),
 (2310, 'Сборка мебели', 'sborka-mebeli', 3, NULL, 9, true, 230);
 
--- КРАСОТА И ЗДОРОВЬЕ (услуги) (id: 240)
+-- КРАСОТА И ЗДОРОВЬЕ (id: 240)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (240, 'Красота и здоровье', 'krasota-zdorovie-uslugi', 2, 'spa', 3, true, 2);
 
--- Подкатегории Красоты и здоровья (услуги)
+-- Подкатегории Красота и здоровье
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2401, 'Парикмахерские услуги', 'parikmaherskie-uslugi', 3, NULL, 0, true, 240),
 (2402, 'Маникюр и педикюр', 'manikyur-pedikyur-uslugi', 3, NULL, 1, true, 240),
@@ -328,7 +314,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (250, 'Образование и курсы', 'obrazovanie-kursy', 2, 'school', 4, true, 2);
 
--- Подкатегории Образования и курсов
+-- Подкатегории Образование и курсы
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2501, 'Репетиторы', 'repetitory', 3, NULL, 0, true, 250),
 (2502, 'Курсы иностранных языков', 'kursy-inostrannykh-yazykov', 3, NULL, 1, true, 250),
@@ -345,7 +331,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (260, 'Финансовые услуги', 'finansovye-uslugi', 2, 'account_balance', 5, true, 2);
 
--- Подкатегории Финансовых услуг
+-- Подкатегории Финансовые услуги
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2601, 'Бухгалтерские услуги', 'bukhgalterskie-uslugi', 3, NULL, 0, true, 260),
 (2602, 'Аудиторские услуги', 'auditorskie-uslugi', 3, NULL, 1, true, 260),
@@ -362,7 +348,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (270, 'Авто услуги', 'avto-uslugi', 2, 'car_repair', 6, true, 2);
 
--- Подкатегории Авто услуг
+-- Подкатегории Авто услуги
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2701, 'Ремонт автомобилей', 'remont-avtomobiley', 3, NULL, 0, true, 270),
 (2702, 'Кузовной ремонт', 'kuzovnoy-remont', 3, NULL, 1, true, 270),
@@ -379,7 +365,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (280, 'Организация мероприятий', 'organizatsiya-meropriyatiy', 2, 'celebration', 7, true, 2);
 
--- Подкатегории Организации мероприятий
+-- Подкатегории Организация мероприятий
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2801, 'Свадьбы', 'svadby', 3, NULL, 0, true, 280),
 (2802, 'Дни рождения', 'dni-rozhdeniya', 3, NULL, 1, true, 280),
@@ -396,7 +382,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (290, 'Фото и видео услуги', 'foto-video-uslugi', 2, 'photo_camera', 8, true, 2);
 
--- Подкатегории Фото и видео услуг
+-- Подкатегории Фото и видео услуги
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (2901, 'Свадебная фотосъемка', 'svadebnaya-fotosemka', 3, NULL, 0, true, 290),
 (2902, 'Портретная фотосъемка', 'portretnaya-fotosemka', 3, NULL, 1, true, 290),
@@ -413,7 +399,7 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (300, 'Туризм и путешествия', 'turizm-puteshestviya', 2, 'flight', 9, true, 2);
 
--- Подкатегории Туризма и путешествий
+-- Подкатегории Туризм и путешествия
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (3001, 'Туристические туры', 'turisticheskie-tury', 3, NULL, 0, true, 300),
 (3002, 'Авиабилеты', 'aviabilety', 3, NULL, 1, true, 300),
@@ -428,26 +414,26 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 
 -- УСЛУГИ ДЛЯ ЖИВОТНЫХ (id: 310)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
-VALUES (3010, 'Услуги для животных', 'uslugi-dlya-zhivotnykh', 2, 'pets', 10, true, 2);
+VALUES (310, 'Услуги для животных', 'uslugi-dlya-zhivotnykh', 2, 'pets', 10, true, 2);
 
--- Подкатегории Услуг для животных
+-- Подкатегории Услуги для животных
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
-(3101, 'Ветеринарные услуги', 'veterinarnye-uslugi', 3, NULL, 0, true, 3010),
-(3102, 'Груминг', 'gruming', 3, NULL, 1, true, 3010),
-(3103, 'Передержка животных', 'perederzyka-zhivotnykh', 3, NULL, 2, true, 3010),
-(3104, 'Дрессировка', 'dressirovka', 3, NULL, 3, true, 3010),
-(3105, 'Выгул собак', 'vygul-sobak', 3, NULL, 4, true, 3010),
-(3106, 'Вязка животных', 'vyazka-zhivotnykh', 3, NULL, 5, true, 3010),
-(3107, 'Зоотакси', 'zootaksi', 3, NULL, 6, true, 3010),
-(3108, 'Зоогостиницы', 'zoogostinitsy', 3, NULL, 7, true, 3010),
-(3109, 'Стерилизация и кастрация', 'sterilizatsiya-kastratsiya', 3, NULL, 8, true, 3010),
-(3110, 'Ветеринарная аптека', 'veterinarnaya-apteka', 3, NULL, 9, true, 3010);
+(3101, 'Ветеринарные услуги', 'veterinarnye-uslugi', 3, NULL, 0, true, 310),
+(3102, 'Груминг', 'gruming', 3, NULL, 1, true, 310),
+(3103, 'Передержка животных', 'perederzyka-zhivotnykh', 3, NULL, 2, true, 310),
+(3104, 'Дрессировка', 'dressirovka', 3, NULL, 3, true, 310),
+(3105, 'Выгул собак', 'vygul-sobak', 3, NULL, 4, true, 310),
+(3106, 'Вязка животных', 'vyazka-zhivotnykh', 3, NULL, 5, true, 310),
+(3107, 'Зоотакси', 'zootaksi', 3, NULL, 6, true, 310),
+(3108, 'Зоогостиницы', 'zoogostinitsy', 3, NULL, 7, true, 310),
+(3109, 'Стерилизация и кастрация', 'sterilizatsiya-kastratsiya', 3, NULL, 8, true, 310),
+(3110, 'Ветеринарная аптека', 'veterinarnaya-apteka', 3, NULL, 9, true, 310);
 
 -- РЕКЛАМА И МАРКЕТИНГ (id: 320)
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id)
 VALUES (320, 'Реклама и маркетинг', 'reklama-marketing', 2, 'campaign', 11, true, 2);
 
--- Подкатегории Рекламы и маркетинга
+-- Подкатегории Реклама и маркетинг
 INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, parent_id) VALUES
 (3201, 'Интернет-реклама', 'internet-reklama', 3, NULL, 0, true, 320),
 (3202, 'Наружная реклама', 'naruzhnaya-reklama', 3, NULL, 1, true, 320),
@@ -460,19 +446,12 @@ INSERT INTO categories (id, name, slug, level, icon, sort_order, is_active, pare
 (3209, 'Медиапланирование', 'mediaplanirovanie', 3, NULL, 8, true, 320),
 (3210, 'Email-маркетинг', 'email-marketing', 3, NULL, 9, true, 320);
 
--- Созданы все категории услуг
-
 -- ============================================================
--- ШАГ 6: Обновляем sequence до максимального ID + 1
+-- Обновляем sequence и показываем статистику
 -- ============================================================
 
 SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories) + 1);
 
--- ============================================================
--- ШАГ 7: Выводим статистику
--- ============================================================
-
--- Показываем количество категорий по уровням
 SELECT
     level,
     COUNT(*) as count
@@ -483,7 +462,3 @@ ORDER BY level;
 COMMIT;
 
 -- Миграция завершена успешно!
--- Теперь в базе данных:
--- - 2 категории уровня 1 (Товары, Услуги)
--- - 24 категории уровня 2 (12 товаров + 12 услуг)
--- - 240 категорий уровня 3 (подкатегории)
