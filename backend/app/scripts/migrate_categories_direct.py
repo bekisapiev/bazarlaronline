@@ -239,7 +239,7 @@ CATEGORIES = {
                     ("Работа за рубежом", "rabota-za-rubezhom"),
                     ("Волонтерство", "volonterstvo"),
                     ("Бизнес и партнерство", "biznes-partnerstvo"),
-                    ("Образование и курсы", "obrazovanie-kursy"),
+                    ("Обучение и тренинги", "obuchenie-treningi"),
                 ]
             },
         ]
