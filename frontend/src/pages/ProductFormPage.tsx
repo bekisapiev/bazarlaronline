@@ -185,8 +185,8 @@ const ProductFormPage: React.FC = () => {
     try {
       const response = await walletAPI.getBalance();
       setWalletBalance({
-        main_balance: response.data.main_balance || 0,
-        referral_balance: response.data.referral_balance || 0,
+        main_balance: Number(response.data.main_balance) || 0,
+        referral_balance: Number(response.data.referral_balance) || 0,
       });
     } catch (err) {
       console.error('Failed to load wallet balance:', err);
