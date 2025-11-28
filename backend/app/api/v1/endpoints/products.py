@@ -419,6 +419,42 @@ async def create_product(
                 detail="Referral commission percent must be between 1 and 50"
             )
 
+        # Stock quantity is required for referral program
+        if product_data.product_type == "product" and not product_data.stock_quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Stock quantity is required when referral program is enabled for products"
+            )
+
+        # Check wallet balance for referral commission reserve
+        if product_data.product_type == "product" and product_data.stock_quantity:
+            # Get wallet
+            wallet_result = await db.execute(
+                select(Wallet).where(Wallet.user_id == current_user.id)
+            )
+            wallet = wallet_result.scalar_one_or_none()
+
+            if not wallet:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Wallet not found. Please contact support."
+                )
+
+            # Calculate total commission that needs to be reserved
+            effective_price = product_data.discount_price if product_data.discount_price else product_data.price
+            total_commission = (
+                Decimal(str(product_data.stock_quantity)) *
+                Decimal(str(effective_price)) *
+                Decimal(str(product_data.referral_commission_percent)) /
+                Decimal('100')
+            )
+
+            if wallet.main_balance < total_commission:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Insufficient balance for referral program. Required: {float(total_commission):.2f} KGS, Available: {float(wallet.main_balance):.2f} KGS"
+                )
+
     # Create product
     product = Product(
         seller_id=current_user.id,
@@ -427,6 +463,7 @@ async def create_product(
         category_id=product_data.category_id,
         price=product_data.price,
         discount_price=product_data.discount_price,
+        stock_quantity=product_data.stock_quantity,
         product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
@@ -450,6 +487,7 @@ async def create_product(
         price=product.price,
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
+        stock_quantity=product.stock_quantity,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,
@@ -513,6 +551,8 @@ async def update_product(
         product.price = product_data.price
     if product_data.discount_price is not None:
         product.discount_price = product_data.discount_price
+    if product_data.stock_quantity is not None:
+        product.stock_quantity = product_data.stock_quantity
     if product_data.product_type is not None:
         if product_data.product_type not in ["product", "service"]:
             raise HTTPException(
@@ -536,6 +576,60 @@ async def update_product(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Product referral program is only available for Business tariff"
             )
+
+        # Check if enabling referral program
+        if product_data.is_referral_enabled and not product.is_referral_enabled:
+            # Stock quantity is required for products
+            stock_qty = product_data.stock_quantity if product_data.stock_quantity is not None else product.stock_quantity
+            if product.product_type == "product" and not stock_qty:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Stock quantity is required when enabling referral program for products"
+                )
+
+            # Check wallet balance
+            if product.product_type == "product" and stock_qty:
+                # Get wallet
+                wallet_result = await db.execute(
+                    select(Wallet).where(Wallet.user_id == current_user.id)
+                )
+                wallet = wallet_result.scalar_one_or_none()
+
+                if not wallet:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Wallet not found. Please contact support."
+                    )
+
+                # Calculate total commission
+                effective_price = (
+                    product_data.discount_price if product_data.discount_price is not None
+                    else (product.discount_price if product.discount_price else product.price)
+                )
+                commission_percent = (
+                    product_data.referral_commission_percent if product_data.referral_commission_percent is not None
+                    else product.referral_commission_percent
+                )
+
+                if not commission_percent:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Referral commission percent is required when enabling referral program"
+                    )
+
+                total_commission = (
+                    Decimal(str(stock_qty)) *
+                    Decimal(str(effective_price)) *
+                    Decimal(str(commission_percent)) /
+                    Decimal('100')
+                )
+
+                if wallet.main_balance < total_commission:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Insufficient balance for referral program. Required: {float(total_commission):.2f} KGS, Available: {float(wallet.main_balance):.2f} KGS"
+                    )
+
         product.is_referral_enabled = product_data.is_referral_enabled
 
     if product_data.referral_commission_percent is not None:
@@ -561,6 +655,7 @@ async def update_product(
         price=product.price,
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
+        stock_quantity=product.stock_quantity,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,
