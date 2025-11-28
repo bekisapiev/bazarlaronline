@@ -420,14 +420,14 @@ async def create_product(
             )
 
         # Stock quantity is required for referral program
-        if product_data.product_type == "product" and not product_data.stock_quantity:
+        if product_data.is_referral_enabled and product_data.product_type == "product" and not product_data.stock_quantity:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Stock quantity is required when referral program is enabled for products"
             )
 
         # Check wallet balance for referral commission reserve
-        if product_data.product_type == "product" and product_data.stock_quantity:
+        if product_data.is_referral_enabled and product_data.product_type == "product" and product_data.stock_quantity:
             # Get wallet
             wallet_result = await db.execute(
                 select(Wallet).where(Wallet.user_id == current_user.id)
