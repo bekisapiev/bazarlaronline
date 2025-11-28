@@ -40,7 +40,7 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { productsAPI, categoriesAPI, uploadAPI } from '../services/api';
+import { productsAPI, categoriesAPI, uploadAPI, walletAPI } from '../services/api';
 import { formatErrorMessage } from '../utils/errorHandler';
 
 interface Category {
@@ -108,6 +108,12 @@ const ProductFormPage: React.FC = () => {
   const [newCharKey, setNewCharKey] = useState('');
   const [newCharValue, setNewCharValue] = useState('');
 
+  // Wallet balance
+  const [walletBalance, setWalletBalance] = useState<{
+    main_balance: number;
+    referral_balance: number;
+  }>({ main_balance: 0, referral_balance: 0 });
+
   // Promotion
   const [promotionPackages, setPromotionPackages] = useState<any[]>([]);
   const [selectedPromotionViews, setSelectedPromotionViews] = useState<number>(0);
@@ -174,10 +180,24 @@ const ProductFormPage: React.FC = () => {
     console.log('Set levels:', { level1: path[0], level2: path[1], level3: path[2], level4: path[3] });
   }, [findCategoryPath]);
 
+  // Load wallet balance
+  const loadWalletBalance = async () => {
+    try {
+      const response = await walletAPI.getBalance();
+      setWalletBalance({
+        main_balance: response.data.main_balance || 0,
+        referral_balance: response.data.referral_balance || 0,
+      });
+    } catch (err) {
+      console.error('Failed to load wallet balance:', err);
+    }
+  };
+
   // Load categories
   useEffect(() => {
     loadCategories();
     loadPromotionPackages(); // Load for both create and edit modes
+    loadWalletBalance(); // Load wallet balance
   }, []);
 
   const loadProduct = useCallback(async (productId: string) => {
@@ -740,6 +760,13 @@ const ProductFormPage: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
 
+                {/* Display wallet balance */}
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Основной баланс:</strong> {walletBalance.main_balance.toFixed(2)} сом
+                  </Typography>
+                </Alert>
+
                 <FormControlLabel
                   control={
                     <Switch
@@ -753,6 +780,14 @@ const ProductFormPage: React.FC = () => {
 
                 {formData.is_referral_enabled && (
                   <>
+                    {!formData.is_service && (
+                      <Alert severity="warning" sx={{ mb: 2 }}>
+                        <Typography variant="body2">
+                          Для включения реферальной программы необходимо указать количество товара на складе выше в форме
+                        </Typography>
+                      </Alert>
+                    )}
+
                     <TextField
                       fullWidth
                       label="Процент комиссии"
@@ -776,20 +811,47 @@ const ProductFormPage: React.FC = () => {
                     />
 
                     {formData.referral_commission_percent && formData.price && (
-                      <Alert severity="info">
-                        <Typography variant="body2">
-                          <strong>Комиссия для рефералов:</strong>
-                          {' '}
-                          {((formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
-                          {' '}
-                          ({formData.referral_commission_percent}% от{' '}
-                          {formData.discount_price ? 'цены со скидкой' : 'обычной цены'})
-                        </Typography>
-                      </Alert>
+                      <>
+                        <Alert severity="info" sx={{ mb: 2 }}>
+                          <Typography variant="body2">
+                            <strong>Комиссия для рефералов:</strong>
+                            {' '}
+                            {((formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
+                            {' '}
+                            ({formData.referral_commission_percent}% от{' '}
+                            {formData.discount_price ? 'цены со скидкой' : 'обычной цены'})
+                          </Typography>
+                        </Alert>
+
+                        {/* Calculate and show total commission reserve required */}
+                        {!formData.is_service && formData.stock_quantity && (
+                          <Alert
+                            severity={
+                              ((formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100) > walletBalance.main_balance)
+                                ? 'error'
+                                : 'success'
+                            }
+                            sx={{ mb: 2 }}
+                          >
+                            <Typography variant="body2">
+                              <strong>Требуется резерв для {formData.stock_quantity} товаров:</strong>
+                              {' '}
+                              {(formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
+                              <br />
+                              {((formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100) > walletBalance.main_balance) && (
+                                <span style={{ color: 'error.main' }}>
+                                  ⚠️ Недостаточно средств на балансе!
+                                </span>
+                              )}
+                            </Typography>
+                          </Alert>
+                        )}
+                      </>
                     )}
 
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                       Любой пользователь сможет делиться ссылкой на этот товар и получать комиссию с каждой покупки.
+                      Сумма комиссии резервируется на вашем основном балансе.
                     </Typography>
                   </>
                 )}
@@ -1039,6 +1101,13 @@ const ProductFormPage: React.FC = () => {
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
 
+                {/* Display wallet balance */}
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Основной баланс:</strong> {walletBalance.main_balance.toFixed(2)} сом
+                  </Typography>
+                </Alert>
+
                 <Alert
                   severity={promotionStats.is_promoted ? 'success' : 'info'}
                   sx={{ mb: 2 }}
@@ -1069,15 +1138,27 @@ const ProductFormPage: React.FC = () => {
                       <em>Не выбрано</em>
                     </MenuItem>
                     {promotionPackages.map((pkg) => (
-                      <MenuItem key={pkg.views} value={pkg.views}>
+                      <MenuItem
+                        key={pkg.views}
+                        value={pkg.views}
+                        disabled={pkg.price > walletBalance.main_balance}
+                      >
                         {pkg.views} просмотров — {pkg.price.toFixed(2)} сом
                         {pkg.price_per_view > 0 && ` (${pkg.price_per_view.toFixed(2)} сом/просмотр)`}
+                        {pkg.price > walletBalance.main_balance && ' (недостаточно средств)'}
                       </MenuItem>
                     ))}
                   </Select>
                   <FormHelperText>
-                    {user?.tariff === 'pro' && 'Скидка 33% для PRO тарифа'}
-                    {user?.tariff === 'business' && 'Скидка 50% для BUSINESS тарифа'}
+                    {user?.tariff === 'pro' && 'Скидка 33% для PRO тарифа. '}
+                    {user?.tariff === 'business' && 'Скидка 50% для BUSINESS тарифа. '}
+                    {selectedPromotionViews > 0 && promotionPackages.find(p => p.views === selectedPromotionViews) && (
+                      <>
+                        {promotionPackages.find(p => p.views === selectedPromotionViews)!.price > walletBalance.main_balance && (
+                          <span style={{ color: 'red' }}>⚠️ Недостаточно средств на балансе!</span>
+                        )}
+                      </>
+                    )}
                   </FormHelperText>
                 </FormControl>
 
@@ -1086,14 +1167,19 @@ const ProductFormPage: React.FC = () => {
                   variant="contained"
                   color="primary"
                   onClick={handlePromote}
-                  disabled={promoting || selectedPromotionViews === 0}
+                  disabled={
+                    promoting ||
+                    selectedPromotionViews === 0 ||
+                    (promotionPackages.find(p => p.views === selectedPromotionViews)?.price || 0) > walletBalance.main_balance
+                  }
                   startIcon={promoting ? <CircularProgress size={20} /> : undefined}
                 >
                   {promoting ? 'Продвижение...' : 'Продвинуть товар'}
                 </Button>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
-                  Продвинутые товары показываются выше в списке и получают больше просмотров
+                  Продвинутые товары показываются выше в списке и получают больше просмотров.
+                  Оплата списывается с основного баланса.
                 </Typography>
               </Paper>
             )}
