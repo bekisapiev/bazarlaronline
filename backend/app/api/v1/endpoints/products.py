@@ -870,6 +870,7 @@ async def get_my_products(
                 price=p.price,
                 discount_price=p.discount_price,
                 discount_percent=p.discount_percent,
+                stock_quantity=p.stock_quantity,
                 delivery_type=p.delivery_type,
                 delivery_methods=p.delivery_methods,
                 characteristics=p.characteristics,
