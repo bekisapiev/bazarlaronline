@@ -517,6 +517,7 @@ const ProductFormPage: React.FC = () => {
         product_type: formData.is_service ? 'service' : 'product',
         characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
         discount_price: formData.discount_price || undefined,
+        stock_quantity: formData.stock_quantity || undefined,
         delivery_type: formData.delivery_available ? 'paid' : 'pickup',
         is_referral_enabled: formData.is_referral_enabled || false,
         referral_commission_percent: formData.is_referral_enabled ? formData.referral_commission_percent : undefined,
