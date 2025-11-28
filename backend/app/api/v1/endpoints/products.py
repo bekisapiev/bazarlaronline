@@ -1000,6 +1000,7 @@ async def get_product_by_id(
         "price": float(product.price),
         "discount_price": float(product.discount_price) if product.discount_price else None,
         "discount_percent": product.discount_percent,
+        "stock_quantity": product.stock_quantity,
         "images": product.images or [],
         "characteristics": product.characteristics or [],
         "delivery_type": product.delivery_type,
