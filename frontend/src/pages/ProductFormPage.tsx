@@ -78,7 +78,7 @@ const ProductFormPage: React.FC = () => {
   const [formData, setFormData] = useState<ProductFormData>({
     title: '',
     description: '',
-    price: 0,
+    price: '' as any,
     category_id: null,
     images: [],
     is_service: false,
@@ -113,6 +113,9 @@ const ProductFormPage: React.FC = () => {
     main_balance: number;
     referral_balance: number;
   }>({ main_balance: 0, referral_balance: 0 });
+
+  // Referral toggle warning
+  const [referralToggleWarning, setReferralToggleWarning] = useState('');
 
   // Promotion
   const [promotionPackages, setPromotionPackages] = useState<any[]>([]);
@@ -418,6 +421,26 @@ const ProductFormPage: React.FC = () => {
     });
   };
 
+  // Обработчик переключателя реферальной программы
+  const handleReferralToggle = (checked: boolean) => {
+    // Если пытаемся включить, проверяем необходимые условия
+    if (checked && !formData.is_service) {
+      // Проверяем наличие необходимых данных
+      if (!formData.price) {
+        setReferralToggleWarning('Укажите цену, количество на складе, без этих данных реферальную программу нельзя включить');
+        return;
+      }
+      if (!formData.stock_quantity) {
+        setReferralToggleWarning('Укажите цену, количество на складе, без этих данных реферальную программу нельзя включить');
+        return;
+      }
+    }
+
+    // Все проверки пройдены, очищаем предупреждение и переключаем
+    setReferralToggleWarning('');
+    handleInputChange('is_referral_enabled', checked);
+  };
+
   // Обработчики для всех 4 уровней категорий
   const handleLevel1Change = (categoryId: number) => {
     setSelectedLevel1(categoryId);
@@ -698,8 +721,8 @@ const ProductFormPage: React.FC = () => {
                     fullWidth
                     label="Цена"
                     type="number"
-                    value={formData.price}
-                    onChange={(e) => handleInputChange('price', Number(e.target.value))}
+                    value={formData.price || ''}
+                    onChange={(e) => handleInputChange('price', e.target.value ? Number(e.target.value) : '' as any)}
                     error={!!formErrors.price}
                     helperText={formErrors.price}
                     required
@@ -765,14 +788,28 @@ const ProductFormPage: React.FC = () => {
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Typography variant="body2">
                     <strong>Основной баланс:</strong> {walletBalance.main_balance.toFixed(2)} сом
+                    {formData.is_referral_enabled && !formData.is_service && formData.stock_quantity && formData.referral_commission_percent && formData.price && (
+                      <>
+                        <br />
+                        <strong>Будет списано:</strong> {(formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
+                        <br />
+                        <strong>Останется:</strong> {(walletBalance.main_balance - (formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100)).toFixed(2)} сом
+                      </>
+                    )}
                   </Typography>
                 </Alert>
+
+                {referralToggleWarning && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {referralToggleWarning}
+                  </Alert>
+                )}
 
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.is_referral_enabled || false}
-                      onChange={(e) => handleInputChange('is_referral_enabled', e.target.checked)}
+                      onChange={(e) => handleReferralToggle(e.target.checked)}
                     />
                   }
                   label="Включить реферальную программу для этого товара"
@@ -781,7 +818,7 @@ const ProductFormPage: React.FC = () => {
 
                 {formData.is_referral_enabled && (
                   <>
-                    {!formData.is_service && (
+                    {!formData.is_service && !formData.stock_quantity && (
                       <Alert severity="warning" sx={{ mb: 2 }}>
                         <Typography variant="body2">
                           Для включения реферальной программы необходимо указать количество товара на складе выше в форме
