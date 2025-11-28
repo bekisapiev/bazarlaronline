@@ -103,11 +103,19 @@ async def get_sellers_catalog(
     Returns list of seller profiles with filters.
     Only shows sellers with tariff "pro" or "business".
     """
+    from app.models.location import City, Market
+    from app.models.product import Category
+    from sqlalchemy.orm import selectinload
+
     # JOIN with User table to filter by tariff - only Pro and Business users shown
     query = select(SellerProfile).join(
         User, SellerProfile.user_id == User.id
     ).where(
         User.tariff.in_(["pro", "business"])
+    ).options(
+        selectinload(SellerProfile.city),
+        selectinload(SellerProfile.market),
+        selectinload(SellerProfile.category)
     )
 
     # Apply filters
@@ -169,12 +177,13 @@ async def get_sellers_catalog(
                 "description": s.description,
                 "logo_url": s.logo_url,
                 "banner_url": s.banner_url,
-                "city_id": s.city_id,
                 "seller_type": s.seller_type,
-                "category_id": s.category_id,
                 "rating": float(s.rating),
                 "reviews_count": s.reviews_count,
-                "is_verified": s.is_verified
+                "is_verified": s.is_verified,
+                "city": {"id": s.city.id, "name": s.city.name} if s.city else None,
+                "market": {"id": s.market.id, "name": s.market.name} if s.market else None,
+                "category": {"id": s.category.id, "name": s.category.name} if s.category else None
             }
             for s in sellers
         ],
