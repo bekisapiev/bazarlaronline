@@ -185,7 +185,7 @@ const AdminPanelPage: React.FC = () => {
     try {
       setUsersLoading(true);
       // Admin endpoint to get all users
-      const response = await api.get('/users/admin/all');
+      const response = await api.get('/admin/users/all');
       setUsers(response.data);
     } catch (err: any) {
       console.error('Error loading users:', err);
@@ -278,13 +278,13 @@ const AdminPanelPage: React.FC = () => {
       setLoading(true);
 
       if (action === 'ban') {
-        await api.put(`/users/admin/${selectedUser.id}/ban`);
+        await api.put(`/admin/users/${selectedUser.id}/ban`);
         setSuccess('Пользователь заблокирован');
       } else if (action === 'unban') {
-        await api.put(`/users/admin/${selectedUser.id}/unban`);
+        await api.put(`/admin/users/${selectedUser.id}/unban`);
         setSuccess('Пользователь разблокирован');
       } else if (action === 'changeRole') {
-        await api.put(`/users/admin/${selectedUser.id}/role`, { role: newUserRole });
+        await api.put(`/admin/users/${selectedUser.id}/role`, { role: newUserRole });
         setSuccess('Роль пользователя изменена');
       }
 
@@ -303,7 +303,7 @@ const AdminPanelPage: React.FC = () => {
   const handleProductModeration = async (productId: string, approved: boolean) => {
     try {
       setLoading(true);
-      await api.put(`/products/admin/${productId}/moderate`, {
+      await api.put(`/admin/products/${productId}/moderate`, {
         status: approved ? 'active' : 'rejected',
       });
 
