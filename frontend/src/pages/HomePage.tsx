@@ -125,7 +125,7 @@ const HomePage: React.FC = () => {
     setHasMore(true);
     loadProducts(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentType, selectedCity, selectedMarket, selectedCategory1, selectedCategory2, selectedCategory3, sellerType]);
+  }, [selectedCity, selectedMarket, selectedCategory1, selectedCategory2, selectedCategory3, sellerType]);
 
   // Infinite scroll setup
   useEffect(() => {
@@ -735,7 +735,7 @@ const HomePage: React.FC = () => {
 
               {!hasMore && products.length > 0 && (
                 <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
-                  Вы просмотрели все {contentType === 'product' ? 'товары' : 'услуги'}
+                  Вы просмотрели все объявления
                 </Typography>
               )}
             </>
