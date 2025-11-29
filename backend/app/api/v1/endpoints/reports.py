@@ -10,11 +10,13 @@ from datetime import datetime
 
 from app.database.session import get_db
 from app.models.report import Report, ReportType, ReportReason, ReportStatus
-from app.models.user import User
+from app.models.user import User, SellerProfile
 from app.models.product import Product
 from app.models.review import Review
+from app.models.order import Order
 from app.core.dependencies import get_current_active_user
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
@@ -22,11 +24,14 @@ router = APIRouter()
 # Schemas
 class ReportCreate(BaseModel):
     """Report creation schema"""
-    report_type: str = Field(..., description="Type: product, seller, review, user")
+    report_type: str = Field(..., description="Type: product, seller, review, user, order")
     reported_product_id: Optional[str] = None
     reported_seller_id: Optional[str] = None
     reported_review_id: Optional[str] = None
     reported_user_id: Optional[str] = None
+    reported_order_id: Optional[str] = None
+    reporter_phone: Optional[str] = Field(None, description="Reporter's phone (auto-filled from profile)")
+    reporter_email: Optional[str] = Field(None, description="Reporter's email (auto-filled from profile)")
     reason: str = Field(..., description="Reason: spam, inappropriate, fraud, fake, copyright, offensive, other")
     description: str = Field(..., min_length=10, max_length=1000)
 
@@ -40,10 +45,13 @@ class ReportResponse(BaseModel):
     status: str
     created_at: datetime
     reporter_id: str
+    reporter_phone: Optional[str]
+    reporter_email: Optional[str]
     reported_product_id: Optional[str]
     reported_seller_id: Optional[str]
     reported_review_id: Optional[str]
     reported_user_id: Optional[str]
+    reported_order_id: Optional[str]
 
 
 # Helper to check admin access
@@ -107,6 +115,11 @@ async def create_report(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="reported_user_id is required for user reports"
         )
+    elif report_type == ReportType.ORDER and not report_data.reported_order_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="reported_order_id is required for order reports"
+        )
 
     # Verify that the reported entity exists
     if report_type == ReportType.PRODUCT:
@@ -149,6 +162,27 @@ async def create_report(
                 detail="User not found"
             )
 
+    elif report_type == ReportType.ORDER:
+        order_result = await db.execute(
+            select(Order).where(Order.id == UUID(report_data.reported_order_id))
+        )
+        order = order_result.scalar_one_or_none()
+        if not order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order not found"
+            )
+        # Verify that the current user is the buyer of this order
+        if order.buyer_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only report orders you purchased"
+            )
+
+    # Auto-fill reporter contact info from user profile if not provided
+    reporter_phone = report_data.reporter_phone or current_user.phone_number
+    reporter_email = report_data.reporter_email or current_user.email
+
     # Create report
     report = Report(
         reporter_id=current_user.id,
@@ -157,6 +191,9 @@ async def create_report(
         reported_seller_id=UUID(report_data.reported_seller_id) if report_data.reported_seller_id else None,
         reported_review_id=UUID(report_data.reported_review_id) if report_data.reported_review_id else None,
         reported_user_id=UUID(report_data.reported_user_id) if report_data.reported_user_id else None,
+        reported_order_id=UUID(report_data.reported_order_id) if report_data.reported_order_id else None,
+        reporter_phone=reporter_phone,
+        reporter_email=reporter_email,
         reason=reason,
         description=report_data.description,
         status=ReportStatus.PENDING
@@ -174,10 +211,13 @@ async def create_report(
         status=report.status.value,
         created_at=report.created_at,
         reporter_id=str(report.reporter_id),
+        reporter_phone=report.reporter_phone,
+        reporter_email=report.reporter_email,
         reported_product_id=str(report.reported_product_id) if report.reported_product_id else None,
         reported_seller_id=str(report.reported_seller_id) if report.reported_seller_id else None,
         reported_review_id=str(report.reported_review_id) if report.reported_review_id else None,
-        reported_user_id=str(report.reported_user_id) if report.reported_user_id else None
+        reported_user_id=str(report.reported_user_id) if report.reported_user_id else None,
+        reported_order_id=str(report.reported_order_id) if report.reported_order_id else None
     )
 
 
@@ -238,8 +278,12 @@ async def get_pending_reports(
 ):
     """
     Get pending reports (admin/moderator only)
+
+    Includes reporter contact info and seller details for order complaints
     """
-    query = select(Report).where(Report.status == ReportStatus.PENDING)
+    query = select(Report).where(Report.status == ReportStatus.PENDING).options(
+        selectinload(Report.reported_order).selectinload(Order.seller)
+    )
 
     if report_type:
         try:
@@ -269,23 +313,49 @@ async def get_pending_reports(
     result = await db.execute(query)
     reports = result.scalars().all()
 
+    # Build response with seller details
+    items = []
+    for r in reports:
+        item = {
+            "id": str(r.id),
+            "reporter_id": str(r.reporter_id),
+            "reporter_phone": r.reporter_phone,
+            "reporter_email": r.reporter_email,
+            "report_type": r.report_type.value,
+            "reported_product_id": str(r.reported_product_id) if r.reported_product_id else None,
+            "reported_seller_id": str(r.reported_seller_id) if r.reported_seller_id else None,
+            "reported_review_id": str(r.reported_review_id) if r.reported_review_id else None,
+            "reported_user_id": str(r.reported_user_id) if r.reported_user_id else None,
+            "reported_order_id": str(r.reported_order_id) if r.reported_order_id else None,
+            "reason": r.reason.value,
+            "description": r.description,
+            "status": r.status.value,
+            "created_at": r.created_at,
+            "seller_info": None
+        }
+
+        # For order complaints, include seller details
+        if r.report_type == ReportType.ORDER and r.reported_order:
+            seller = r.reported_order.seller
+            if seller:
+                # Get seller profile for shop name
+                seller_profile_result = await db.execute(
+                    select(SellerProfile).where(SellerProfile.user_id == seller.id)
+                )
+                seller_profile = seller_profile_result.scalar_one_or_none()
+
+                item["seller_info"] = {
+                    "seller_id": str(seller.id),
+                    "email": seller.email,
+                    "phone": seller.phone_number,
+                    "shop_name": seller_profile.shop_name if seller_profile else seller.full_name,
+                    "full_name": seller.full_name
+                }
+
+        items.append(item)
+
     return {
-        "items": [
-            {
-                "id": str(r.id),
-                "reporter_id": str(r.reporter_id),
-                "report_type": r.report_type.value,
-                "reported_product_id": str(r.reported_product_id) if r.reported_product_id else None,
-                "reported_seller_id": str(r.reported_seller_id) if r.reported_seller_id else None,
-                "reported_review_id": str(r.reported_review_id) if r.reported_review_id else None,
-                "reported_user_id": str(r.reported_user_id) if r.reported_user_id else None,
-                "reason": r.reason.value,
-                "description": r.description,
-                "status": r.status.value,
-                "created_at": r.created_at
-            }
-            for r in reports
-        ],
+        "items": items,
         "total": total,
         "limit": limit,
         "offset": offset,

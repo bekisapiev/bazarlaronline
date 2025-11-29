@@ -25,6 +25,7 @@ class ReportType(str, enum.Enum):
     SELLER = "seller"
     REVIEW = "review"
     USER = "user"
+    ORDER = "order"
 
 
 class ReportReason(str, enum.Enum):
@@ -51,6 +52,11 @@ class Report(Base):
     reported_seller_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     reported_review_id = Column(UUID(as_uuid=True), ForeignKey("reviews.id", ondelete="CASCADE"), nullable=True)
     reported_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    reported_order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=True)
+
+    # Reporter contact info (editable by user)
+    reporter_phone = Column(String(20), nullable=True)
+    reporter_email = Column(String(255), nullable=True)
 
     # Report details
     reason = Column(SQLEnum(ReportReason), nullable=False)
@@ -73,6 +79,7 @@ class Report(Base):
     reported_seller = relationship("User", foreign_keys=[reported_seller_id])
     reported_review = relationship("Review", foreign_keys=[reported_review_id])
     reported_user = relationship("User", foreign_keys=[reported_user_id])
+    reported_order = relationship("Order", foreign_keys=[reported_order_id])
 
     def __repr__(self):
         return f"<Report {self.report_type} by {self.reporter_id}>"

@@ -13,6 +13,7 @@ from app.services.tariff_renewal import check_and_renew_tariffs
 from app.models.wallet import WithdrawalRequest, Wallet, Transaction
 from app.models.user import User
 from app.models.product import Product
+from app.models.report import Report, ReportStatus
 from app.core.dependencies import get_current_active_user
 
 router = APIRouter()
@@ -432,18 +433,24 @@ async def get_platform_stats(
         )
     )
     partner_active_products = partner_products_result.scalar()
-    
+
+    # Count pending reports
+    pending_reports_result = await db.execute(
+        select(func.count()).select_from(Report).where(Report.status == ReportStatus.PENDING)
+    )
+    pending_reports = pending_reports_result.scalar()
+
     return {
         "total_users": total_users or 0,
         "active_users": active_users or 0,
         "total_products": total_products or 0,
         "total_orders": 0,  # TODO: Implement when orders are added
         "total_revenue": 0,  # TODO: Implement when orders are added
-        "pending_reports": 0,  # TODO: Implement from reports
+        "pending_reports": pending_reports or 0,
         "pending_products": pending_products or 0,
         "partner_total_sales": 0,  # TODO: Implement from orders
         "partner_total_commission": 0,  # TODO: Implement from transactions
         "partner_referrer_share": 0,  # TODO: Calculate from transactions
-        "partner_platform_share": 0,  # TODO: Calculate from transactions  
+        "partner_platform_share": 0,  # TODO: Calculate from transactions
         "partner_active_products": partner_active_products or 0
     }

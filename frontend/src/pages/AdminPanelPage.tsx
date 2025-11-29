@@ -82,13 +82,26 @@ function TabPanel(props: TabPanelProps) {
 
 interface Report {
   id: string;
-  type: string;
+  report_type: string;
   reason: string;
   description: string;
   status: string;
-  reporter_name: string;
-  reported_item_id: string;
+  reporter_id: string;
+  reporter_phone?: string;
+  reporter_email?: string;
+  reported_product_id?: string;
+  reported_seller_id?: string;
+  reported_review_id?: string;
+  reported_user_id?: string;
+  reported_order_id?: string;
   created_at: string;
+  seller_info?: {
+    seller_id: string;
+    email: string;
+    phone: string;
+    shop_name: string;
+    full_name: string;
+  };
 }
 
 interface User {
@@ -325,6 +338,10 @@ const AdminPanelPage: React.FC = () => {
         return 'Пользователь';
       case 'review':
         return 'Отзыв';
+      case 'seller':
+        return 'Продавец';
+      case 'order':
+        return 'Заказ';
       default:
         return type;
     }
@@ -466,7 +483,8 @@ const AdminPanelPage: React.FC = () => {
                   <TableCell>Тип</TableCell>
                   <TableCell>Причина</TableCell>
                   <TableCell>Описание</TableCell>
-                  <TableCell>От кого</TableCell>
+                  <TableCell>Контакт покупателя</TableCell>
+                  <TableCell>Продавец</TableCell>
                   <TableCell>Дата</TableCell>
                   <TableCell>Статус</TableCell>
                   <TableCell align="right">Действия</TableCell>
@@ -476,15 +494,45 @@ const AdminPanelPage: React.FC = () => {
                 {reports.map((report) => (
                   <TableRow key={report.id} hover>
                     <TableCell>
-                      <Chip label={getReportTypeLabel(report.type)} size="small" />
+                      <Chip label={getReportTypeLabel(report.report_type)} size="small" />
                     </TableCell>
                     <TableCell>{report.reason}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
                         {report.description}
                       </Typography>
                     </TableCell>
-                    <TableCell>{report.reporter_name}</TableCell>
+                    <TableCell>
+                      {report.reporter_phone && (
+                        <Typography variant="body2">
+                          📱 {report.reporter_phone}
+                        </Typography>
+                      )}
+                      {report.reporter_email && (
+                        <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                          ✉️ {report.reporter_email}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {report.seller_info ? (
+                        <>
+                          <Typography variant="body2" fontWeight={600}>
+                            {report.seller_info.shop_name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                            📱 {report.seller_info.phone}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                            ✉️ {report.seller_info.email}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          —
+                        </Typography>
+                      )}
+                    </TableCell>
                     <TableCell>{formatDate(report.created_at)}</TableCell>
                     <TableCell>
                       <Chip
@@ -1020,7 +1068,7 @@ const AdminPanelPage: React.FC = () => {
           {selectedReport && (
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Тип: {getReportTypeLabel(selectedReport.type)}
+                Тип: {getReportTypeLabel(selectedReport.report_type)}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Причина: {selectedReport.reason}
@@ -1028,9 +1076,45 @@ const AdminPanelPage: React.FC = () => {
               <Typography variant="body2" gutterBottom sx={{ mt: 2 }}>
                 Описание: {selectedReport.description}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                От: {selectedReport.reporter_name} | {formatDate(selectedReport.created_at)}
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="subtitle2" gutterBottom>
+                Контакты покупателя:
               </Typography>
+              {selectedReport.reporter_phone && (
+                <Typography variant="body2" color="text.secondary">
+                  Телефон: {selectedReport.reporter_phone}
+                </Typography>
+              )}
+              {selectedReport.reporter_email && (
+                <Typography variant="body2" color="text.secondary">
+                  Email: {selectedReport.reporter_email}
+                </Typography>
+              )}
+
+              {selectedReport.seller_info && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" gutterBottom>
+                    Данные продавца:
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Название: {selectedReport.seller_info.shop_name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Телефон: {selectedReport.seller_info.phone}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Email: {selectedReport.seller_info.email}
+                  </Typography>
+                </>
+              )}
+
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                Дата жалобы: {formatDate(selectedReport.created_at)}
+              </Typography>
+
               <TextField
                 fullWidth
                 multiline
