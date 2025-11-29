@@ -168,6 +168,7 @@ const AdminPanelPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
   const [productStatusFilter, setProductStatusFilter] = useState('all');
+  const [changingProductStatus, setChangingProductStatus] = useState<string | null>(null);
 
   // Statistics state
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -269,6 +270,20 @@ const AdminPanelPage: React.FC = () => {
     }
   }, [currentTab, loadReports, loadUsers, loadProducts, loadStats]);
 
+  // Reload products when filter changes
+  useEffect(() => {
+    if (currentTab === 1) {
+      loadProducts();
+    }
+  }, [productStatusFilter]);
+
+  // Reload reports when filter changes
+  useEffect(() => {
+    if (currentTab === 3) {
+      loadReports();
+    }
+  }, [reportStatusFilter]);
+
   const handleReportReview = async (approved: boolean) => {
     if (!selectedReport) return;
 
@@ -338,6 +353,30 @@ const AdminPanelPage: React.FC = () => {
     }
   };
 
+  const handleProductStatusChange = async (productId: string, newStatus: string) => {
+    try {
+      setChangingProductStatus(productId);
+      await api.put(`/admin/products/${productId}/moderate`, {
+        status: newStatus,
+      });
+
+      const statusLabels: { [key: string]: string } = {
+        active: 'активным',
+        moderation: 'на модерацию',
+        rejected: 'отклонённым',
+        inactive: 'неактивным'
+      };
+
+      setSuccess(`Статус товара изменён на "${statusLabels[newStatus] || newStatus}"`);
+      loadProducts();
+    } catch (err: any) {
+      console.error('Error changing product status:', err);
+      setError(err.response?.data?.detail || 'Не удалось изменить статус товара');
+    } finally {
+      setChangingProductStatus(null);
+    }
+  };
+
   const getReportTypeLabel = (type: string) => {
     switch (type) {
       case 'product':
@@ -375,6 +414,36 @@ const AdminPanelPage: React.FC = () => {
       case 'seller':
         return 'primary';
       case 'buyer':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
+  const getProductStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Активный';
+      case 'moderation':
+        return 'На модерации';
+      case 'rejected':
+        return 'Отклонён';
+      case 'inactive':
+        return 'Неактивный';
+      default:
+        return status;
+    }
+  };
+
+  const getProductStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'success';
+      case 'moderation':
+        return 'warning';
+      case 'rejected':
+        return 'error';
+      case 'inactive':
         return 'default';
       default:
         return 'default';
@@ -654,17 +723,18 @@ const AdminPanelPage: React.FC = () => {
           <Typography variant="h6" fontWeight={600}>
             Модерация товаров
           </Typography>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Статус</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Фильтр по статусу</InputLabel>
             <Select
               value={productStatusFilter}
-              label="Статус"
+              label="Фильтр по статусу"
               onChange={(e) => setProductStatusFilter(e.target.value)}
             >
-              <MenuItem value="pending">Ожидают</MenuItem>
-              <MenuItem value="active">Активные</MenuItem>
-              <MenuItem value="rejected">Отклонённые</MenuItem>
               <MenuItem value="all">Все</MenuItem>
+              <MenuItem value="moderation">На модерации</MenuItem>
+              <MenuItem value="active">Активные</MenuItem>
+              <MenuItem value="inactive">Неактивные</MenuItem>
+              <MenuItem value="rejected">Отклонённые</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -696,27 +766,49 @@ const AdminPanelPage: React.FC = () => {
                     sx={{ height: 200, width: '100%', objectFit: 'cover' }}
                   />
                   <CardContent>
-                    <Typography variant="subtitle1" fontWeight={600} noWrap>
+                    <Typography variant="subtitle1" fontWeight={600} noWrap title={product.title}>
                       {product.title}
                     </Typography>
                     <Typography variant="h6" color="primary" sx={{ mb: 1 }}>
                       {formatCurrency(product.price)}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" display="block" noWrap>
                       Продавец: {product.seller_name}
                     </Typography>
-                    <Chip
-                      label={product.status}
-                      size="small"
-                      sx={{ mt: 1 }}
-                      color={
-                        product.status === 'active'
-                          ? 'success'
-                          : product.status === 'pending'
-                          ? 'warning'
-                          : 'error'
-                      }
-                    />
+
+                    {/* Status Selector */}
+                    <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                      <InputLabel>Статус</InputLabel>
+                      <Select
+                        value={product.status}
+                        label="Статус"
+                        onChange={(e) => handleProductStatusChange(product.id, e.target.value)}
+                        disabled={changingProductStatus === product.id}
+                      >
+                        <MenuItem value="moderation">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="На модерации" size="small" color="warning" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="active">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Активный" size="small" color="success" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="inactive">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Неактивный" size="small" color="default" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="rejected">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Отклонён" size="small" color="error" />
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    {/* Action Buttons */}
                     <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                       <Button
                         size="small"
@@ -725,26 +817,18 @@ const AdminPanelPage: React.FC = () => {
                         startIcon={<Visibility />}
                         onClick={() => navigate(`/products/${product.id}`)}
                       >
-                        Смотреть
+                        Просмотр
                       </Button>
-                      {product.status === 'pending' && (
-                        <>
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={() => handleProductModeration(product.id, true)}
-                          >
-                            <CheckCircle />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleProductModeration(product.id, false)}
-                          >
-                            <Cancel />
-                          </IconButton>
-                        </>
-                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        fullWidth
+                        startIcon={<Edit />}
+                        onClick={() => navigate(`/add-product?edit=${product.id}`)}
+                      >
+                        Редакт.
+                      </Button>
                     </Box>
                   </CardContent>
                 </Card>

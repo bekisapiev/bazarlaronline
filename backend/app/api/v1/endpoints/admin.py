@@ -373,7 +373,7 @@ async def change_user_role(
 
 @router.get("/products")
 async def get_all_products(
-    status: Optional[str] = Query(None, description="Filter by status: active, pending, rejected, moderation"),
+    status: Optional[str] = Query(None, description="Filter by status: active, moderation, inactive, rejected"),
     limit: int = Query(100, le=500),
     offset: int = 0,
     current_user: User = Depends(require_admin),
@@ -383,6 +383,7 @@ async def get_all_products(
     Get all products with optional status filter (admin only)
 
     Unlike the public /products endpoint, this returns products with any status
+    Supported statuses: active, moderation, inactive, rejected
     """
     from app.models.user import SellerProfile
     from sqlalchemy.orm import joinedload
@@ -442,11 +443,15 @@ async def moderate_product(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Moderate a product (admin only)"""
-    if data.status not in ["active", "rejected", "pending", "moderation"]:
+    """
+    Moderate a product (admin only)
+
+    Supported statuses: active, moderation, inactive, rejected
+    """
+    if data.status not in ["active", "rejected", "moderation", "inactive"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid status"
+            detail="Invalid status. Supported: active, moderation, inactive, rejected"
         )
     
     result = await db.execute(select(Product).where(Product.id == product_id))
