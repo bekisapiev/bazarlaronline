@@ -825,7 +825,7 @@ const AdminPanelPage: React.FC = () => {
                         color="primary"
                         fullWidth
                         startIcon={<Edit />}
-                        onClick={() => navigate(`/add-product?edit=${product.id}`)}
+                        onClick={() => navigate(`/products/${product.id}/edit`)}
                       >
                         Редакт.
                       </Button>
