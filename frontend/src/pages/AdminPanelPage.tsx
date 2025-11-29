@@ -167,7 +167,7 @@ const AdminPanelPage: React.FC = () => {
   // Products state
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
-  const [productStatusFilter, setProductStatusFilter] = useState('pending');
+  const [productStatusFilter, setProductStatusFilter] = useState('all');
 
   // Statistics state
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -211,8 +211,15 @@ const AdminPanelPage: React.FC = () => {
   const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
-      const response = await productsAPI.getProducts({ status: productStatusFilter });
-      setProducts(response.data.items || response.data);
+      // Don't send status parameter if filter is 'all'
+      const params = productStatusFilter === 'all'
+        ? { limit: 100, offset: 0 }
+        : { status: productStatusFilter, limit: 100, offset: 0 };
+      const response = await productsAPI.getProducts(params);
+      const productsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data.items || []);
+      setProducts(productsData);
     } catch (err: any) {
       console.error('Error loading products:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить товары');
