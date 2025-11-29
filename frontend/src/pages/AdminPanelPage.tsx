@@ -211,11 +211,12 @@ const AdminPanelPage: React.FC = () => {
   const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
+      // Use admin endpoint which supports status filtering
       // Don't send status parameter if filter is 'all'
       const params = productStatusFilter === 'all'
         ? { limit: 100, offset: 0 }
         : { status: productStatusFilter, limit: 100, offset: 0 };
-      const response = await productsAPI.getProducts(params);
+      const response = await api.get('/admin/products', { params });
       const productsData = Array.isArray(response.data)
         ? response.data
         : (response.data.items || []);
