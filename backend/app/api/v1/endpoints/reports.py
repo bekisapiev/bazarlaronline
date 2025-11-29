@@ -281,7 +281,7 @@ async def get_pending_reports(
 
     Includes reporter contact info and seller details for order complaints
     """
-    query = select(Report).where(Report.status == ReportStatus.PENDING).options(
+    query = select(Report).where(Report.status == ReportStatus.PENDING.value).options(
         selectinload(Report.reported_order).selectinload(Order.seller)
     )
 
@@ -299,7 +299,7 @@ async def get_pending_reports(
 
     # Count total
     count_query = select(func.count()).select_from(Report).where(
-        Report.status == ReportStatus.PENDING
+        Report.status == ReportStatus.PENDING.value
     )
     if report_type:
         count_query = count_query.where(Report.report_type == rt)
@@ -425,28 +425,28 @@ async def get_report_stats(
     pending_result = await db.execute(
         select(func.count())
         .select_from(Report)
-        .where(Report.status == ReportStatus.PENDING)
+        .where(Report.status == ReportStatus.PENDING.value)
     )
     pending = pending_result.scalar() or 0
 
     reviewed_result = await db.execute(
         select(func.count())
         .select_from(Report)
-        .where(Report.status == ReportStatus.REVIEWED)
+        .where(Report.status == ReportStatus.REVIEWED.value)
     )
     reviewed = reviewed_result.scalar() or 0
 
     resolved_result = await db.execute(
         select(func.count())
         .select_from(Report)
-        .where(Report.status == ReportStatus.RESOLVED)
+        .where(Report.status == ReportStatus.RESOLVED.value)
     )
     resolved = resolved_result.scalar() or 0
 
     dismissed_result = await db.execute(
         select(func.count())
         .select_from(Report)
-        .where(Report.status == ReportStatus.DISMISSED)
+        .where(Report.status == ReportStatus.DISMISSED.value)
     )
     dismissed = dismissed_result.scalar() or 0
 
