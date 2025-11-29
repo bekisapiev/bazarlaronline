@@ -22,6 +22,7 @@ import {
   AccountBalanceWallet as WalletIcon,
   Inventory as InventoryIcon,
   ContentCopy as CopyIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
 import { usersAPI, walletAPI } from '../../services/api';
 
@@ -149,8 +150,27 @@ const ProfileMainPage: React.FC = () => {
           p: 3,
           mb: 2,
           color: 'white',
+          position: 'relative',
         }}
       >
+        {/* Edit Button */}
+        <IconButton
+          onClick={() => navigate('/settings')}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            bgcolor: 'rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            '&:hover': {
+              bgcolor: 'rgba(255, 255, 255, 0.3)',
+            },
+          }}
+          size="small"
+        >
+          <EditIcon />
+        </IconButton>
+
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Avatar
             src={profile?.avatar}
