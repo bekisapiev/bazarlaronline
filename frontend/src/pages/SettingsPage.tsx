@@ -27,6 +27,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Avatar,
 } from '@mui/material';
 import {
   Save,
@@ -37,11 +38,13 @@ import {
   DeleteForever,
   NavigateNext,
   Warning,
+  Person,
+  CloudUpload,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../store';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, usersAPI, uploadAPI } from '../services/api';
 import {
   setSettings,
   updateSettings as updateSettingsAction,
@@ -49,6 +52,14 @@ import {
   setError as setErrorAction,
 } from '../store/slices/settingsSlice';
 import type { UserSettings } from '../store/slices/settingsSlice';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone?: string;
+  avatar?: string;
+}
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -74,6 +85,12 @@ const SettingsPage: React.FC = () => {
     },
   });
 
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+
   const [hasChanges, setHasChanges] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,8 +111,23 @@ const SettingsPage: React.FC = () => {
     }
   }, [dispatch]);
 
+  const loadProfile = useCallback(async () => {
+    try {
+      setProfileLoading(true);
+      const response = await usersAPI.getCurrentUser();
+      setProfile(response.data);
+      setEditedProfile(response.data);
+    } catch (err: any) {
+      console.error('Error loading profile:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить профиль');
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSettings();
+    loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -205,6 +237,45 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const phone = editedProfile.phone?.trim();
+      const updateData = {
+        full_name: editedProfile.full_name?.trim(),
+        phone: phone || null,
+      };
+      await usersAPI.updateCurrentUser(updateData);
+      await loadProfile();
+      setSuccess('Профиль успешно обновлён');
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      setError(err.response?.data?.detail || 'Не удалось обновить профиль');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingAvatar(true);
+      const response = await uploadAPI.uploadImage(file);
+      const avatarUrl = response.data.url;
+      await usersAPI.updateCurrentUser({ avatar: avatarUrl });
+      setProfile({ ...profile, avatar: avatarUrl } as UserProfile);
+      setEditedProfile({ ...editedProfile, avatar: avatarUrl });
+      setSuccess('Аватар успешно обновлён');
+    } catch (err: any) {
+      console.error('Error uploading avatar:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить аватар');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const languageOptions = [
     { value: 'ru', label: 'Русский' },
     { value: 'en', label: 'English' },
@@ -249,6 +320,108 @@ const SettingsPage: React.FC = () => {
         </Box>
       ) : (
         <>
+          {/* Profile Settings */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Person sx={{ mr: 1, color: 'primary.main' }} />
+              <Typography variant="h6" fontWeight={600}>
+                Личная информация
+              </Typography>
+            </Box>
+
+            {profileLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Grid container spacing={3}>
+                {/* Avatar Upload */}
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Avatar
+                      src={editedProfile.avatar}
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        bgcolor: 'grey.300',
+                      }}
+                    >
+                      <Person sx={{ fontSize: 40 }} />
+                    </Avatar>
+                    <Box>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={uploadingAvatar ? <CircularProgress size={20} /> : <CloudUpload />}
+                        disabled={uploadingAvatar}
+                      >
+                        Загрузить фото
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                        />
+                      </Button>
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                        JPG, PNG или GIF (макс. 5 МБ)
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+
+                {/* Full Name */}
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Полное имя"
+                    value={editedProfile.full_name || ''}
+                    onChange={(e) =>
+                      setEditedProfile({ ...editedProfile, full_name: e.target.value })
+                    }
+                    placeholder="Введите ваше имя"
+                  />
+                </Grid>
+
+                {/* Email (Read Only) */}
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={editedProfile.email || ''}
+                    disabled
+                    helperText="Email нельзя изменить"
+                  />
+                </Grid>
+
+                {/* Phone */}
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Телефон"
+                    value={editedProfile.phone || ''}
+                    onChange={(e) =>
+                      setEditedProfile({ ...editedProfile, phone: e.target.value })
+                    }
+                    placeholder="0555 00 00 00"
+                  />
+                </Grid>
+
+                {/* Save Profile Button */}
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    startIcon={<Save />}
+                    onClick={handleSaveProfile}
+                    disabled={profileLoading}
+                  >
+                    Сохранить профиль
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+          </Paper>
+
           {/* Language Settings */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
