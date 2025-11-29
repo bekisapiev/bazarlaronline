@@ -258,13 +258,13 @@ const AdminPanelPage: React.FC = () => {
 
   useEffect(() => {
     if (currentTab === 0) {
-      loadReports();
-    } else if (currentTab === 1) {
-      loadUsers();
-    } else if (currentTab === 2) {
-      loadProducts();
-    } else if (currentTab === 3) {
       loadStats();
+    } else if (currentTab === 1) {
+      loadProducts();
+    } else if (currentTab === 2) {
+      loadUsers();
+    } else if (currentTab === 3) {
+      loadReports();
     }
   }, [currentTab, loadReports, loadUsers, loadProducts, loadStats]);
 
@@ -443,15 +443,15 @@ const AdminPanelPage: React.FC = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<Warning />} iconPosition="start" label="Жалобы" />
-          <Tab icon={<Person />} iconPosition="start" label="Пользователи" />
-          <Tab icon={<Inventory />} iconPosition="start" label="Товары" />
           <Tab icon={<Assessment />} iconPosition="start" label="Статистика" />
+          <Tab icon={<Inventory />} iconPosition="start" label="Товары и услуги" />
+          <Tab icon={<Person />} iconPosition="start" label="Пользователи" />
+          <Tab icon={<Warning />} iconPosition="start" label="Жалобы" />
         </Tabs>
       </Paper>
 
-      {/* Tab 1: Reports */}
-      <TabPanel value={currentTab} index={0}>
+      {/* Tab 4: Reports */}
+      <TabPanel value={currentTab} index={3}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" fontWeight={600}>
             Список жалоб
@@ -568,8 +568,8 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 2: Users */}
-      <TabPanel value={currentTab} index={1}>
+      {/* Tab 3: Users */}
+      <TabPanel value={currentTab} index={2}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Управление пользователями
@@ -647,8 +647,8 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 3: Products */}
-      <TabPanel value={currentTab} index={2}>
+      {/* Tab 2: Products */}
+      <TabPanel value={currentTab} index={1}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" fontWeight={600}>
             Модерация товаров
@@ -753,8 +753,8 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 4: Statistics */}
-      <TabPanel value={currentTab} index={3}>
+      {/* Tab 1: Statistics */}
+      <TabPanel value={currentTab} index={0}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Статистика платформы
@@ -898,7 +898,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Warning />}
-                      onClick={() => setCurrentTab(0)}
+                      onClick={() => setCurrentTab(3)}
                     >
                       Просмотреть жалобы
                     </Button>
@@ -906,7 +906,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Inventory />}
-                      onClick={() => setCurrentTab(2)}
+                      onClick={() => setCurrentTab(1)}
                     >
                       Модерация товаров
                     </Button>
@@ -914,7 +914,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Person />}
-                      onClick={() => setCurrentTab(1)}
+                      onClick={() => setCurrentTab(2)}
                     >
                       Управление пользователями
                     </Button>
