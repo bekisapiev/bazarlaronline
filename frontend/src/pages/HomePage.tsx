@@ -12,8 +12,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  ToggleButtonGroup,
-  ToggleButton,
   FormControl,
   InputLabel,
   Select,
@@ -26,8 +24,6 @@ import {
   Stack,
 } from '@mui/material';
 import {
-  ShoppingBag as ProductIcon,
-  MiscellaneousServices as ServiceIcon,
   FilterList as FilterIcon,
   Close as CloseIcon,
   Store as MarketIcon,
@@ -92,7 +88,6 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
 
   // Filters
-  const [contentType, setContentType] = useState<'product' | 'service'>('product');
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<number | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -237,7 +232,7 @@ const HomePage: React.FC = () => {
       const params: any = {
         page: pageNum,
         page_size: 30,
-        product_type: contentType,  // 'product' or 'service'
+        // Load both products and services - no product_type filter
       };
 
       if (selectedCity) params.city_id = selectedCity;
@@ -261,15 +256,6 @@ const HomePage: React.FC = () => {
       setError('Ошибка загрузки товаров');
     } finally {
       setLoadingState(false);
-    }
-  };
-
-  const handleContentTypeChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newType: 'product' | 'service' | null
-  ) => {
-    if (newType !== null) {
-      setContentType(newType);
     }
   };
 
@@ -337,14 +323,6 @@ const HomePage: React.FC = () => {
         <Typography gutterBottom variant="h6" component="div" noWrap>
           {product.title}
         </Typography>
-
-        {/* Product type badge */}
-        <Chip
-          label={product.product_type === 'product' ? 'Товар' : 'Услуга'}
-          size="small"
-          color={product.product_type === 'product' ? 'primary' : 'secondary'}
-          sx={{ mb: 1 }}
-        />
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           {product.discount_price ? (
@@ -695,26 +673,6 @@ const HomePage: React.FC = () => {
         </Typography>
       </Box>
 
-      {/* Content Type Toggle */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <ToggleButtonGroup
-          value={contentType}
-          exclusive
-          onChange={handleContentTypeChange}
-          aria-label="content type"
-          size="large"
-        >
-          <ToggleButton value="product" aria-label="products">
-            <ProductIcon sx={{ mr: 1 }} />
-            Товары
-          </ToggleButton>
-          <ToggleButton value="service" aria-label="services">
-            <ServiceIcon sx={{ mr: 1 }} />
-            Услуги
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
       {/* Desktop Horizontal Filters */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
         {renderFiltersHorizontal()}
@@ -743,7 +701,7 @@ const HomePage: React.FC = () => {
           {products.length === 0 && !loading && (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <Typography variant="h6" color="text.secondary">
-                {contentType === 'product' ? 'Товары не найдены' : 'Услуги не найдены'}
+                Ничего не найдено
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Попробуйте изменить параметры фильтров
