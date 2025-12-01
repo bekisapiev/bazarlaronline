@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { Box, CircularProgress } from '@mui/material';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -76,7 +77,7 @@ function App() {
   return (
     <div className="App">
       <Header />
-      <main className="main-content">
+      <main className="main-content" style={{ paddingBottom: '80px' }}>
         <Routes>
           {/* Публичные роуты */}
           <Route path="/" element={<HomePage />} />
@@ -212,6 +213,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }

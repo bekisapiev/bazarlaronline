@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel
 
 from app.database.session import get_db
@@ -370,6 +371,71 @@ async def change_user_role(
 
 # Product Moderation Endpoints
 
+@router.get("/products")
+async def get_all_products(
+    status: Optional[str] = Query(None, description="Filter by status: active, moderation, inactive, rejected"),
+    limit: int = Query(100, le=500),
+    offset: int = 0,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get all products with optional status filter (admin only)
+
+    Unlike the public /products endpoint, this returns products with any status
+    Supported statuses: active, moderation, inactive, rejected
+    """
+    from app.models.user import SellerProfile
+    from sqlalchemy.orm import joinedload
+
+    # Build query - join with SellerProfile and User to get seller info
+    query = select(Product, SellerProfile, User).join(
+        SellerProfile,
+        Product.seller_id == SellerProfile.user_id,
+        isouter=True
+    ).join(
+        User,
+        Product.seller_id == User.id
+    ).options(
+        joinedload(SellerProfile.city),
+        joinedload(SellerProfile.market)
+    )
+
+    # Apply status filter if provided
+    if status:
+        query = query.where(Product.status == status)
+
+    # Order by newest first
+    query = query.order_by(desc(Product.created_at))
+
+    # Pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    products_with_info = result.all()
+
+    # Format response
+    products_list = []
+    for product, seller_profile, user in products_with_info:
+        products_list.append({
+            "id": str(product.id),
+            "title": product.title,
+            "description": product.description,
+            "price": float(product.price) if product.price else 0,
+            "discount_price": float(product.discount_price) if product.discount_price else None,
+            "status": product.status,
+            "product_type": product.product_type,
+            "images": product.images or [],
+            "seller_id": str(product.seller_id),
+            "seller_name": seller_profile.shop_name if seller_profile else (user.full_name or user.email),
+            "seller_email": user.email if user else None,
+            "created_at": product.created_at,
+            "updated_at": product.updated_at
+        })
+
+    return products_list
+
+
 @router.put("/products/{product_id}/moderate")
 async def moderate_product(
     product_id: UUID,
@@ -377,11 +443,15 @@ async def moderate_product(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
-    """Moderate a product (admin only)"""
-    if data.status not in ["active", "rejected", "pending", "moderation"]:
+    """
+    Moderate a product (admin only)
+
+    Supported statuses: active, moderation, inactive, rejected
+    """
+    if data.status not in ["active", "rejected", "moderation", "inactive"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid status"
+            detail="Invalid status. Supported: active, moderation, inactive, rejected"
         )
     
     result = await db.execute(select(Product).where(Product.id == product_id))

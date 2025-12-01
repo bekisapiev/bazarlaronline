@@ -19,8 +19,6 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  ToggleButtonGroup,
-  ToggleButton,
   FormControlLabel,
   Switch,
   InputAdornment,
@@ -34,8 +32,6 @@ import {
   Delete as DeleteIcon,
   CloudUpload as UploadIcon,
   Save as SaveIcon,
-  ShoppingBag as ProductIcon,
-  MiscellaneousServices as ServiceIcon,
 } from '@mui/icons-material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -276,6 +272,21 @@ const ProductFormPage: React.FC = () => {
       setCategorySelection(formData.category_id, flatCategories);
     }
   }, [formData.category_id, flatCategories, setCategorySelection]);
+
+  // Auto-detect is_service based on level 1 category
+  useEffect(() => {
+    if (selectedLevel1 && flatCategories.length > 0) {
+      const level1Category = flatCategories.find(c => c.id === selectedLevel1);
+      if (level1Category) {
+        // Check if category name is "Услуги" or slug is "uslugi"
+        const isService = level1Category.name === 'Услуги' || level1Category.slug === 'uslugi';
+        setFormData(prev => ({
+          ...prev,
+          is_service: isService
+        }));
+      }
+    }
+  }, [selectedLevel1, flatCategories]);
 
   const loadPromotionPackages = async () => {
     try {
@@ -666,30 +677,6 @@ const ProductFormPage: React.FC = () => {
                 Основная информация
               </Typography>
               <Divider sx={{ mb: 3 }} />
-
-              {/* Product/Service Toggle */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-                <ToggleButtonGroup
-                  value={formData.is_service ? 'service' : 'product'}
-                  exclusive
-                  onChange={(e, newValue) => {
-                    if (newValue !== null) {
-                      handleInputChange('is_service', newValue === 'service');
-                    }
-                  }}
-                  aria-label="product type"
-                  size="large"
-                >
-                  <ToggleButton value="product" aria-label="product">
-                    <ProductIcon sx={{ mr: 1 }} />
-                    Товар
-                  </ToggleButton>
-                  <ToggleButton value="service" aria-label="service">
-                    <ServiceIcon sx={{ mr: 1 }} />
-                    Услуга
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
 
               <TextField
                 fullWidth

@@ -15,6 +15,8 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -34,6 +36,8 @@ import { logout } from '../../store/slices/authSlice';
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const { unreadCount } = useSelector((state: RootState) => state.notifications);
   const { favoriteIds } = useSelector((state: RootState) => state.favorites);
@@ -105,57 +109,65 @@ const Header: React.FC = () => {
 
           {/* Navigation */}
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 'auto' }}>
-            <Button color="inherit" onClick={() => navigate('/sellers')}>
-              Продавцы
-            </Button>
-            <Button color="inherit" onClick={() => navigate('/documentation')}>
-              Документация
-            </Button>
+            {!isMobile && (
+              <>
+                <Button color="inherit" onClick={() => navigate('/sellers')}>
+                  Продавцы
+                </Button>
+                <Button color="inherit" onClick={() => navigate('/documentation')}>
+                  Документация
+                </Button>
+              </>
+            )}
 
             {isAuthenticated ? (
               <>
-                {/* Notifications */}
-                <IconButton
-                  color="inherit"
-                  onClick={() => navigate('/notifications')}
-                  aria-label="notifications"
-                >
-                  <Badge badgeContent={unreadCount} color="error">
-                    <NotificationsIcon />
-                  </Badge>
-                </IconButton>
+                {!isMobile && (
+                  <>
+                    {/* Notifications */}
+                    <IconButton
+                      color="inherit"
+                      onClick={() => navigate('/notifications')}
+                      aria-label="notifications"
+                    >
+                      <Badge badgeContent={unreadCount} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    </IconButton>
 
-                {/* Favorites */}
-                <IconButton
-                  color="inherit"
-                  onClick={() => navigate('/favorites')}
-                  aria-label="favorites"
-                >
-                  <Badge badgeContent={favoriteIds.length} color="primary">
-                    <FavoriteIcon />
-                  </Badge>
-                </IconButton>
+                    {/* Favorites */}
+                    <IconButton
+                      color="inherit"
+                      onClick={() => navigate('/favorites')}
+                      aria-label="favorites"
+                    >
+                      <Badge badgeContent={favoriteIds.length} color="primary">
+                        <FavoriteIcon />
+                      </Badge>
+                    </IconButton>
 
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => navigate('/add')}
-                  sx={{ mx: 1 }}
-                >
-                  Добавить
-                </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => navigate('/add')}
+                      sx={{ mx: 1 }}
+                    >
+                      Добавить
+                    </Button>
 
-                {/* Profile Menu */}
-                <IconButton
-                  onClick={handleProfileMenuOpen}
-                  aria-label="account"
-                  aria-controls="profile-menu"
-                  aria-haspopup="true"
-                >
-                  <Avatar sx={{ width: 32, height: 32 }}>
-                    {user?.full_name?.[0] || <AccountIcon />}
-                  </Avatar>
-                </IconButton>
+                    {/* Profile Menu */}
+                    <IconButton
+                      onClick={handleProfileMenuOpen}
+                      aria-label="account"
+                      aria-controls="profile-menu"
+                      aria-haspopup="true"
+                    >
+                      <Avatar sx={{ width: 32, height: 32 }}>
+                        {user?.full_name?.[0] || <AccountIcon />}
+                      </Avatar>
+                    </IconButton>
+                  </>
+                )}
 
                 <Menu
                   id="profile-menu"
@@ -208,13 +220,15 @@ const Header: React.FC = () => {
                 </Menu>
               </>
             ) : (
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => navigate('/login')}
-              >
-                Войти
-              </Button>
+              !isMobile && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => navigate('/login')}
+                >
+                  Войти
+                </Button>
+              )
             )}
           </Box>
         </Toolbar>

@@ -167,7 +167,8 @@ const AdminPanelPage: React.FC = () => {
   // Products state
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
-  const [productStatusFilter, setProductStatusFilter] = useState('pending');
+  const [productStatusFilter, setProductStatusFilter] = useState('all');
+  const [changingProductStatus, setChangingProductStatus] = useState<string | null>(null);
 
   // Statistics state
   const [stats, setStats] = useState<PlatformStats | null>(null);
@@ -211,8 +212,16 @@ const AdminPanelPage: React.FC = () => {
   const loadProducts = useCallback(async () => {
     try {
       setProductsLoading(true);
-      const response = await productsAPI.getProducts({ status: productStatusFilter });
-      setProducts(response.data.items || response.data);
+      // Use admin endpoint which supports status filtering
+      // Don't send status parameter if filter is 'all'
+      const params = productStatusFilter === 'all'
+        ? { limit: 100, offset: 0 }
+        : { status: productStatusFilter, limit: 100, offset: 0 };
+      const response = await api.get('/admin/products', { params });
+      const productsData = Array.isArray(response.data)
+        ? response.data
+        : (response.data.items || []);
+      setProducts(productsData);
     } catch (err: any) {
       console.error('Error loading products:', err);
       setError(err.response?.data?.detail || 'Не удалось загрузить товары');
@@ -251,15 +260,29 @@ const AdminPanelPage: React.FC = () => {
 
   useEffect(() => {
     if (currentTab === 0) {
-      loadReports();
-    } else if (currentTab === 1) {
-      loadUsers();
-    } else if (currentTab === 2) {
-      loadProducts();
-    } else if (currentTab === 3) {
       loadStats();
+    } else if (currentTab === 1) {
+      loadProducts();
+    } else if (currentTab === 2) {
+      loadUsers();
+    } else if (currentTab === 3) {
+      loadReports();
     }
   }, [currentTab, loadReports, loadUsers, loadProducts, loadStats]);
+
+  // Reload products when filter changes
+  useEffect(() => {
+    if (currentTab === 1) {
+      loadProducts();
+    }
+  }, [productStatusFilter]);
+
+  // Reload reports when filter changes
+  useEffect(() => {
+    if (currentTab === 3) {
+      loadReports();
+    }
+  }, [reportStatusFilter]);
 
   const handleReportReview = async (approved: boolean) => {
     if (!selectedReport) return;
@@ -330,6 +353,30 @@ const AdminPanelPage: React.FC = () => {
     }
   };
 
+  const handleProductStatusChange = async (productId: string, newStatus: string) => {
+    try {
+      setChangingProductStatus(productId);
+      await api.put(`/admin/products/${productId}/moderate`, {
+        status: newStatus,
+      });
+
+      const statusLabels: { [key: string]: string } = {
+        active: 'активным',
+        moderation: 'на модерацию',
+        rejected: 'отклонённым',
+        inactive: 'неактивным'
+      };
+
+      setSuccess(`Статус товара изменён на "${statusLabels[newStatus] || newStatus}"`);
+      loadProducts();
+    } catch (err: any) {
+      console.error('Error changing product status:', err);
+      setError(err.response?.data?.detail || 'Не удалось изменить статус товара');
+    } finally {
+      setChangingProductStatus(null);
+    }
+  };
+
   const getReportTypeLabel = (type: string) => {
     switch (type) {
       case 'product':
@@ -367,6 +414,36 @@ const AdminPanelPage: React.FC = () => {
       case 'seller':
         return 'primary';
       case 'buyer':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
+  const getProductStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Активный';
+      case 'moderation':
+        return 'На модерации';
+      case 'rejected':
+        return 'Отклонён';
+      case 'inactive':
+        return 'Неактивный';
+      default:
+        return status;
+    }
+  };
+
+  const getProductStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'success';
+      case 'moderation':
+        return 'warning';
+      case 'rejected':
+        return 'error';
+      case 'inactive':
         return 'default';
       default:
         return 'default';
@@ -436,15 +513,15 @@ const AdminPanelPage: React.FC = () => {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab icon={<Warning />} iconPosition="start" label="Жалобы" />
-          <Tab icon={<Person />} iconPosition="start" label="Пользователи" />
-          <Tab icon={<Inventory />} iconPosition="start" label="Товары" />
           <Tab icon={<Assessment />} iconPosition="start" label="Статистика" />
+          <Tab icon={<Inventory />} iconPosition="start" label="Товары и услуги" />
+          <Tab icon={<Person />} iconPosition="start" label="Пользователи" />
+          <Tab icon={<Warning />} iconPosition="start" label="Жалобы" />
         </Tabs>
       </Paper>
 
-      {/* Tab 1: Reports */}
-      <TabPanel value={currentTab} index={0}>
+      {/* Tab 4: Reports */}
+      <TabPanel value={currentTab} index={3}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" fontWeight={600}>
             Список жалоб
@@ -561,8 +638,8 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 2: Users */}
-      <TabPanel value={currentTab} index={1}>
+      {/* Tab 3: Users */}
+      <TabPanel value={currentTab} index={2}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Управление пользователями
@@ -640,23 +717,24 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 3: Products */}
-      <TabPanel value={currentTab} index={2}>
+      {/* Tab 2: Products */}
+      <TabPanel value={currentTab} index={1}>
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" fontWeight={600}>
             Модерация товаров
           </Typography>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Статус</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel>Фильтр по статусу</InputLabel>
             <Select
               value={productStatusFilter}
-              label="Статус"
+              label="Фильтр по статусу"
               onChange={(e) => setProductStatusFilter(e.target.value)}
             >
-              <MenuItem value="pending">Ожидают</MenuItem>
-              <MenuItem value="active">Активные</MenuItem>
-              <MenuItem value="rejected">Отклонённые</MenuItem>
               <MenuItem value="all">Все</MenuItem>
+              <MenuItem value="moderation">На модерации</MenuItem>
+              <MenuItem value="active">Активные</MenuItem>
+              <MenuItem value="inactive">Неактивные</MenuItem>
+              <MenuItem value="rejected">Отклонённые</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -688,27 +766,49 @@ const AdminPanelPage: React.FC = () => {
                     sx={{ height: 200, width: '100%', objectFit: 'cover' }}
                   />
                   <CardContent>
-                    <Typography variant="subtitle1" fontWeight={600} noWrap>
+                    <Typography variant="subtitle1" fontWeight={600} noWrap title={product.title}>
                       {product.title}
                     </Typography>
                     <Typography variant="h6" color="primary" sx={{ mb: 1 }}>
                       {formatCurrency(product.price)}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography variant="caption" color="text.secondary" display="block" noWrap>
                       Продавец: {product.seller_name}
                     </Typography>
-                    <Chip
-                      label={product.status}
-                      size="small"
-                      sx={{ mt: 1 }}
-                      color={
-                        product.status === 'active'
-                          ? 'success'
-                          : product.status === 'pending'
-                          ? 'warning'
-                          : 'error'
-                      }
-                    />
+
+                    {/* Status Selector */}
+                    <FormControl fullWidth size="small" sx={{ mt: 2 }}>
+                      <InputLabel>Статус</InputLabel>
+                      <Select
+                        value={product.status}
+                        label="Статус"
+                        onChange={(e) => handleProductStatusChange(product.id, e.target.value)}
+                        disabled={changingProductStatus === product.id}
+                      >
+                        <MenuItem value="moderation">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="На модерации" size="small" color="warning" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="active">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Активный" size="small" color="success" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="inactive">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Неактивный" size="small" color="default" />
+                          </Box>
+                        </MenuItem>
+                        <MenuItem value="rejected">
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Chip label="Отклонён" size="small" color="error" />
+                          </Box>
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    {/* Action Buttons */}
                     <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                       <Button
                         size="small"
@@ -717,26 +817,18 @@ const AdminPanelPage: React.FC = () => {
                         startIcon={<Visibility />}
                         onClick={() => navigate(`/products/${product.id}`)}
                       >
-                        Смотреть
+                        Просмотр
                       </Button>
-                      {product.status === 'pending' && (
-                        <>
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={() => handleProductModeration(product.id, true)}
-                          >
-                            <CheckCircle />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleProductModeration(product.id, false)}
-                          >
-                            <Cancel />
-                          </IconButton>
-                        </>
-                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        fullWidth
+                        startIcon={<Edit />}
+                        onClick={() => navigate(`/products/${product.id}/edit`)}
+                      >
+                        Редакт.
+                      </Button>
                     </Box>
                   </CardContent>
                 </Card>
@@ -746,8 +838,8 @@ const AdminPanelPage: React.FC = () => {
         )}
       </TabPanel>
 
-      {/* Tab 4: Statistics */}
-      <TabPanel value={currentTab} index={3}>
+      {/* Tab 1: Statistics */}
+      <TabPanel value={currentTab} index={0}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Статистика платформы
@@ -891,7 +983,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Warning />}
-                      onClick={() => setCurrentTab(0)}
+                      onClick={() => setCurrentTab(3)}
                     >
                       Просмотреть жалобы
                     </Button>
@@ -899,7 +991,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Inventory />}
-                      onClick={() => setCurrentTab(2)}
+                      onClick={() => setCurrentTab(1)}
                     >
                       Модерация товаров
                     </Button>
@@ -907,7 +999,7 @@ const AdminPanelPage: React.FC = () => {
                       variant="outlined"
                       fullWidth
                       startIcon={<Person />}
-                      onClick={() => setCurrentTab(1)}
+                      onClick={() => setCurrentTab(2)}
                     >
                       Управление пользователями
                     </Button>
