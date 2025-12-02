@@ -24,6 +24,7 @@ import {
   DialogActions,
   TextField,
   Paper,
+  Snackbar,
 } from '@mui/material';
 import {
   Favorite,
@@ -85,6 +86,7 @@ interface Product {
   referral_commission_percent?: number;
   referral_commission_amount?: number;
   product_type: 'product' | 'service';
+  stock_quantity?: number;
 }
 
 interface Review {
@@ -124,6 +126,7 @@ const ProductDetailPage: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [userReferralId, setUserReferralId] = useState<string | null>(null);
   const [productReferralLink, setProductReferralLink] = useState<string>('');
+  const [outOfStockNotification, setOutOfStockNotification] = useState(false);
 
   // Order modal state
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
@@ -267,13 +270,23 @@ const ProductDetailPage: React.FC = () => {
 
   // Handle product referral code from URL
   useEffect(() => {
-    if (id) {
+    if (id && product) {
+      // Check if product has stock available (for products, not services)
+      if (product.product_type === 'product' && product.stock_quantity !== undefined && product.stock_quantity <= 0) {
+        // Show notification and redirect to home if out of stock
+        setOutOfStockNotification(true);
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 2000);
+        return;
+      }
+
       const referralData = handleProductReferralCode(id);
       if (referralData) {
         console.log('Product referral saved:', referralData);
       }
     }
-  }, [id]);
+  }, [id, product, navigate]);
 
   // Load user referral ID for sharing
   useEffect(() => {
@@ -566,10 +579,10 @@ const ProductDetailPage: React.FC = () => {
                     />
                   </Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Поделитесь ссылкой и получите комиссию:
+                    Поделитесь ссылкой и получите комиссию партнера:
                   </Typography>
                   <Typography variant="h5" fontWeight={600} color="success.main">
-                    {product.referral_commission_amount} сом ({product.referral_commission_percent}%)
+                    {product.referral_commission_amount} сом (45%)
                   </Typography>
                   {productReferralLink && isAuthenticated && (
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -1183,6 +1196,27 @@ const ProductDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Copy Success Snackbar */}
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={2000}
+        onClose={() => setCopySuccess(false)}
+        message="Скопировано!"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      {/* Out of Stock Notification */}
+      <Snackbar
+        open={outOfStockNotification}
+        autoHideDuration={2000}
+        onClose={() => setOutOfStockNotification(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setOutOfStockNotification(false)}>
+          Товары на складе не осталось, посмотрите другие товары для заказа.
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
