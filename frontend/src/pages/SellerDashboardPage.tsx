@@ -92,18 +92,24 @@ const SellerDashboardPage: React.FC = () => {
   const loadProductPerformance = useCallback(async () => {
     try {
       const response = await analyticsAPI.getProductPerformance(sortBy, 10);
-      setProductPerformance(response.data);
+      // Ensure data is array
+      const data = Array.isArray(response.data) ? response.data : (response.data?.items || []);
+      setProductPerformance(data);
     } catch (err: any) {
       console.error('Error loading product performance:', err);
+      setProductPerformance([]); // Set empty array on error
     }
   }, [sortBy]);
 
   const loadSalesData = useCallback(async () => {
     try {
       const response = await analyticsAPI.getSalesByPeriod(period);
-      setSalesData(response.data);
+      // Ensure data is array
+      const data = Array.isArray(response.data) ? response.data : (response.data?.items || []);
+      setSalesData(data);
     } catch (err: any) {
       console.error('Error loading sales data:', err);
+      setSalesData([]); // Set empty array on error
     }
   }, [period]);
 
