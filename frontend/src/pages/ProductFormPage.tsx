@@ -205,9 +205,6 @@ const ProductFormPage: React.FC = () => {
       const response = await productsAPI.getProductById(productId);
       const product = response.data;
 
-      console.log('Loading product:', product);
-      console.log('Product category_id:', product.category_id, 'type:', typeof product.category_id);
-
       // Convert characteristics array to object format for form
       const characteristicsObject: Record<string, string> = {};
       if (Array.isArray(product.characteristics)) {
@@ -247,11 +244,20 @@ const ProductFormPage: React.FC = () => {
         is_promoted: product.is_promoted || false,
       });
     } catch (err: any) {
-      setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
+      // Handle 404 errors specially - redirect to products list
+      if (err.response?.status === 404) {
+        setError('Товар не найден. Возможно, он был удален.');
+        // Redirect to products list after 2 seconds
+        setTimeout(() => {
+          navigate('/profile/products');
+        }, 2000);
+      } else {
+        setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   // Load product if edit mode
   useEffect(() => {
@@ -263,12 +269,7 @@ const ProductFormPage: React.FC = () => {
 
   // Set category hierarchy when categories and product are loaded
   useEffect(() => {
-    console.log('Category selection effect triggered');
-    console.log('formData.category_id:', formData.category_id, 'type:', typeof formData.category_id);
-    console.log('flatCategories.length:', flatCategories.length);
-
     if (formData.category_id && flatCategories.length > 0) {
-      console.log('Both values present, calling setCategorySelection');
       setCategorySelection(formData.category_id, flatCategories);
     }
   }, [formData.category_id, flatCategories, setCategorySelection]);
@@ -317,7 +318,6 @@ const ProductFormPage: React.FC = () => {
   const loadCategories = async () => {
     try {
       const response = await categoriesAPI.getCategoryTree();
-      console.log('Categories response:', response.data);
 
       // Handle different response formats
       let categoriesData: Category[] = [];
@@ -335,12 +335,10 @@ const ProductFormPage: React.FC = () => {
         console.warn('Unexpected categories data format:', response.data);
       }
 
-      console.log('Loaded categories:', categoriesData);
       setCategories(categoriesData);
 
       // Create flat list for easier lookup
       const flat = flattenCategories(categoriesData);
-      console.log('Flattened categories:', flat);
       setFlatCategories(flat);
     } catch (err) {
       console.error('Failed to load categories:', err);
