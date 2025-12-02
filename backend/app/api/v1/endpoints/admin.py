@@ -507,7 +507,7 @@ async def get_platform_stats(
 
     # Count pending reports
     pending_reports_result = await db.execute(
-        select(func.count()).select_from(Report).where(Report.status == ReportStatus.PENDING.value)
+        select(func.count()).select_from(Report).where(Report.status == "pending")
     )
     pending_reports = pending_reports_result.scalar()
 
