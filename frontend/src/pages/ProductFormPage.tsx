@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -88,9 +88,6 @@ const ProductFormPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
-  // Track attempted product loads to prevent duplicate 404s (React Strict Mode)
-  const attemptedLoadRef = useRef<Set<string>>(new Set());
 
   // Categories - теперь поддерживаем 4 уровня
   const [categories, setCategories] = useState<Category[]>([]);
@@ -203,12 +200,6 @@ const ProductFormPage: React.FC = () => {
   }, []);
 
   const loadProduct = useCallback(async (productId: string) => {
-    // Skip if we've already attempted to load this product (prevents duplicate 404s)
-    if (attemptedLoadRef.current.has(productId)) {
-      return;
-    }
-    attemptedLoadRef.current.add(productId);
-
     setLoading(true);
     try {
       const response = await productsAPI.getProductById(productId);

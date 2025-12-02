@@ -942,16 +942,11 @@ async def get_product_by_id(
     from app.models.product import Category
     from sqlalchemy.orm import joinedload
 
-    # Get product with seller profile info
-    # Use joinedload to eagerly load all relationships to avoid lazy loading issues
+    # Get product with seller info (LEFT JOIN for SellerProfile as it may not exist yet)
     result = await db.execute(
-        select(Product, SellerProfile, User).join(
-            SellerProfile, Product.seller_id == SellerProfile.user_id
-        ).join(
+        select(Product, User).join(
             User, Product.seller_id == User.id
         ).options(
-            joinedload(SellerProfile.city),
-            joinedload(SellerProfile.market),
             joinedload(Product.category)
         ).where(Product.id == product_id)
     )
@@ -963,11 +958,23 @@ async def get_product_by_id(
             detail="Product not found"
         )
 
-    product, seller_profile, user = row
+    product, user = row
 
-    # Get city and market names BEFORE commit (while still in session)
-    city_name = seller_profile.city.name if seller_profile.city else None
-    market_name = seller_profile.market.name if seller_profile.market else None
+    # Get seller profile separately (may not exist for new users)
+    seller_profile_result = await db.execute(
+        select(SellerProfile).options(
+            joinedload(SellerProfile.city),
+            joinedload(SellerProfile.market)
+        ).where(SellerProfile.user_id == user.id)
+    )
+    seller_profile = seller_profile_result.scalar_one_or_none()
+
+    # Get city and market names if seller profile exists
+    city_name = None
+    market_name = None
+    if seller_profile:
+        city_name = seller_profile.city.name if seller_profile.city else None
+        market_name = seller_profile.market.name if seller_profile.market else None
 
     # Get category hierarchy BEFORE commit (while still in session)
     category_hierarchy = []
@@ -1024,17 +1031,17 @@ async def get_product_by_id(
             "full_name": user.full_name,
             "avatar": user.avatar,
             "tariff": user.tariff,
-            "shop_name": seller_profile.shop_name,
-            "seller_type": seller_profile.seller_type,
-            "city_id": seller_profile.city_id,
+            "shop_name": seller_profile.shop_name if seller_profile else None,
+            "seller_type": seller_profile.seller_type if seller_profile else None,
+            "city_id": seller_profile.city_id if seller_profile else None,
             "city_name": city_name,
-            "market_id": seller_profile.market_id,
+            "market_id": seller_profile.market_id if seller_profile else None,
             "market_name": market_name,
-            "address": seller_profile.address,
-            "latitude": float(seller_profile.latitude) if seller_profile.latitude else None,
-            "longitude": float(seller_profile.longitude) if seller_profile.longitude else None,
-            "logo_url": seller_profile.logo_url,
-            "rating": float(seller_profile.rating),
-            "reviews_count": seller_profile.reviews_count,
+            "address": seller_profile.address if seller_profile else None,
+            "latitude": float(seller_profile.latitude) if (seller_profile and seller_profile.latitude) else None,
+            "longitude": float(seller_profile.longitude) if (seller_profile and seller_profile.longitude) else None,
+            "logo_url": seller_profile.logo_url if seller_profile else None,
+            "rating": float(seller_profile.rating) if seller_profile else 0.0,
+            "reviews_count": seller_profile.reviews_count if seller_profile else 0,
         }
     }
