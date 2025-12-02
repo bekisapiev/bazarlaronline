@@ -335,7 +335,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_products}
+                  {dashboardData.total_products || 0}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -357,7 +357,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_orders}
+                  {dashboardData.total_orders || 0}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -379,7 +379,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {formatCurrency(dashboardData.total_revenue)}
+                  {formatCurrency(dashboardData.total_revenue || 0)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <TrendingUp sx={{ fontSize: 16, color: 'success.main' }} />
@@ -401,7 +401,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_views.toLocaleString()}
+                  {(dashboardData.total_views || 0).toLocaleString()}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -423,7 +423,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.average_rating.toFixed(1)}
+                  {(dashboardData.average_rating || 0).toFixed(1)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <Star sx={{ fontSize: 16, color: 'warning.main' }} />
