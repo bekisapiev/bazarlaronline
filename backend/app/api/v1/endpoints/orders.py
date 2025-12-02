@@ -15,7 +15,7 @@ from app.models.product import Product
 from app.models.user import User
 from app.models.wallet import Wallet, Transaction, ProductReferralPurchase
 from app.core.dependencies import get_current_active_user
-from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse
+from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse, OrderListItem
 
 router = APIRouter()
 
@@ -226,14 +226,17 @@ async def get_orders(
 
     Can filter by role (as buyer or seller) and by status
     """
-    # Build query based on role
+    from sqlalchemy.orm import joinedload
+
+    # Build query based on role - join with seller User to get seller name
     if role == "buyer":
-        query = select(Order).where(Order.buyer_id == current_user.id)
+        query = select(Order, User).join(User, Order.seller_id == User.id).where(Order.buyer_id == current_user.id)
     elif role == "seller":
-        query = select(Order).where(Order.seller_id == current_user.id)
+        # For seller view, we need buyer name, so join with buyer
+        query = select(Order, User).join(User, Order.buyer_id == User.id).where(Order.seller_id == current_user.id)
     else:
-        # Get all orders where user is buyer or seller
-        query = select(Order).where(
+        # Get all orders where user is buyer or seller - join with seller
+        query = select(Order, User).join(User, Order.seller_id == User.id).where(
             or_(
                 Order.buyer_id == current_user.id,
                 Order.seller_id == current_user.id
@@ -248,7 +251,7 @@ async def get_orders(
     query = query.order_by(desc(Order.created_at)).limit(limit).offset(offset)
 
     result = await db.execute(query)
-    orders = result.scalars().all()
+    orders_with_users = result.all()
 
     # Count total
     count_query = select(func.count()).select_from(Order)
@@ -270,24 +273,38 @@ async def get_orders(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
 
+    # Format response
+    items = []
+    for order, user in orders_with_users:
+        # Get first product title from items
+        product_title = "Нет товаров"
+        if order.items and len(order.items) > 0:
+            first_item = order.items[0]
+            product_title = first_item.get('product_title', 'Н/Д')
+            if len(order.items) > 1:
+                product_title = f"{product_title} (+{len(order.items) - 1})"
+
+        # Seller name (or buyer name if viewing as seller)
+        if role == "seller":
+            seller_name = user.full_name or user.email  # This is actually buyer
+        else:
+            seller_name = user.full_name or user.email
+
+        items.append(OrderListItem(
+            id=str(order.id),
+            order_number=order.order_number,
+            buyer_id=str(order.buyer_id),
+            seller_id=str(order.seller_id),
+            seller_name=seller_name,
+            product_title=product_title,
+            total_price=order.total_amount,
+            status=order.status,
+            created_at=order.created_at,
+            items_count=len(order.items) if order.items else 0
+        ))
+
     return {
-        "items": [
-            OrderResponse(
-                id=str(o.id),
-                order_number=o.order_number,
-                buyer_id=str(o.buyer_id),
-                seller_id=str(o.seller_id),
-                items=o.items,
-                total_amount=o.total_amount,
-                delivery_address=o.delivery_address,
-                phone_number=o.phone_number,
-                payment_method=o.payment_method,
-                status=o.status,
-                created_at=o.created_at,
-                updated_at=o.updated_at
-            )
-            for o in orders
-        ],
+        "items": items,
         "total": total,
         "limit": limit,
         "offset": offset,

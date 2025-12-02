@@ -84,3 +84,20 @@ class OrderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OrderListItem(BaseModel):
+    """Order list item with additional info for display"""
+    id: str
+    order_number: str
+    buyer_id: str
+    seller_id: str
+    seller_name: str  # For display
+    product_title: str  # First product title or "Multiple items"
+    total_price: Decimal  # Alias for total_amount
+    status: str
+    created_at: datetime
+    items_count: int  # Number of items in order
+
+    class Config:
+        from_attributes = True
