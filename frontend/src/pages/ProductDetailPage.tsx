@@ -87,6 +87,7 @@ interface Product {
   referral_commission_amount?: number;
   product_type: 'product' | 'service';
   stock_quantity?: number;
+  status: string;
 }
 
 interface Review {
@@ -271,6 +272,15 @@ const ProductDetailPage: React.FC = () => {
   // Handle product referral code from URL
   useEffect(() => {
     if (id && product) {
+      // Check if product status is not active
+      if (product.status !== 'active') {
+        setOutOfStockNotification(true);
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 2000);
+        return;
+      }
+
       // Check if product has stock available (for products, not services)
       if (product.product_type === 'product' && product.stock_quantity !== undefined && product.stock_quantity <= 0) {
         // Show notification and redirect to home if out of stock

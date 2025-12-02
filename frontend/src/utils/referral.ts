@@ -104,6 +104,29 @@ export const getProductReferralCookie = (productId: string): ProductReferralCook
 };
 
 /**
+ * Get any product referral cookie (without filtering by product ID)
+ */
+export const getAnyProductReferralCookie = (): ProductReferralCookie | null => {
+  const name = 'product_ref=';
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const cookies = decodedCookie.split(';');
+
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i].trim();
+    if (cookie.indexOf(name) === 0) {
+      try {
+        const value = cookie.substring(name.length, cookie.length);
+        const data: ProductReferralCookie = JSON.parse(decodeURIComponent(value));
+        return data;
+      } catch (e) {
+        console.error('Error parsing product referral cookie:', e);
+      }
+    }
+  }
+  return null;
+};
+
+/**
  * Clear product referral cookie
  */
 export const clearProductReferralCookie = (): void => {

@@ -17,7 +17,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { setUser } from '../../store/slices/authSlice';
-import { handleReferralCode, clearReferralCodeCookie } from '../../utils/referral';
+import { handleReferralCode, clearReferralCodeCookie, getAnyProductReferralCookie, clearProductReferralCookie } from '../../utils/referral';
 
 const EmailAuth: React.FC = () => {
   const dispatch = useDispatch();
@@ -72,6 +72,14 @@ const EmailAuth: React.FC = () => {
       const userResponse = await authAPI.getCurrentUser();
       dispatch(setUser(userResponse.data));
 
+      // Check for product referral cookie
+      const productReferral = getAnyProductReferralCookie();
+      if (productReferral) {
+        clearProductReferralCookie();
+        navigate(`/products/${productReferral.productId}?ref=${productReferral.referrerId}`, { replace: true });
+        return;
+      }
+
       // Redirect to the page user was trying to access, or home
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
@@ -116,6 +124,14 @@ const EmailAuth: React.FC = () => {
 
       // Clear referral cookie after successful registration
       clearReferralCodeCookie();
+
+      // Check for product referral cookie
+      const productReferral = getAnyProductReferralCookie();
+      if (productReferral) {
+        clearProductReferralCookie();
+        navigate(`/products/${productReferral.productId}?ref=${productReferral.referrerId}`, { replace: true });
+        return;
+      }
 
       // Redirect to the page user was trying to access, or home
       const from = (location.state as any)?.from?.pathname || '/';
