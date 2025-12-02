@@ -47,7 +47,7 @@ class Report(Base):
     reporter_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # What is being reported
-    report_type = Column(SQLEnum(ReportType, name="report_type_enum"), nullable=False)
+    report_type = Column(SQLEnum(ReportType, name="report_type_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
     reported_product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=True)
     reported_seller_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     reported_review_id = Column(UUID(as_uuid=True), ForeignKey("reviews.id", ondelete="CASCADE"), nullable=True)
@@ -59,9 +59,9 @@ class Report(Base):
     reporter_email = Column(String(255), nullable=True)
 
     # Report details
-    reason = Column(SQLEnum(ReportReason, name="report_reason_enum"), nullable=False)
+    reason = Column(SQLEnum(ReportReason, name="report_reason_enum", values_callable=lambda x: [e.value for e in x]), nullable=False)
     description = Column(Text, nullable=False)
-    status = Column(SQLEnum(ReportStatus, name="report_status_enum"), default=ReportStatus.PENDING)
+    status = Column(SQLEnum(ReportStatus, name="report_status_enum", values_callable=lambda x: [e.value for e in x]), default=ReportStatus.PENDING)
 
     # Admin handling
     reviewed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
