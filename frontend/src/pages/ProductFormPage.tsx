@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -88,6 +88,9 @@ const ProductFormPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Track attempted product loads to prevent duplicate 404s (React Strict Mode)
+  const attemptedLoadRef = useRef<Set<string>>(new Set());
 
   // Categories - теперь поддерживаем 4 уровня
   const [categories, setCategories] = useState<Category[]>([]);
@@ -200,6 +203,12 @@ const ProductFormPage: React.FC = () => {
   }, []);
 
   const loadProduct = useCallback(async (productId: string) => {
+    // Skip if we've already attempted to load this product (prevents duplicate 404s)
+    if (attemptedLoadRef.current.has(productId)) {
+      return;
+    }
+    attemptedLoadRef.current.add(productId);
+
     setLoading(true);
     try {
       const response = await productsAPI.getProductById(productId);
@@ -246,11 +255,11 @@ const ProductFormPage: React.FC = () => {
     } catch (err: any) {
       // Handle 404 errors specially - redirect to products list
       if (err.response?.status === 404) {
-        setError('Товар не найден. Возможно, он был удален.');
-        // Redirect to products list after 2 seconds
+        setError('Товар не найден. Перенаправление...');
+        // Immediate redirect - no need to wait
         setTimeout(() => {
-          navigate('/profile/products');
-        }, 2000);
+          navigate('/profile/products', { replace: true });
+        }, 500);
       } else {
         setError(formatErrorMessage(err, 'Ошибка загрузки товара'));
       }
