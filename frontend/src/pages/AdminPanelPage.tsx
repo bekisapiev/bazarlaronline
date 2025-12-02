@@ -237,22 +237,8 @@ const AdminPanelPage: React.FC = () => {
       setStats(response.data);
     } catch (err: any) {
       console.error('Error loading stats:', err);
-      // Set mock data if endpoint doesn't exist
-      setStats({
-        total_users: 1250,
-        total_products: 5840,
-        total_orders: 3420,
-        total_revenue: 2450000,
-        active_users: 890,
-        pending_reports: 15,
-        pending_products: 23,
-        // Partner program mock data
-        partner_total_sales: 450000,
-        partner_total_commission: 67500,
-        partner_referrer_share: 30375, // 45% of 67500
-        partner_platform_share: 37125, // 55% of 67500
-        partner_active_products: 45,
-      });
+      setError(err.response?.data?.detail || 'Не удалось загрузить статистику');
+      setStats(null);
     } finally {
       setStatsLoading(false);
     }
