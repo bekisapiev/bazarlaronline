@@ -25,6 +25,7 @@ interface Order {
   total_price: number;
   status: string;
   created_at: string;
+  buyer_name: string;
   seller_name: string;
 }
 
@@ -32,6 +33,7 @@ const MyOrdersSubPage: React.FC = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [cancelingOrder, setCancelingOrder] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -93,6 +95,24 @@ const MyOrdersSubPage: React.FC = () => {
     });
   };
 
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('Вы уверены, что хотите отменить заказ?')) {
+      return;
+    }
+
+    try {
+      setCancelingOrder(orderId);
+      await ordersAPI.updateOrderStatus(orderId, 'cancelled');
+      // Reload orders after cancellation
+      await loadOrders();
+    } catch (err: any) {
+      console.error('Error canceling order:', err);
+      alert('Ошибка при отмене заказа');
+    } finally {
+      setCancelingOrder(null);
+    }
+  };
+
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
       <BackButton title="Мои заказы" />
@@ -126,6 +146,7 @@ const MyOrdersSubPage: React.FC = () => {
                 <TableCell>Сумма</TableCell>
                 <TableCell>Статус</TableCell>
                 <TableCell>Дата</TableCell>
+                <TableCell>Действия</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -143,6 +164,19 @@ const MyOrdersSubPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{formatDate(order.created_at)}</TableCell>
+                  <TableCell>
+                    {order.status === 'pending' && (
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancelingOrder === order.id}
+                      >
+                        {cancelingOrder === order.id ? 'Отменяем...' : 'Отменить'}
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -180,20 +180,38 @@ async def get_orders(
 
     Can filter by role (as buyer or seller) and by status
     """
-    from sqlalchemy.orm import joinedload
+    from sqlalchemy.orm import aliased
 
-    # Build query based on role - join with seller User to get seller name
+    # Create aliases for buyer and seller users
+    BuyerUser = aliased(User)
+    SellerUser = aliased(User)
+
+    # Build query based on role - join with both buyer and seller
     if role == "buyer":
-        query = select(Order, User).join(User, Order.seller_id == User.id).where(Order.buyer_id == current_user.id)
+        query = (
+            select(Order, BuyerUser, SellerUser)
+            .join(BuyerUser, Order.buyer_id == BuyerUser.id)
+            .join(SellerUser, Order.seller_id == SellerUser.id)
+            .where(Order.buyer_id == current_user.id)
+        )
     elif role == "seller":
-        # For seller view, we need buyer name, so join with buyer
-        query = select(Order, User).join(User, Order.buyer_id == User.id).where(Order.seller_id == current_user.id)
+        query = (
+            select(Order, BuyerUser, SellerUser)
+            .join(BuyerUser, Order.buyer_id == BuyerUser.id)
+            .join(SellerUser, Order.seller_id == SellerUser.id)
+            .where(Order.seller_id == current_user.id)
+        )
     else:
-        # Get all orders where user is buyer or seller - join with seller
-        query = select(Order, User).join(User, Order.seller_id == User.id).where(
-            or_(
-                Order.buyer_id == current_user.id,
-                Order.seller_id == current_user.id
+        # Get all orders where user is buyer or seller
+        query = (
+            select(Order, BuyerUser, SellerUser)
+            .join(BuyerUser, Order.buyer_id == BuyerUser.id)
+            .join(SellerUser, Order.seller_id == SellerUser.id)
+            .where(
+                or_(
+                    Order.buyer_id == current_user.id,
+                    Order.seller_id == current_user.id
+                )
             )
         )
 
@@ -229,7 +247,7 @@ async def get_orders(
 
     # Format response
     items = []
-    for order, user in orders_with_users:
+    for order, buyer_user, seller_user in orders_with_users:
         # Get first product title from items
         product_title = "Нет товаров"
         if order.items and len(order.items) > 0:
@@ -238,17 +256,16 @@ async def get_orders(
             if len(order.items) > 1:
                 product_title = f"{product_title} (+{len(order.items) - 1})"
 
-        # Seller name (or buyer name if viewing as seller)
-        if role == "seller":
-            seller_name = user.full_name or user.email  # This is actually buyer
-        else:
-            seller_name = user.full_name or user.email
+        # Get buyer and seller names
+        buyer_name = buyer_user.full_name or buyer_user.email
+        seller_name = seller_user.full_name or seller_user.email
 
         items.append(OrderListItem(
             id=str(order.id),
             order_number=order.order_number,
             buyer_id=str(order.buyer_id),
             seller_id=str(order.seller_id),
+            buyer_name=buyer_name,
             seller_name=seller_name,
             product_title=product_title,
             total_price=order.total_amount,
@@ -322,7 +339,8 @@ async def update_order_status(
     """
     Update order status
 
-    Only seller can update order status
+    - Seller can update to any status
+    - Buyer can only cancel pending orders
     Valid statuses: pending, processing, completed, cancelled
     """
     valid_statuses = ["pending", "processing", "completed", "cancelled"]
@@ -343,12 +361,28 @@ async def update_order_status(
             detail="Order not found"
         )
 
-    # Only seller can update status - convert to string for safe comparison
-    if str(order.seller_id) != str(current_user.id):
+    # Check permissions - seller or buyer
+    is_seller = str(order.seller_id) == str(current_user.id)
+    is_buyer = str(order.buyer_id) == str(current_user.id)
+
+    if not is_seller and not is_buyer:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only seller can update order status"
+            detail="You don't have permission to update this order"
         )
+
+    # Buyers can only cancel pending orders
+    if is_buyer and not is_seller:
+        if status_data.status != "cancelled":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Покупатель может только отменить заказ"
+            )
+        if order.status != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Можно отменить только заказы в статусе 'Ожидает'"
+            )
 
     # Update status
     order.status = status_data.status

@@ -12,8 +12,11 @@ import {
   Chip,
   CircularProgress,
   Paper,
+  Button,
+  Menu,
+  MenuItem,
 } from '@mui/material';
-import { Receipt as ReceiptIcon } from '@mui/icons-material';
+import { Receipt as ReceiptIcon, MoreVert as MoreVertIcon } from '@mui/icons-material';
 import BackButton from '../../components/profile/BackButton';
 import { ordersAPI } from '../../services/api';
 
@@ -23,12 +26,15 @@ interface Order {
   total_price: number;
   status: string;
   created_at: string;
-  seller_name: string; // Actually buyer name when role=seller
+  buyer_name: string;
+  seller_name: string;
 }
 
 const OrderedFromMeSubPage: React.FC = () => {
   const [orderedFromMe, setOrderedFromMe] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadOrderedFromMe();
@@ -92,6 +98,30 @@ const OrderedFromMeSubPage: React.FC = () => {
     });
   };
 
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, order: Order) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedOrder(order);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setSelectedOrder(null);
+  };
+
+  const handleChangeStatus = async (newStatus: string) => {
+    if (!selectedOrder) return;
+
+    try {
+      await ordersAPI.updateOrderStatus(selectedOrder.id, newStatus);
+      // Reload orders after status change
+      await loadOrderedFromMe();
+      handleCloseMenu();
+    } catch (err: any) {
+      console.error('Error updating order status:', err);
+      alert('Ошибка при изменении статуса заказа');
+    }
+  };
+
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
       <BackButton title="Мне заказали" />
@@ -121,6 +151,7 @@ const OrderedFromMeSubPage: React.FC = () => {
                 <TableCell>Сумма</TableCell>
                 <TableCell>Статус</TableCell>
                 <TableCell>Дата</TableCell>
+                <TableCell>Действия</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -128,7 +159,7 @@ const OrderedFromMeSubPage: React.FC = () => {
                 <TableRow key={order.id} hover>
                   <TableCell>{order.id.slice(0, 8)}</TableCell>
                   <TableCell>{order.product_title || 'Н/Д'}</TableCell>
-                  <TableCell>{order.seller_name || 'Н/Д'}</TableCell>
+                  <TableCell>{order.buyer_name || 'Н/Д'}</TableCell>
                   <TableCell>{order.total_price} сом</TableCell>
                   <TableCell>
                     <Chip
@@ -138,12 +169,38 @@ const OrderedFromMeSubPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{formatDate(order.created_at)}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      onClick={(e) => handleOpenMenu(e, order)}
+                      startIcon={<MoreVertIcon />}
+                    >
+                      Статус
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
       )}
+
+      {/* Status Change Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleCloseMenu}
+      >
+        <MenuItem onClick={() => handleChangeStatus('processing')}>
+          В обработке
+        </MenuItem>
+        <MenuItem onClick={() => handleChangeStatus('completed')}>
+          Завершён
+        </MenuItem>
+        <MenuItem onClick={() => handleChangeStatus('cancelled')}>
+          Отменён
+        </MenuItem>
+      </Menu>
     </Container>
   );
 };
