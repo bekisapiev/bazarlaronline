@@ -109,10 +109,10 @@ async def get_products(
     from app.models.user import SellerProfile
     from sqlalchemy.orm import joinedload
 
-    # Always join with SellerProfile to get seller information (city, market, seller_type)
-    # Select both Product and SellerProfile to avoid additional queries
+    # LEFT JOIN with SellerProfile to include products from users without profile
+    # Select both Product and SellerProfile (SellerProfile can be None)
     # Use joinedload to eagerly load city and market relationships
-    query = select(Product, SellerProfile).join(
+    query = select(Product, SellerProfile).outerjoin(
         SellerProfile,
         Product.seller_id == SellerProfile.user_id
     ).options(
@@ -158,8 +158,8 @@ async def get_products(
         desc(Product.created_at)
     )
 
-    # Count total before pagination - also join with SellerProfile for consistency
-    count_query = select(func.count()).select_from(Product).join(
+    # Count total before pagination - LEFT JOIN with SellerProfile
+    count_query = select(func.count()).select_from(Product).outerjoin(
         SellerProfile,
         Product.seller_id == SellerProfile.user_id
     ).where(Product.status == "active")
@@ -200,9 +200,12 @@ async def get_products(
         # Access all attributes while objects are still attached to session
         promotion_views = p.promotion_views_remaining or 0
 
-        # Get city and market names
-        city_name = seller_profile.city.name if seller_profile.city else None
-        market_name = seller_profile.market.name if seller_profile.market else None
+        # Get city and market names (handle None seller_profile)
+        city_name = None
+        market_name = None
+        if seller_profile:
+            city_name = seller_profile.city.name if seller_profile.city else None
+            market_name = seller_profile.market.name if seller_profile.market else None
 
         products_data.append({
             "id": str(p.id),
@@ -219,13 +222,13 @@ async def get_products(
             "is_referral_enabled": p.is_referral_enabled,
             "referral_commission_percent": float(p.referral_commission_percent) if p.referral_commission_percent else None,
             "referral_commission_amount": float(p.referral_commission_amount) if p.referral_commission_amount else None,
-            # Seller information
+            # Seller information (can be None if no profile exists)
             "seller": {
-                "shop_name": seller_profile.shop_name,
-                "seller_type": seller_profile.seller_type,
-                "city_id": seller_profile.city_id,
+                "shop_name": seller_profile.shop_name if seller_profile else None,
+                "seller_type": seller_profile.seller_type if seller_profile else None,
+                "city_id": seller_profile.city_id if seller_profile else None,
                 "city_name": city_name,
-                "market_id": seller_profile.market_id,
+                "market_id": seller_profile.market_id if seller_profile else None,
                 "market_name": market_name,
             }
         })
