@@ -9,7 +9,7 @@ from datetime import datetime
 class GoogleAuthRequest(BaseModel):
     """Google OAuth token request"""
     token: str
-    ref_code: Optional[str] = None  # Referral code (user ID who referred)
+    ref_code: Optional[str] = None  # Referral code (12-digit referral_id of referrer)
 
 
 class TokenResponse(BaseModel):
