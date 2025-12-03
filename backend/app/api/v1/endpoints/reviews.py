@@ -3,7 +3,8 @@ Review Endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, cast
+from sqlalchemy.dialects.postgresql import JSONB
 from typing import Optional
 from uuid import UUID
 from decimal import Decimal
@@ -153,7 +154,9 @@ async def get_product_reviews(
         )
 
     # Get reviews for orders containing this product
-    # Join Review with Order to filter by product_id
+    # Use JSONB contains operator to check if product_id exists in items array
+    product_filter = cast([{"product_id": str(product_id)}], JSONB)
+
     result = await db.execute(
         select(Review)
         .join(Order, Review.order_id == Order.id)
@@ -161,7 +164,7 @@ async def get_product_reviews(
             selectinload(Review.buyer),
             selectinload(Review.order)
         )
-        .where(Order.product_id == product_id)
+        .where(Order.items.op('@>')(product_filter))
         .order_by(desc(Review.created_at))
         .limit(limit)
         .offset(offset)
@@ -189,7 +192,7 @@ async def get_product_reviews(
         select(func.count())
         .select_from(Review)
         .join(Order, Review.order_id == Order.id)
-        .where(Order.product_id == product_id)
+        .where(Order.items.op('@>')(product_filter))
     )
     total = count_result.scalar()
 
