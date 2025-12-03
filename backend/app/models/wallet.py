@@ -85,7 +85,7 @@ class ReferralEarning(Base):
     referee_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)  # Кто пополнил
     transaction_id = Column(UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=True)  # Транзакция пополнения
     topup_amount = Column(Numeric(10, 2), nullable=False)  # Сумма пополнения реферала
-    earning_amount = Column(Numeric(10, 2), nullable=False)  # Начисленный бонус (20%)
+    earning_amount = Column(Numeric(10, 2), nullable=False)  # Начисленный бонус (15% от системы)
     status = Column(String(20), default="completed")  # pending, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 

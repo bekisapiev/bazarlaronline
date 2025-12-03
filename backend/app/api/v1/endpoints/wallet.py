@@ -102,9 +102,9 @@ async def topup_wallet(
     db.add(transaction)
     await db.flush()  # Flush to get transaction.id
 
-    # Check if user has active referrer and give 20% bonus
+    # Check if user has active referrer and give 15% bonus
     if user.referred_by and user.referral_expires_at and user.referral_expires_at > datetime.utcnow():
-        bonus_amount = Decimal(str(request.amount)) * Decimal('0.20')  # 20%
+        bonus_amount = Decimal(str(request.amount)) * Decimal('0.15')  # 15% cashback
 
         # Get referrer wallet
         referrer_wallet_result = await db.execute(
