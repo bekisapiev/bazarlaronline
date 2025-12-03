@@ -46,8 +46,9 @@ import {
   reviewsAPI,
   recommendationsAPI,
   usersAPI,
+  ordersAPI,
 } from '../services/api';
-import { handleProductReferralCode } from '../utils/referral';
+import { handleProductReferralCode, getAnyProductReferralCookie } from '../utils/referral';
 
 interface Product {
   id: string;
@@ -362,11 +363,36 @@ const ProductDetailPage: React.FC = () => {
       return;
     }
 
+    if (!product) {
+      alert('Ошибка: товар не загружен');
+      return;
+    }
+
     setSubmittingOrder(true);
     try {
-      // TODO: Implement actual order API call
-      // For now, just show success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get product referrer ID from cookies if exists
+      const productReferralData = getAnyProductReferralCookie();
+
+      // Create order through API
+      const orderData = {
+        seller_id: product.seller.id,
+        items: [
+          {
+            product_id: product.id,
+            quantity: orderQuantity,
+            price: product.discount_price || product.price,
+            discount_price: product.discount_price,
+            product_referrer_id: productReferralData?.referrerId || null,
+          }
+        ],
+        delivery_address: isService ? (orderDateTime || '') : orderAddress,
+        phone_number: orderPhone,
+        payment_method: 'wallet', // Default to wallet payment
+        notes: orderNotes,
+      };
+
+      await ordersAPI.createOrder(orderData);
+
       alert(`${isService ? 'Запись' : 'Заказ'} успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
       setOrderDialogOpen(false);
       setOrderName('');
@@ -375,9 +401,15 @@ const ProductDetailPage: React.FC = () => {
       setOrderQuantity(1);
       setOrderAddress('');
       setOrderDateTime('');
-    } catch (error) {
+
+      // Redirect to orders page after 1 second
+      setTimeout(() => {
+        navigate('/profile/orders');
+      }, 1000);
+    } catch (error: any) {
       console.error('Error submitting order:', error);
-      alert('Ошибка при оформлении заказа');
+      const errorMessage = error.response?.data?.detail || 'Ошибка при оформлении заказа';
+      alert(errorMessage);
     } finally {
       setSubmittingOrder(false);
     }
