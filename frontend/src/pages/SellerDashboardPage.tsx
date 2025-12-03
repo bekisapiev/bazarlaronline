@@ -535,13 +535,13 @@ const SellerDashboardPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="right">{product.views.toLocaleString()}</TableCell>
-                        <TableCell align="right">{product.orders}</TableCell>
-                        <TableCell align="right">{formatCurrency(product.revenue)}</TableCell>
+                        <TableCell align="right">{(product.views || 0).toLocaleString()}</TableCell>
+                        <TableCell align="right">{product.orders || 0}</TableCell>
+                        <TableCell align="right">{formatCurrency(product.revenue || 0)}</TableCell>
                         <TableCell align="right">
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                             <Star sx={{ fontSize: 16, color: 'warning.main', mr: 0.5 }} />
-                            {product.rating.toFixed(1)}
+                            {(product.rating || 0).toFixed(1)}
                           </Box>
                         </TableCell>
                       </TableRow>
