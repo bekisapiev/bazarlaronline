@@ -114,7 +114,8 @@ export default api;
 
 // API endpoints
 export const authAPI = {
-  googleAuth: (token: string) => api.post('/auth/google', { token }),
+  googleAuth: (token: string, refCode?: string | null) =>
+    api.post('/auth/google', { token, ref_code: refCode || undefined }),
   refreshToken: (refreshToken: string) => api.post('/auth/refresh', { refresh_token: refreshToken }),
   logout: () => api.post('/auth/logout'),
   getCurrentUser: () => api.get('/auth/me'),

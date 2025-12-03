@@ -28,6 +28,7 @@ import ReferralProductsPage from './pages/ReferralProductsPage';
 import TariffsPage from './pages/TariffsPage';
 import { authAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
+import { handleReferralCode } from './utils/referral';
 import './App.css';
 
 function App() {
@@ -35,6 +36,9 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle referral code from URL and save to cookies
+    handleReferralCode();
+
     // Check for existing tokens and restore auth state
     const initAuth = async () => {
       const accessToken = localStorage.getItem('access_token');
