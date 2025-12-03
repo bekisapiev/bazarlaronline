@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -44,6 +45,7 @@ interface Transaction {
 }
 
 const WalletSubPage: React.FC = () => {
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [walletLoading, setWalletLoading] = useState(false);
   const [mainBalance, setMainBalance] = useState(0);
@@ -99,6 +101,15 @@ const WalletSubPage: React.FC = () => {
       setTopupAmount('');
       setSuccess('Кошелёк успешно пополнен');
       loadWallet();
+
+      // Check if there's a return URL to redirect back
+      const returnUrl = localStorage.getItem('returnUrl');
+      if (returnUrl) {
+        localStorage.removeItem('returnUrl');
+        setTimeout(() => {
+          navigate(returnUrl);
+        }, 1500); // Wait a bit to show success message
+      }
     } catch (err: any) {
       console.error('Error topping up wallet:', err);
       setError(err.response?.data?.detail || 'Не удалось пополнить кошелёк');
