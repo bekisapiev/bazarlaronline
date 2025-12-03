@@ -11,9 +11,10 @@ from pydantic import BaseModel
 
 from app.database.session import get_db
 from app.services.tariff_renewal import check_and_renew_tariffs
-from app.models.wallet import WithdrawalRequest, Wallet, Transaction
+from app.models.wallet import WithdrawalRequest, Wallet, Transaction, ProductReferralPurchase
 from app.models.user import User
 from app.models.product import Product
+from app.models.order import Order
 from app.models.report import Report, ReportStatus
 from app.core.dependencies import get_current_active_user
 
@@ -480,21 +481,21 @@ async def get_platform_stats(
     # Count users
     total_users_result = await db.execute(select(func.count()).select_from(User))
     total_users = total_users_result.scalar()
-    
+
     active_users_result = await db.execute(
         select(func.count()).select_from(User).where(User.is_banned == False)
     )
     active_users = active_users_result.scalar()
-    
+
     # Count products
     total_products_result = await db.execute(select(func.count()).select_from(Product))
     total_products = total_products_result.scalar()
-    
+
     pending_products_result = await db.execute(
         select(func.count()).select_from(Product).where(Product.status == "moderation")
     )
     pending_products = pending_products_result.scalar()
-    
+
     # Partner program statistics
     partner_products_result = await db.execute(
         select(func.count()).select_from(Product).where(
@@ -506,21 +507,51 @@ async def get_platform_stats(
 
     # Count pending reports
     pending_reports_result = await db.execute(
-        select(func.count()).select_from(Report).where(Report.status == ReportStatus.PENDING)
+        select(func.count()).select_from(Report).where(Report.status == "pending")
     )
     pending_reports = pending_reports_result.scalar()
+
+    # Count orders
+    total_orders_result = await db.execute(select(func.count()).select_from(Order))
+    total_orders = total_orders_result.scalar()
+
+    # Calculate total revenue from completed orders
+    total_revenue_result = await db.execute(
+        select(func.sum(Order.total_amount)).where(Order.status == "completed")
+    )
+    total_revenue = total_revenue_result.scalar() or 0
+
+    # Partner program: Calculate total sales from completed product referral purchases
+    partner_sales_result = await db.execute(
+        select(func.sum(ProductReferralPurchase.product_price)).where(
+            ProductReferralPurchase.status == "completed"
+        )
+    )
+    partner_total_sales = partner_sales_result.scalar() or 0
+
+    # Partner program: Calculate total commission from completed product referral purchases
+    partner_commission_result = await db.execute(
+        select(func.sum(ProductReferralPurchase.commission_amount)).where(
+            ProductReferralPurchase.status == "completed"
+        )
+    )
+    partner_total_commission = partner_commission_result.scalar() or 0
+
+    # Calculate partner share (45%) and platform share (55%)
+    partner_referrer_share = float(partner_total_commission) * 0.45 if partner_total_commission else 0
+    partner_platform_share = float(partner_total_commission) * 0.55 if partner_total_commission else 0
 
     return {
         "total_users": total_users or 0,
         "active_users": active_users or 0,
         "total_products": total_products or 0,
-        "total_orders": 0,  # TODO: Implement when orders are added
-        "total_revenue": 0,  # TODO: Implement when orders are added
+        "total_orders": total_orders or 0,
+        "total_revenue": float(total_revenue),
         "pending_reports": pending_reports or 0,
         "pending_products": pending_products or 0,
-        "partner_total_sales": 0,  # TODO: Implement from orders
-        "partner_total_commission": 0,  # TODO: Implement from transactions
-        "partner_referrer_share": 0,  # TODO: Calculate from transactions
-        "partner_platform_share": 0,  # TODO: Calculate from transactions
+        "partner_total_sales": float(partner_total_sales),
+        "partner_total_commission": float(partner_total_commission),
+        "partner_referrer_share": round(partner_referrer_share, 2),
+        "partner_platform_share": round(partner_platform_share, 2),
         "partner_active_products": partner_active_products or 0
     }

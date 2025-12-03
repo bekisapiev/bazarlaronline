@@ -67,10 +67,34 @@ async def google_auth(
 
     # Create new user if doesn't exist
     if not user:
+        # Handle referral code if provided
+        referred_by_user_id = None
+        referral_expires_at = None
+        if request.ref_code:
+            try:
+                # ref_code is the referral_id (12-digit code), not UUID
+                # Find referrer by their referral_id
+                referrer_result = await db.execute(
+                    select(User).where(User.referral_id == request.ref_code)
+                )
+                referrer = referrer_result.scalar_one_or_none()
+
+                if referrer:
+                    referred_by_user_id = referrer.id
+                    # Set referral expiry to 1 year from now
+                    from datetime import datetime, timedelta
+                    referral_expires_at = datetime.utcnow() + timedelta(days=365)
+                else:
+                    print(f"Warning: Referrer with referral_id {request.ref_code} not found")
+            except Exception as e:
+                print(f"Error processing referral code: {e}")
+
         user = User(
             email=user_info['email'],
             full_name=user_info.get('name'),
-            google_id=user_info['google_id']
+            google_id=user_info['google_id'],
+            referred_by=referred_by_user_id,
+            referral_expires_at=referral_expires_at
         )
         db.add(user)
         await db.flush()  # Flush to get user.id

@@ -23,7 +23,7 @@ interface Order {
   total_price: number;
   status: string;
   created_at: string;
-  seller_name: string;
+  seller_name: string; // Actually buyer name when role=seller
 }
 
 const OrderedFromMeSubPage: React.FC = () => {
@@ -37,7 +37,7 @@ const OrderedFromMeSubPage: React.FC = () => {
   const loadOrderedFromMe = async () => {
     try {
       setOrdersLoading(true);
-      const response = await ordersAPI.getOrders({ type: 'seller' });
+      const response = await ordersAPI.getOrders({ role: 'seller' });
       const ordersData = Array.isArray(response.data)
         ? response.data
         : (response.data.items || []);

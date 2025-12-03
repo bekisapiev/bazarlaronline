@@ -34,7 +34,8 @@ class OrderCreate(BaseModel):
     items: List[OrderItem]
     delivery_address: Optional[str] = None
     phone_number: str
-    payment_method: str = "wallet"  # wallet or mbank
+    payment_method: str = "cash"  # Only cash payment on delivery
+    notes: Optional[str] = None  # Additional notes for the order
 
     class Config:
         json_schema_extra = {
@@ -50,7 +51,8 @@ class OrderCreate(BaseModel):
                 ],
                 "delivery_address": "г. Бишкек, ул. Чуй 123",
                 "phone_number": "+996555123456",
-                "payment_method": "wallet"
+                "payment_method": "cash",
+                "notes": "Позвоните заранее"
             }
         }
 
@@ -78,9 +80,27 @@ class OrderResponse(BaseModel):
     delivery_address: Optional[str] = None
     phone_number: Optional[str] = None
     payment_method: Optional[str] = None
+    notes: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class OrderListItem(BaseModel):
+    """Order list item with additional info for display"""
+    id: str
+    order_number: str
+    buyer_id: str
+    seller_id: str
+    seller_name: str  # For display
+    product_title: str  # First product title or "Multiple items"
+    total_price: Decimal  # Alias for total_amount
+    status: str
+    created_at: datetime
+    items_count: int  # Number of items in order
 
     class Config:
         from_attributes = True

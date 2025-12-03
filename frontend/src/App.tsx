@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Box, CircularProgress } from '@mui/material';
 import Header from './components/layout/Header';
@@ -28,23 +28,32 @@ import ReferralProductsPage from './pages/ReferralProductsPage';
 import TariffsPage from './pages/TariffsPage';
 import { authAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
+import { handleReferralCode, getRefCodeFromUrl } from './utils/referral';
 import './App.css';
 
 function App() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle referral code from URL and save to cookies
+    const refCode = handleReferralCode();
+
     // Check for existing tokens and restore auth state
     const initAuth = async () => {
       const accessToken = localStorage.getItem('access_token');
       const refreshToken = localStorage.getItem('refresh_token');
+
+      let isAuthenticated = false;
 
       if (accessToken && refreshToken) {
         try {
           // Try to get current user
           const response = await authAPI.getCurrentUser();
           dispatch(setUser(response.data));
+          isAuthenticated = true;
         } catch (error) {
           // If token is invalid, clear it
           console.error('Failed to restore auth:', error);
@@ -53,11 +62,16 @@ function App() {
         }
       }
 
+      // If user has referral code but not authenticated, redirect to login
+      if (refCode && !isAuthenticated && location.pathname !== '/login') {
+        navigate('/login');
+      }
+
       setLoading(false);
     };
 
     initAuth();
-  }, [dispatch]);
+  }, [dispatch, navigate, location.pathname]);
 
   if (loading) {
     return (

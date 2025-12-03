@@ -92,18 +92,24 @@ const SellerDashboardPage: React.FC = () => {
   const loadProductPerformance = useCallback(async () => {
     try {
       const response = await analyticsAPI.getProductPerformance(sortBy, 10);
-      setProductPerformance(response.data);
+      // Ensure data is array
+      const data = Array.isArray(response.data) ? response.data : (response.data?.items || []);
+      setProductPerformance(data);
     } catch (err: any) {
       console.error('Error loading product performance:', err);
+      setProductPerformance([]); // Set empty array on error
     }
   }, [sortBy]);
 
   const loadSalesData = useCallback(async () => {
     try {
       const response = await analyticsAPI.getSalesByPeriod(period);
-      setSalesData(response.data);
+      // Ensure data is array
+      const data = Array.isArray(response.data) ? response.data : (response.data?.items || []);
+      setSalesData(data);
     } catch (err: any) {
       console.error('Error loading sales data:', err);
+      setSalesData([]); // Set empty array on error
     }
   }, [period]);
 
@@ -329,7 +335,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_products}
+                  {dashboardData.total_products || 0}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -351,7 +357,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_orders}
+                  {dashboardData.total_orders || 0}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -373,7 +379,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {formatCurrency(dashboardData.total_revenue)}
+                  {formatCurrency(dashboardData.total_revenue || 0)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <TrendingUp sx={{ fontSize: 16, color: 'success.main' }} />
@@ -395,7 +401,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.total_views.toLocaleString()}
+                  {(dashboardData.total_views || 0).toLocaleString()}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <ArrowUpward sx={{ fontSize: 16, color: 'success.main' }} />
@@ -417,7 +423,7 @@ const SellerDashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" fontWeight={600}>
-                  {dashboardData.average_rating.toFixed(1)}
+                  {(dashboardData.average_rating || 0).toFixed(1)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <Star sx={{ fontSize: 16, color: 'warning.main' }} />
@@ -529,13 +535,13 @@ const SellerDashboardPage: React.FC = () => {
                             </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell align="right">{product.views.toLocaleString()}</TableCell>
-                        <TableCell align="right">{product.orders}</TableCell>
-                        <TableCell align="right">{formatCurrency(product.revenue)}</TableCell>
+                        <TableCell align="right">{(product.views || 0).toLocaleString()}</TableCell>
+                        <TableCell align="right">{product.orders || 0}</TableCell>
+                        <TableCell align="right">{formatCurrency(product.revenue || 0)}</TableCell>
                         <TableCell align="right">
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                             <Star sx={{ fontSize: 16, color: 'warning.main', mr: 0.5 }} />
-                            {product.rating.toFixed(1)}
+                            {(product.rating || 0).toFixed(1)}
                           </Box>
                         </TableCell>
                       </TableRow>

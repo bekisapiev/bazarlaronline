@@ -40,7 +40,7 @@ const MyOrdersSubPage: React.FC = () => {
   const loadOrders = async () => {
     try {
       setOrdersLoading(true);
-      const response = await ordersAPI.getOrders();
+      const response = await ordersAPI.getOrders({ role: 'buyer' });
       const ordersData = Array.isArray(response.data) ? response.data : (response.data.items || []);
       setOrders(ordersData);
     } catch (err: any) {

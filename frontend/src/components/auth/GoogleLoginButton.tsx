@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import { setUser } from '../../store/slices/authSlice';
+import { getReferralCodeCookie } from '../../utils/referral';
 
 declare global {
   interface Window {
@@ -20,8 +21,11 @@ const GoogleLoginButton: React.FC = () => {
     try {
       const token = response.credential;
 
-      // Send token to backend
-      const result = await authAPI.googleAuth(token);
+      // Get referral code from cookies if exists
+      const refCode = getReferralCodeCookie();
+
+      // Send token and referral code to backend
+      const result = await authAPI.googleAuth(token, refCode);
 
       // Save tokens
       localStorage.setItem('access_token', result.data.access_token);

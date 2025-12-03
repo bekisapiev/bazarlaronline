@@ -24,6 +24,7 @@ import {
   DialogActions,
   TextField,
   Paper,
+  Snackbar,
 } from '@mui/material';
 import {
   Favorite,
@@ -45,8 +46,9 @@ import {
   reviewsAPI,
   recommendationsAPI,
   usersAPI,
+  ordersAPI,
 } from '../services/api';
-import { handleProductReferralCode } from '../utils/referral';
+import { handleProductReferralCode, getAnyProductReferralCookie } from '../utils/referral';
 
 interface Product {
   id: string;
@@ -85,6 +87,8 @@ interface Product {
   referral_commission_percent?: number;
   referral_commission_amount?: number;
   product_type: 'product' | 'service';
+  stock_quantity?: number;
+  status: string;
 }
 
 interface Review {
@@ -124,6 +128,7 @@ const ProductDetailPage: React.FC = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [userReferralId, setUserReferralId] = useState<string | null>(null);
   const [productReferralLink, setProductReferralLink] = useState<string>('');
+  const [outOfStockNotification, setOutOfStockNotification] = useState(false);
 
   // Order modal state
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
@@ -267,13 +272,32 @@ const ProductDetailPage: React.FC = () => {
 
   // Handle product referral code from URL
   useEffect(() => {
-    if (id) {
+    if (id && product) {
+      // Check if product status is not active
+      if (product.status !== 'active') {
+        setOutOfStockNotification(true);
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 2000);
+        return;
+      }
+
+      // Check if product has stock available (for products, not services)
+      if (product.product_type === 'product' && product.stock_quantity !== undefined && product.stock_quantity <= 0) {
+        // Show notification and redirect to home if out of stock
+        setOutOfStockNotification(true);
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 2000);
+        return;
+      }
+
       const referralData = handleProductReferralCode(id);
       if (referralData) {
         console.log('Product referral saved:', referralData);
       }
     }
-  }, [id]);
+  }, [id, product, navigate]);
 
   // Load user referral ID for sharing
   useEffect(() => {
@@ -339,11 +363,36 @@ const ProductDetailPage: React.FC = () => {
       return;
     }
 
+    if (!product) {
+      alert('Ошибка: товар не загружен');
+      return;
+    }
+
     setSubmittingOrder(true);
     try {
-      // TODO: Implement actual order API call
-      // For now, just show success message
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get product referrer ID from cookies if exists
+      const productReferralData = getAnyProductReferralCookie();
+
+      // Create order through API
+      const orderData = {
+        seller_id: product.seller.id,
+        items: [
+          {
+            product_id: product.id,
+            quantity: orderQuantity,
+            price: product.discount_price || product.price,
+            discount_price: product.discount_price,
+            product_referrer_id: productReferralData?.referrerId || null,
+          }
+        ],
+        delivery_address: isService ? (orderDateTime || '') : orderAddress,
+        phone_number: orderPhone,
+        payment_method: 'cash',
+        notes: orderNotes,
+      };
+
+      await ordersAPI.createOrder(orderData);
+
       alert(`${isService ? 'Запись' : 'Заказ'} успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
       setOrderDialogOpen(false);
       setOrderName('');
@@ -352,9 +401,15 @@ const ProductDetailPage: React.FC = () => {
       setOrderQuantity(1);
       setOrderAddress('');
       setOrderDateTime('');
-    } catch (error) {
+
+      // Redirect to orders page after 1 second
+      setTimeout(() => {
+        navigate('/profile/orders');
+      }, 1000);
+    } catch (error: any) {
       console.error('Error submitting order:', error);
-      alert('Ошибка при оформлении заказа');
+      const errorMessage = error.response?.data?.detail || 'Ошибка при оформлении заказа';
+      alert(errorMessage);
     } finally {
       setSubmittingOrder(false);
     }
@@ -566,10 +621,10 @@ const ProductDetailPage: React.FC = () => {
                     />
                   </Box>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Поделитесь ссылкой и получите комиссию:
+                    Поделитесь ссылкой и получите комиссию партнера:
                   </Typography>
                   <Typography variant="h5" fontWeight={600} color="success.main">
-                    {product.referral_commission_amount} сом ({product.referral_commission_percent}%)
+                    {product.referral_commission_amount} сом (45%)
                   </Typography>
                   {productReferralLink && isAuthenticated && (
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -645,7 +700,8 @@ const ProductDetailPage: React.FC = () => {
               <Divider sx={{ my: 3 }} />
 
               {/* Seller Info */}
-              {product.seller && (
+              {/* Seller Information - Only for Pro and Business tariff */}
+              {product.seller && product.seller.tariff !== 'free' && (
                 <>
                   <Typography variant="h6" gutterBottom fontWeight={600}>
                     Информация о продавце
@@ -1149,6 +1205,17 @@ const ProductDetailPage: React.FC = () => {
               </>
             )}
 
+            {/* Payment Method Info */}
+            <Divider sx={{ my: 3 }} />
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.50', border: 1, borderColor: 'info.main' }}>
+              <Typography variant="body1" fontWeight={600} gutterBottom>
+                Способ оплаты: Наличными
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Оплата при получении товара
+              </Typography>
+            </Paper>
+
             {product && (
               <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1183,6 +1250,27 @@ const ProductDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Copy Success Snackbar */}
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={2000}
+        onClose={() => setCopySuccess(false)}
+        message="Скопировано!"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
+
+      {/* Out of Stock Notification */}
+      <Snackbar
+        open={outOfStockNotification}
+        autoHideDuration={2000}
+        onClose={() => setOutOfStockNotification(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="warning" onClose={() => setOutOfStockNotification(false)}>
+          Товары на складе не осталось, посмотрите другие товары для заказа.
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

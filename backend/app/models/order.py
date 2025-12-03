@@ -23,6 +23,7 @@ class Order(Base):
     delivery_address = Column(Text, nullable=True)
     phone_number = Column(String(20), nullable=True)
     payment_method = Column(String(20), nullable=True)  # wallet, mbank
+    notes = Column(Text, nullable=True)  # Additional notes from buyer
     status = Column(String(20), default="pending")  # pending, processing, completed, cancelled
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

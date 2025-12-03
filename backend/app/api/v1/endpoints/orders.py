@@ -15,7 +15,7 @@ from app.models.product import Product
 from app.models.user import User
 from app.models.wallet import Wallet, Transaction, ProductReferralPurchase
 from app.core.dependencies import get_current_active_user
-from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse
+from app.schemas.order import OrderCreate, OrderStatusUpdate, OrderResponse, OrderListItem
 
 router = APIRouter()
 
@@ -32,9 +32,8 @@ async def create_order(
     Process:
     1. Validate all products exist and belong to seller
     2. Calculate total amount
-    3. Process payment (wallet or mbank)
-    4. Calculate and distribute partner commission if applicable
-    5. Create order and transaction records
+    3. Create order with cash payment (payment on delivery)
+    4. Create product referral purchase records if applicable
     """
     if not order_data.items:
         raise HTTPException(
@@ -93,7 +92,7 @@ async def create_order(
             "discount_price": float(item.discount_price) if item.discount_price else None
         })
 
-    # Create order first
+    # Create order with cash payment (payment on delivery)
     order = Order(
         order_number=Order.generate_order_number(),
         buyer_id=current_user.id,
@@ -103,66 +102,12 @@ async def create_order(
         delivery_address=order_data.delivery_address,
         phone_number=order_data.phone_number,
         payment_method=order_data.payment_method,
-        status="pending" if order_data.payment_method == "mbank" else "processing"
+        notes=order_data.notes,
+        status="pending"  # Cash orders start as pending
     )
 
     db.add(order)
     await db.flush()  # Flush to get order.id
-
-    # Process payment
-    if order_data.payment_method == "wallet":
-        # Check wallet balance
-        wallet_result = await db.execute(
-            select(Wallet).where(Wallet.user_id == current_user.id)
-        )
-        wallet = wallet_result.scalar_one_or_none()
-
-        if not wallet or wallet.main_balance < total_amount:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Insufficient balance. Required: {total_amount} KGS"
-            )
-
-        # Deduct from buyer's wallet
-        wallet.main_balance -= total_amount
-
-        # Create buyer transaction
-        buyer_transaction = Transaction(
-            user_id=current_user.id,
-            type="order_payment",
-            amount=total_amount,
-            balance_type="main",
-            description=f"Оплата заказа {order.order_number}",
-            reference_id=order.id,
-            status="completed"
-        )
-        db.add(buyer_transaction)
-
-        # Credit seller's wallet (full amount)
-        seller_wallet_result = await db.execute(
-            select(Wallet).where(Wallet.user_id == seller.id)
-        )
-        seller_wallet = seller_wallet_result.scalar_one_or_none()
-
-        if not seller_wallet:
-            seller_wallet = Wallet(user_id=seller.id)
-            db.add(seller_wallet)
-            await db.flush()
-
-        # Seller gets full amount
-        seller_wallet.main_balance += total_amount
-
-        # Create seller transaction
-        seller_transaction = Transaction(
-            user_id=seller.id,
-            type="order_received",
-            amount=total_amount,
-            balance_type="main",
-            description=f"Получен платеж за заказ {order.order_number}",
-            reference_id=order.id,
-            status="completed"
-        )
-        db.add(seller_transaction)
 
     # Process product referral purchases
     # Create ProductReferralPurchase records for products with referral program enabled
@@ -206,6 +151,7 @@ async def create_order(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at
@@ -226,14 +172,17 @@ async def get_orders(
 
     Can filter by role (as buyer or seller) and by status
     """
-    # Build query based on role
+    from sqlalchemy.orm import joinedload
+
+    # Build query based on role - join with seller User to get seller name
     if role == "buyer":
-        query = select(Order).where(Order.buyer_id == current_user.id)
+        query = select(Order, User).join(User, Order.seller_id == User.id).where(Order.buyer_id == current_user.id)
     elif role == "seller":
-        query = select(Order).where(Order.seller_id == current_user.id)
+        # For seller view, we need buyer name, so join with buyer
+        query = select(Order, User).join(User, Order.buyer_id == User.id).where(Order.seller_id == current_user.id)
     else:
-        # Get all orders where user is buyer or seller
-        query = select(Order).where(
+        # Get all orders where user is buyer or seller - join with seller
+        query = select(Order, User).join(User, Order.seller_id == User.id).where(
             or_(
                 Order.buyer_id == current_user.id,
                 Order.seller_id == current_user.id
@@ -248,7 +197,7 @@ async def get_orders(
     query = query.order_by(desc(Order.created_at)).limit(limit).offset(offset)
 
     result = await db.execute(query)
-    orders = result.scalars().all()
+    orders_with_users = result.all()
 
     # Count total
     count_query = select(func.count()).select_from(Order)
@@ -270,24 +219,38 @@ async def get_orders(
     count_result = await db.execute(count_query)
     total = count_result.scalar()
 
+    # Format response
+    items = []
+    for order, user in orders_with_users:
+        # Get first product title from items
+        product_title = "Нет товаров"
+        if order.items and len(order.items) > 0:
+            first_item = order.items[0]
+            product_title = first_item.get('product_title', 'Н/Д')
+            if len(order.items) > 1:
+                product_title = f"{product_title} (+{len(order.items) - 1})"
+
+        # Seller name (or buyer name if viewing as seller)
+        if role == "seller":
+            seller_name = user.full_name or user.email  # This is actually buyer
+        else:
+            seller_name = user.full_name or user.email
+
+        items.append(OrderListItem(
+            id=str(order.id),
+            order_number=order.order_number,
+            buyer_id=str(order.buyer_id),
+            seller_id=str(order.seller_id),
+            seller_name=seller_name,
+            product_title=product_title,
+            total_price=order.total_amount,
+            status=order.status,
+            created_at=order.created_at,
+            items_count=len(order.items) if order.items else 0
+        ))
+
     return {
-        "items": [
-            OrderResponse(
-                id=str(o.id),
-                order_number=o.order_number,
-                buyer_id=str(o.buyer_id),
-                seller_id=str(o.seller_id),
-                items=o.items,
-                total_amount=o.total_amount,
-                delivery_address=o.delivery_address,
-                phone_number=o.phone_number,
-                payment_method=o.payment_method,
-                status=o.status,
-                created_at=o.created_at,
-                updated_at=o.updated_at
-            )
-            for o in orders
-        ],
+        "items": items,
         "total": total,
         "limit": limit,
         "offset": offset,
@@ -334,6 +297,7 @@ async def get_order_by_id(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at
@@ -479,6 +443,7 @@ async def update_order_status(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at
