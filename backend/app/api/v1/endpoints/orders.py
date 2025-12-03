@@ -103,6 +103,7 @@ async def create_order(
         delivery_address=order_data.delivery_address,
         phone_number=order_data.phone_number,
         payment_method=order_data.payment_method,
+        notes=order_data.notes,
         status="pending" if order_data.payment_method == "mbank" else "processing"
     )
 
@@ -206,6 +207,7 @@ async def create_order(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at
@@ -351,6 +353,7 @@ async def get_order_by_id(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at
@@ -496,6 +499,7 @@ async def update_order_status(
         delivery_address=order.delivery_address,
         phone_number=order.phone_number,
         payment_method=order.payment_method,
+        notes=order.notes,
         status=order.status,
         created_at=order.created_at,
         updated_at=order.updated_at

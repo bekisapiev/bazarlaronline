@@ -35,6 +35,7 @@ class OrderCreate(BaseModel):
     delivery_address: Optional[str] = None
     phone_number: str
     payment_method: str = "wallet"  # wallet or mbank
+    notes: Optional[str] = None  # Additional notes for the order
 
     class Config:
         json_schema_extra = {
@@ -50,7 +51,8 @@ class OrderCreate(BaseModel):
                 ],
                 "delivery_address": "г. Бишкек, ул. Чуй 123",
                 "phone_number": "+996555123456",
-                "payment_method": "wallet"
+                "payment_method": "wallet",
+                "notes": "Позвоните заранее"
             }
         }
 
@@ -78,6 +80,7 @@ class OrderResponse(BaseModel):
     delivery_address: Optional[str] = None
     phone_number: Optional[str] = None
     payment_method: Optional[str] = None
+    notes: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime
