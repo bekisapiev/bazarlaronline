@@ -112,31 +112,39 @@ async def create_order(
     # Process product referral purchases
     # Create ProductReferralPurchase records for products with referral program enabled
     for item in order_data.items:
-        if item.product_referrer_id:
-            # Get product to check if referral program is enabled
-            product_result = await db.execute(
-                select(Product).where(Product.id == UUID(item.product_id))
-            )
-            product = product_result.scalar_one_or_none()
+        # Check if product_referrer_id exists and is not empty
+        if item.product_referrer_id and item.product_referrer_id.strip():
+            try:
+                # Validate that product_referrer_id is a valid UUID
+                referrer_uuid = UUID(item.product_referrer_id)
 
-            if product and product.is_referral_enabled and product.referral_commission_percent:
-                # Calculate commission amount
-                item_price = item.discount_price if item.discount_price else item.price
-                total_item_price = item_price * item.quantity
-                commission_amount = (total_item_price * product.referral_commission_percent) / Decimal('100')
-
-                # Create ProductReferralPurchase record
-                referral_purchase = ProductReferralPurchase(
-                    referrer_id=UUID(item.product_referrer_id),
-                    buyer_id=current_user.id,
-                    product_id=UUID(item.product_id),
-                    order_id=order.id,
-                    commission_percent=product.referral_commission_percent,
-                    commission_amount=commission_amount,
-                    product_price=total_item_price,
-                    status="pending"  # Will be completed when order is confirmed
+                # Get product to check if referral program is enabled
+                product_result = await db.execute(
+                    select(Product).where(Product.id == UUID(item.product_id))
                 )
-                db.add(referral_purchase)
+                product = product_result.scalar_one_or_none()
+
+                if product and product.is_referral_enabled and product.referral_commission_percent:
+                    # Calculate commission amount
+                    item_price = item.discount_price if item.discount_price else item.price
+                    total_item_price = item_price * item.quantity
+                    commission_amount = (total_item_price * product.referral_commission_percent) / Decimal('100')
+
+                    # Create ProductReferralPurchase record
+                    referral_purchase = ProductReferralPurchase(
+                        referrer_id=referrer_uuid,
+                        buyer_id=current_user.id,
+                        product_id=UUID(item.product_id),
+                        order_id=order.id,
+                        commission_percent=product.referral_commission_percent,
+                        commission_amount=commission_amount,
+                        product_price=total_item_price,
+                        status="pending"  # Will be completed when order is confirmed
+                    )
+                    db.add(referral_purchase)
+            except (ValueError, AttributeError):
+                # Skip invalid referrer_id (not a valid UUID)
+                continue
 
     await db.commit()
     await db.refresh(order)
