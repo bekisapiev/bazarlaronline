@@ -668,7 +668,8 @@ const ProductDetailPage: React.FC = () => {
               <Divider sx={{ my: 3 }} />
 
               {/* Seller Info */}
-              {product.seller && (
+              {/* Seller Information - Only for Pro and Business tariff */}
+              {product.seller && product.seller.tariff !== 'free' && (
                 <>
                   <Typography variant="h6" gutterBottom fontWeight={600}>
                     Информация о продавце
