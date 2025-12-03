@@ -357,7 +357,9 @@ const ProductDetailPage: React.FC = () => {
     try {
       setLoadingBalance(true);
       const response = await walletAPI.getBalance();
-      setWalletBalance(response.data.main_balance || 0);
+      // Convert to number to ensure toFixed() works
+      const balance = Number(response.data.main_balance || 0);
+      setWalletBalance(balance);
     } catch (error) {
       console.error('Error loading wallet balance:', error);
       setWalletBalance(0);
@@ -1274,7 +1276,7 @@ const ProductDetailPage: React.FC = () => {
                               </Typography>
                             ) : (
                               <Typography variant="body2" color="text.secondary">
-                                Баланс: {walletBalance.toFixed(2)} сом
+                                Баланс: {(Number(walletBalance) || 0).toFixed(2)} сом
                               </Typography>
                             )}
                           </Box>
