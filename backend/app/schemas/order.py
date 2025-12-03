@@ -34,7 +34,7 @@ class OrderCreate(BaseModel):
     items: List[OrderItem]
     delivery_address: Optional[str] = None
     phone_number: str
-    payment_method: str = "wallet"  # wallet or mbank
+    payment_method: str = "cash"  # Only cash payment on delivery
     notes: Optional[str] = None  # Additional notes for the order
 
     class Config:
@@ -51,7 +51,7 @@ class OrderCreate(BaseModel):
                 ],
                 "delivery_address": "г. Бишкек, ул. Чуй 123",
                 "phone_number": "+996555123456",
-                "payment_method": "wallet",
+                "payment_method": "cash",
                 "notes": "Позвоните заранее"
             }
         }

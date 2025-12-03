@@ -25,11 +25,6 @@ import {
   TextField,
   Paper,
   Snackbar,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  FormControl,
-  FormLabel,
 } from '@mui/material';
 import {
   Favorite,
@@ -41,7 +36,6 @@ import {
   NavigateNext,
   Star,
   ContentCopy,
-  AccountBalanceWallet,
 } from '@mui/icons-material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -53,7 +47,6 @@ import {
   recommendationsAPI,
   usersAPI,
   ordersAPI,
-  walletAPI,
 } from '../services/api';
 import { handleProductReferralCode, getAnyProductReferralCookie } from '../utils/referral';
 
@@ -146,9 +139,6 @@ const ProductDetailPage: React.FC = () => {
   const [orderAddress, setOrderAddress] = useState('');
   const [orderDateTime, setOrderDateTime] = useState('');
   const [submittingOrder, setSubmittingOrder] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'cash'>('wallet');
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [loadingBalance, setLoadingBalance] = useState(false);
 
   const loadProduct = useCallback(async () => {
     try {
@@ -351,32 +341,8 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const loadWalletBalance = async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      setLoadingBalance(true);
-      const response = await walletAPI.getBalance();
-      // Convert to number to ensure toFixed() works
-      const balance = Number(response.data.main_balance || 0);
-      setWalletBalance(balance);
-    } catch (error) {
-      console.error('Error loading wallet balance:', error);
-      setWalletBalance(0);
-    } finally {
-      setLoadingBalance(false);
-    }
-  };
-
   const handleOpenOrderDialog = () => {
     setOrderDialogOpen(true);
-    loadWalletBalance();
-  };
-
-  const handleTopup = () => {
-    // Save current URL to return after topup
-    localStorage.setItem('returnUrl', window.location.pathname);
-    navigate('/profile/wallet');
   };
 
   const handleSubmitOrder = async () => {
@@ -402,15 +368,6 @@ const ProductDetailPage: React.FC = () => {
       return;
     }
 
-    // Check balance if paying with wallet
-    if (paymentMethod === 'wallet') {
-      const totalAmount = (product.discount_price || product.price) * orderQuantity;
-      if (walletBalance < totalAmount) {
-        alert(`Недостаточно средств на кошельке. Необходимо: ${totalAmount} сом, Баланс: ${walletBalance} сом`);
-        return;
-      }
-    }
-
     setSubmittingOrder(true);
     try {
       // Get product referrer ID from cookies if exists
@@ -430,7 +387,7 @@ const ProductDetailPage: React.FC = () => {
         ],
         delivery_address: isService ? (orderDateTime || '') : orderAddress,
         phone_number: orderPhone,
-        payment_method: paymentMethod === 'wallet' ? 'wallet' : 'mbank',
+        payment_method: 'cash',
         notes: orderNotes,
       };
 
@@ -1248,75 +1205,16 @@ const ProductDetailPage: React.FC = () => {
               </>
             )}
 
-            {/* Payment Method Selection */}
+            {/* Payment Method Info */}
             <Divider sx={{ my: 3 }} />
-            <FormControl component="fieldset" fullWidth sx={{ mb: 2 }}>
-              <FormLabel component="legend" sx={{ mb: 1, fontWeight: 600 }}>
-                Способ оплаты
-              </FormLabel>
-              <RadioGroup
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as 'wallet' | 'cash')}
-              >
-                <Paper sx={{ p: 2, mb: 2, border: 1, borderColor: paymentMethod === 'wallet' ? 'primary.main' : 'grey.300' }}>
-                  <FormControlLabel
-                    value="wallet"
-                    control={<Radio />}
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AccountBalanceWallet color="primary" />
-                          <Box>
-                            <Typography variant="body1" fontWeight={600}>
-                              Основной кошелёк
-                            </Typography>
-                            {loadingBalance ? (
-                              <Typography variant="body2" color="text.secondary">
-                                Загрузка...
-                              </Typography>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary">
-                                Баланс: {(Number(walletBalance) || 0).toFixed(2)} сом
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTopup();
-                          }}
-                          sx={{ ml: 2 }}
-                        >
-                          Пополнить
-                        </Button>
-                      </Box>
-                    }
-                    sx={{ m: 0, width: '100%' }}
-                  />
-                </Paper>
-
-                <Paper sx={{ p: 2, border: 1, borderColor: paymentMethod === 'cash' ? 'primary.main' : 'grey.300' }}>
-                  <FormControlLabel
-                    value="cash"
-                    control={<Radio />}
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography variant="body1" fontWeight={600}>
-                          Наличными
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          (оплата при получении)
-                        </Typography>
-                      </Box>
-                    }
-                    sx={{ m: 0 }}
-                  />
-                </Paper>
-              </RadioGroup>
-            </FormControl>
+            <Paper sx={{ p: 2, mb: 2, bgcolor: 'info.50', border: 1, borderColor: 'info.main' }}>
+              <Typography variant="body1" fontWeight={600} gutterBottom>
+                Способ оплаты: Наличными
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Оплата при получении товара
+              </Typography>
+            </Paper>
 
             {product && (
               <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>

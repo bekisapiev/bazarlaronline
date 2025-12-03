@@ -32,9 +32,8 @@ async def create_order(
     Process:
     1. Validate all products exist and belong to seller
     2. Calculate total amount
-    3. Process payment (wallet or mbank)
-    4. Calculate and distribute partner commission if applicable
-    5. Create order and transaction records
+    3. Create order with cash payment (payment on delivery)
+    4. Create product referral purchase records if applicable
     """
     if not order_data.items:
         raise HTTPException(
@@ -93,7 +92,7 @@ async def create_order(
             "discount_price": float(item.discount_price) if item.discount_price else None
         })
 
-    # Create order first
+    # Create order with cash payment (payment on delivery)
     order = Order(
         order_number=Order.generate_order_number(),
         buyer_id=current_user.id,
@@ -104,66 +103,11 @@ async def create_order(
         phone_number=order_data.phone_number,
         payment_method=order_data.payment_method,
         notes=order_data.notes,
-        status="pending" if order_data.payment_method == "mbank" else "processing"
+        status="pending"  # Cash orders start as pending
     )
 
     db.add(order)
     await db.flush()  # Flush to get order.id
-
-    # Process payment
-    if order_data.payment_method == "wallet":
-        # Check wallet balance
-        wallet_result = await db.execute(
-            select(Wallet).where(Wallet.user_id == current_user.id)
-        )
-        wallet = wallet_result.scalar_one_or_none()
-
-        if not wallet or wallet.main_balance < total_amount:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Insufficient balance. Required: {total_amount} KGS"
-            )
-
-        # Deduct from buyer's wallet
-        wallet.main_balance -= total_amount
-
-        # Create buyer transaction
-        buyer_transaction = Transaction(
-            user_id=current_user.id,
-            type="order_payment",
-            amount=total_amount,
-            balance_type="main",
-            description=f"Оплата заказа {order.order_number}",
-            reference_id=order.id,
-            status="completed"
-        )
-        db.add(buyer_transaction)
-
-        # Credit seller's wallet (full amount)
-        seller_wallet_result = await db.execute(
-            select(Wallet).where(Wallet.user_id == seller.id)
-        )
-        seller_wallet = seller_wallet_result.scalar_one_or_none()
-
-        if not seller_wallet:
-            seller_wallet = Wallet(user_id=seller.id)
-            db.add(seller_wallet)
-            await db.flush()
-
-        # Seller gets full amount
-        seller_wallet.main_balance += total_amount
-
-        # Create seller transaction
-        seller_transaction = Transaction(
-            user_id=seller.id,
-            type="order_received",
-            amount=total_amount,
-            balance_type="main",
-            description=f"Получен платеж за заказ {order.order_number}",
-            reference_id=order.id,
-            status="completed"
-        )
-        db.add(seller_transaction)
 
     # Process product referral purchases
     # Create ProductReferralPurchase records for products with referral program enabled

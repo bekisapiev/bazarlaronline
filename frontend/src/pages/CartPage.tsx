@@ -156,7 +156,7 @@ const CartPage: React.FC = () => {
         delivery_address: deliveryAddress,
         phone_number: phoneNumber,
         notes: notes || undefined,
-        payment_method: 'wallet',
+        payment_method: 'cash',
       };
 
       await ordersAPI.createOrder(orderData);
