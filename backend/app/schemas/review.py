@@ -22,6 +22,22 @@ class ReviewCreate(BaseModel):
         }
 
 
+class ReviewCreateByProduct(BaseModel):
+    """Create review for a product (finds order automatically)"""
+    product_id: str
+    rating: int = Field(..., ge=0, le=10, description="Rating from 0 to 10")
+    comment: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "product_id": "123e4567-e89b-12d3-a456-426614174000",
+                "rating": 8,
+                "comment": "Отличный товар, быстрая доставка!"
+            }
+        }
+
+
 class ReviewResponse(BaseModel):
     """Review response"""
     id: str
