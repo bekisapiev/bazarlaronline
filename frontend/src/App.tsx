@@ -23,7 +23,7 @@ import OrdersPage from './pages/OrdersPage';
 import ChatPage from './pages/ChatPage';
 import PartnersPage from './pages/PartnersPage';
 import TutorialsPage from './pages/TutorialsPage';
-import DocumentationPage from './pages/DocumentationPage';
+import HowItWorksPage from './pages/HowItWorksPage';
 import ReferralProductsPage from './pages/ReferralProductsPage';
 import TariffsPage from './pages/TariffsPage';
 import { authAPI } from './services/api';
@@ -101,7 +101,7 @@ function App() {
           <Route path="/sellers/:id" element={<SellerDetailPage />} />
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
-          <Route path="/documentation" element={<DocumentationPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
 
           {/* Защищенные роуты - требуют авторизации */}
           <Route
