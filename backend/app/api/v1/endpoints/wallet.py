@@ -63,6 +63,11 @@ async def topup_wallet(
 
     Note: In production, this would integrate with MBank payment gateway.
     For now, it's a placeholder that creates a pending transaction.
+
+    Referral cashback:
+    - If user was referred by someone, the referrer receives 5% cashback
+    - Cashback is credited to referrer's referral balance
+    - Cashback applies to every top-up, regardless of referral expiry date
     """
     if request.amount < 100:
         raise HTTPException(
@@ -102,9 +107,9 @@ async def topup_wallet(
     db.add(transaction)
     await db.flush()  # Flush to get transaction.id
 
-    # Check if user has active referrer and give 15% bonus
-    if user.referred_by and user.referral_expires_at and user.referral_expires_at > datetime.utcnow():
-        bonus_amount = Decimal(str(request.amount)) * Decimal('0.15')  # 15% cashback
+    # Give 5% cashback to referrer on every top-up
+    if user.referred_by:
+        cashback_amount = Decimal(str(request.amount)) * Decimal('0.05')  # 5% cashback
 
         # Get referrer wallet
         referrer_wallet_result = await db.execute(
@@ -114,7 +119,7 @@ async def topup_wallet(
 
         if referrer_wallet:
             # Add to referrer's referral balance
-            referrer_wallet.referral_balance += bonus_amount
+            referrer_wallet.referral_balance += cashback_amount
 
             # Create referral earning record
             earning = ReferralEarning(
@@ -122,7 +127,7 @@ async def topup_wallet(
                 referee_id=current_user.id,
                 transaction_id=transaction.id,
                 topup_amount=Decimal(str(request.amount)),
-                earning_amount=bonus_amount,
+                earning_amount=cashback_amount,
                 status="completed"
             )
             db.add(earning)
@@ -131,9 +136,9 @@ async def topup_wallet(
             referrer_transaction = Transaction(
                 user_id=user.referred_by,
                 type="referral",
-                amount=bonus_amount,
+                amount=cashback_amount,
                 balance_type="referral",
-                description=f"Реферальный бонус от пополнения пользователя",
+                description=f"Реферальный кэшбек 5% от пополнения пользователя",
                 reference_id=transaction.id,
                 status="completed"
             )
