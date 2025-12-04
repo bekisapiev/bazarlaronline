@@ -222,7 +222,8 @@ const SellerDetailPage: React.FC = () => {
           };
         }),
         delivery_address: deliveryAddress,
-        phone: phoneNumber,
+        phone_number: phoneNumber,
+        payment_method: 'cash',
         notes: notes || undefined,
       };
 
@@ -543,7 +544,27 @@ const SellerDetailPage: React.FC = () => {
               <List>
                 {cartItems.map((item) => {
                   const product = cartProducts[item.productId];
-                  if (!product) return null;
+
+                  // Show loading skeleton or error for missing products
+                  if (!product) {
+                    return (
+                      <ListItem key={item.productId} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, mb: 2 }}>
+                        <Box sx={{ width: '100%' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="subtitle1" color="text.secondary">
+                              Загрузка товара...
+                            </Typography>
+                            <IconButton size="small" onClick={() => handleRemoveFromCart(item.productId)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            Цена: {item.discountPrice || item.price} сом × {item.quantity}
+                          </Typography>
+                        </Box>
+                      </ListItem>
+                    );
+                  }
 
                   return (
                     <ListItem key={item.productId} sx={{ borderBottom: 1, borderColor: 'divider', pb: 2, mb: 2, flexDirection: 'column', alignItems: 'stretch' }}>
@@ -684,11 +705,10 @@ const SellerDetailPage: React.FC = () => {
                 </Typography>
                 {cartItems.map((item) => {
                   const product = cartProducts[item.productId];
-                  if (!product) return null;
 
                   return (
                     <Typography key={item.productId} variant="body2">
-                      {product.title} × {item.quantity} = {(item.discountPrice || item.price) * item.quantity} сом
+                      {product ? product.title : 'Товар'} × {item.quantity} = {(item.discountPrice || item.price) * item.quantity} сом
                     </Typography>
                   );
                 })}
