@@ -14,12 +14,34 @@ interface CartState {
   totalQuantity: number;
 }
 
-const initialState: CartState = {
-  sellerId: null,
-  items: [],
-  totalAmount: 0,
-  totalQuantity: 0,
+// Load cart from localStorage
+const loadCartFromStorage = (): CartState => {
+  try {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      return JSON.parse(savedCart);
+    }
+  } catch (error) {
+    console.error('Failed to load cart from localStorage:', error);
+  }
+  return {
+    sellerId: null,
+    items: [],
+    totalAmount: 0,
+    totalQuantity: 0,
+  };
 };
+
+// Save cart to localStorage
+const saveCartToStorage = (state: CartState) => {
+  try {
+    localStorage.setItem('cart', JSON.stringify(state));
+  } catch (error) {
+    console.error('Failed to save cart to localStorage:', error);
+  }
+};
+
+const initialState: CartState = loadCartFromStorage();
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -51,6 +73,9 @@ const cartSlice = createSlice({
         (sum, i) => sum + (i.discountPrice || i.price) * i.quantity,
         0
       );
+
+      // Save to localStorage
+      saveCartToStorage(state);
     },
     removeFromCart: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(i => i.productId !== action.payload);
@@ -66,12 +91,18 @@ const cartSlice = createSlice({
       if (state.items.length === 0) {
         state.sellerId = null;
       }
+
+      // Save to localStorage
+      saveCartToStorage(state);
     },
     clearCart: (state) => {
       state.sellerId = null;
       state.items = [];
       state.totalAmount = 0;
       state.totalQuantity = 0;
+
+      // Save to localStorage
+      saveCartToStorage(state);
     },
     incrementQuantity: (state, action: PayloadAction<string>) => {
       const item = state.items.find(i => i.productId === action.payload);
@@ -84,6 +115,9 @@ const cartSlice = createSlice({
           (sum, i) => sum + (i.discountPrice || i.price) * i.quantity,
           0
         );
+
+        // Save to localStorage
+        saveCartToStorage(state);
       }
     },
     decrementQuantity: (state, action: PayloadAction<string>) => {
@@ -97,6 +131,9 @@ const cartSlice = createSlice({
           (sum, i) => sum + (i.discountPrice || i.price) * i.quantity,
           0
         );
+
+        // Save to localStorage
+        saveCartToStorage(state);
       }
     },
     updateQuantity: (state, action: PayloadAction<{ productId: string; quantity: number }>) => {
@@ -111,6 +148,9 @@ const cartSlice = createSlice({
           (sum, i) => sum + (i.discountPrice || i.price) * i.quantity,
           0
         );
+
+        // Save to localStorage
+        saveCartToStorage(state);
       }
     },
   },
