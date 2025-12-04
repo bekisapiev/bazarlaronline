@@ -624,7 +624,14 @@ const ProductDetailPage: React.FC = () => {
                     Поделитесь ссылкой и получите комиссию партнера:
                   </Typography>
                   <Typography variant="h5" fontWeight={600} color="success.main">
-                    {product.referral_commission_amount} сом (45%)
+                    {(() => {
+                      const referrerAmount = product.referral_commission_amount * 0.45;
+                      const referrerPercent = product.referral_commission_percent
+                        ? (product.referral_commission_percent * 0.45).toFixed(1)
+                        : '0';
+                      const sellerPercent = product.referral_commission_percent || 0;
+                      return `${referrerAmount.toFixed(2)} сом (${referrerPercent}% от ${sellerPercent}%)`;
+                    })()}
                   </Typography>
                   {productReferralLink && isAuthenticated && (
                     <Box sx={{ mt: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
