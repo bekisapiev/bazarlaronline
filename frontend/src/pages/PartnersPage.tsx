@@ -514,7 +514,7 @@ const PartnersPage: React.FC = () => {
                 </li>
                 <li>
                   <Typography variant="body2" color="text.secondary">
-                    Реферал остается активным пожизненно - зарабатывайте на всех его пополнениях!
+                    Реферал остается активным в течение одного года с момента регистрации
                   </Typography>
                 </li>
                 <li>

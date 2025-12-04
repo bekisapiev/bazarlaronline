@@ -143,7 +143,7 @@ const TermsPage: React.FC = () => {
           </li>
           <li>
             <Typography variant="body1" paragraph>
-              Кэшбек начисляется пожизненно на реферальный счет
+              Кэшбек начисляется в течение одного года с момента регистрации реферала
             </Typography>
           </li>
         </Box>
