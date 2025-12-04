@@ -19,8 +19,7 @@ import {
   Alert,
 } from '@mui/material';
 import BackButton from '../../components/profile/BackButton';
-import { ordersAPI } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
+import { ordersAPI, usersAPI } from '../../services/api';
 
 interface OrderItem {
   product_id: string;
@@ -49,15 +48,25 @@ interface OrderDetail {
 const OrderDetailPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusChanging, setStatusChanging] = useState(false);
 
   useEffect(() => {
+    loadCurrentUser();
     loadOrderDetails();
   }, [orderId]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const response = await usersAPI.getCurrentUser();
+      setCurrentUserId(response.data.id);
+    } catch (err: any) {
+      console.error('Error loading current user:', err);
+    }
+  };
 
   const loadOrderDetails = async () => {
     if (!orderId) return;
@@ -166,8 +175,8 @@ const OrderDetailPage: React.FC = () => {
     );
   }
 
-  const isSeller = user?.id === order.seller_id;
-  const isBuyer = user?.id === order.buyer_id;
+  const isSeller = currentUserId === order.seller_id;
+  const isBuyer = currentUserId === order.buyer_id;
 
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
@@ -187,7 +196,7 @@ const OrderDetailPage: React.FC = () => {
           <Chip
             label={getOrderStatusLabel(order.status)}
             color={getOrderStatusColor(order.status) as any}
-            size="large"
+            size="medium"
           />
         </Box>
 
