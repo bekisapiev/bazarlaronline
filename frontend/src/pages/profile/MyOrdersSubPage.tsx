@@ -151,7 +151,12 @@ const MyOrdersSubPage: React.FC = () => {
             </TableHead>
             <TableBody>
               {orders.map((order) => (
-                <TableRow key={order.id} hover>
+                <TableRow
+                  key={order.id}
+                  hover
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/profile/orders/${order.id}`)}
+                >
                   <TableCell>{order.id.slice(0, 8)}</TableCell>
                   <TableCell>{order.product_title || 'Н/Д'}</TableCell>
                   <TableCell>{order.seller_name || 'Н/Д'}</TableCell>
@@ -164,7 +169,7 @@ const MyOrdersSubPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{formatDate(order.created_at)}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     {order.status === 'pending' && (
                       <Button
                         size="small"

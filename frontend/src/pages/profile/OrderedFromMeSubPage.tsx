@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -31,6 +32,7 @@ interface Order {
 }
 
 const OrderedFromMeSubPage: React.FC = () => {
+  const navigate = useNavigate();
   const [orderedFromMe, setOrderedFromMe] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -156,7 +158,12 @@ const OrderedFromMeSubPage: React.FC = () => {
             </TableHead>
             <TableBody>
               {orderedFromMe.map((order) => (
-                <TableRow key={order.id} hover>
+                <TableRow
+                  key={order.id}
+                  hover
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/profile/orders/${order.id}`)}
+                >
                   <TableCell>{order.id.slice(0, 8)}</TableCell>
                   <TableCell>{order.product_title || 'Н/Д'}</TableCell>
                   <TableCell>{order.buyer_name || 'Н/Д'}</TableCell>
@@ -169,7 +176,7 @@ const OrderedFromMeSubPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{formatDate(order.created_at)}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Button
                       size="small"
                       onClick={(e) => handleOpenMenu(e, order)}

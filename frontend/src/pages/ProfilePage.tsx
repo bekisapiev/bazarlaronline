@@ -7,6 +7,7 @@ import MyOrdersSubPage from './profile/MyOrdersSubPage';
 import OrderedFromMeSubPage from './profile/OrderedFromMeSubPage';
 import WalletSubPage from './profile/WalletSubPage';
 import ReservedProductsSubPage from './profile/ReservedProductsSubPage';
+import OrderDetailPage from './profile/OrderDetailPage';
 
 const ProfilePage: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const ProfilePage: React.FC = () => {
       <Route path="my-products" element={<MyProductsSubPage />} />
       <Route path="my-orders" element={<MyOrdersSubPage />} />
       <Route path="ordered-from-me" element={<OrderedFromMeSubPage />} />
+      <Route path="orders/:orderId" element={<OrderDetailPage />} />
       <Route path="wallet" element={<WalletSubPage />} />
       <Route path="reserved-products" element={<ReservedProductsSubPage />} />
     </Routes>
