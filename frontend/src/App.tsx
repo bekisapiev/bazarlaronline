@@ -26,6 +26,9 @@ import TutorialsPage from './pages/TutorialsPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import ReferralProductsPage from './pages/ReferralProductsPage';
 import TariffsPage from './pages/TariffsPage';
+import AboutPage from './pages/AboutPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import { authAPI } from './services/api';
 import { setUser } from './store/slices/authSlice';
 import { handleReferralCode, getRefCodeFromUrl } from './utils/referral';
@@ -102,6 +105,9 @@ function App() {
           <Route path="/partners" element={<PartnersPage />} />
           <Route path="/tutorials" element={<TutorialsPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* Защищенные роуты - требуют авторизации */}
           <Route
