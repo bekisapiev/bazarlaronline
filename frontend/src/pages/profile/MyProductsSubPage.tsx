@@ -174,7 +174,9 @@ const MyProductsSubPage: React.FC = () => {
                       <Typography variant="caption" color="text.secondary">
                         Комиссия: {product.referral_commission_percent}%
                         {product.referral_commission_amount && (
-                          <> ({product.referral_commission_amount.toFixed(2)} сом)</>
+                          <> ({(typeof product.referral_commission_amount === 'string'
+                            ? parseFloat(product.referral_commission_amount)
+                            : product.referral_commission_amount).toFixed(2)} сом)</>
                         )}
                       </Typography>
                     </Box>
