@@ -21,6 +21,13 @@ import { Receipt as ReceiptIcon, MoreVert as MoreVertIcon } from '@mui/icons-mat
 import BackButton from '../../components/profile/BackButton';
 import { ordersAPI } from '../../services/api';
 
+interface OrderItem {
+  product_id: string;
+  product_title: string;
+  quantity: number;
+  price: number;
+}
+
 interface Order {
   id: string;
   product_title: string;

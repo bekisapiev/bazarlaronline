@@ -404,7 +404,21 @@ const OrdersPage: React.FC = () => {
                               alt={item.product_title}
                               variant="rounded"
                             />
-                            <Typography variant="body2">{item.product_title}</Typography>
+                            <MuiLink
+                              component={Link}
+                              to={`/products/${item.product_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              underline="hover"
+                              sx={{
+                                color: 'text.primary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                },
+                              }}
+                            >
+                              <Typography variant="body2">{item.product_title}</Typography>
+                            </MuiLink>
                           </Box>
                         </TableCell>
                         <TableCell align="center">{item.quantity}</TableCell>
