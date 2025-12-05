@@ -1144,6 +1144,7 @@ async def get_warehouse_statistics(
     product_map = {str(p.id): p for p in products}
 
     # Calculate warehouse statistics
+    total_products_count = len(products)  # Количество позиций товаров
     total_stock_quantity = 0
     total_purchase_cost = Decimal('0')
     projected_revenue = Decimal('0')
@@ -1213,6 +1214,7 @@ async def get_warehouse_statistics(
     projected_profit = projected_revenue - total_purchase_cost - total_partner_commission
     
     return WarehouseStatistics(
+        total_products_count=total_products_count,
         total_stock_quantity=total_stock_quantity,
         total_purchase_cost=total_purchase_cost,
         total_revenue=total_revenue,

@@ -19,6 +19,7 @@ import {
 import { productsAPI } from '../../services/api';
 
 interface WarehouseStats {
+  total_products_count: number;
   total_stock_quantity: number;
   total_purchase_cost: number;
   total_revenue: number;
@@ -134,9 +135,9 @@ const WarehouseStatistics: React.FC = () => {
         {/* Row 1: Склад */}
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
-            title="Товаров на складе"
-            value={formatNumber(stats.total_stock_quantity)}
-            subtitle="Общее количество"
+            title="Позиций товаров"
+            value={formatNumber(stats.total_products_count)}
+            subtitle={`Единиц на складе: ${formatNumber(stats.total_stock_quantity)}`}
             icon={<InventoryIcon sx={{ fontSize: 40 }} />}
             color="info"
           />
