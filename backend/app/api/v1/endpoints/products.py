@@ -515,6 +515,7 @@ async def create_product(
         price=product_data.price,
         discount_price=product_data.discount_price,
         stock_quantity=product_data.stock_quantity,
+        purchase_price=product_data.purchase_price,
         product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
@@ -605,6 +606,8 @@ async def update_product(
         product.discount_price = product_data.discount_price
     if product_data.stock_quantity is not None:
         product.stock_quantity = product_data.stock_quantity
+    if product_data.purchase_price is not None:
+        product.purchase_price = product_data.purchase_price
     if product_data.product_type is not None:
         if product_data.product_type not in ["product", "service"]:
             raise HTTPException(
