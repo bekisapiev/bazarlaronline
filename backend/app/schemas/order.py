@@ -95,7 +95,8 @@ class OrderListItem(BaseModel):
     order_number: str
     buyer_id: str
     seller_id: str
-    seller_name: str  # For display
+    buyer_name: str  # Buyer's name for display
+    seller_name: str  # Seller's name for display
     product_title: str  # First product title or "Multiple items"
     total_price: Decimal  # Alias for total_amount
     status: str

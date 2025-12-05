@@ -30,17 +30,13 @@ TARIFF_LIMITS = {
 # Promotion packages: views -> price for FREE tariff
 # PRO: 1.5x cheaper, BUSINESS: 2x cheaper
 PROMOTION_PACKAGES = {
-    0: 0,      # Free
-    500: 10,   # 500 views - 10 som
-    1000: 20,  # 1000 views - 20 som
-    1500: 30,
-    2000: 40,
-    2500: 50,
-    3000: 60,
-    3500: 70,
-    4000: 80,
-    4500: 90,
-    5000: 100
+    0: 0,       # Free
+    500: 10,    # 500 views - 10 som
+    1000: 20,   # 1000 views - 20 som
+    2000: 40,   # 2000 views - 40 som
+    3000: 60,   # 3000 views - 60 som
+    4000: 80,   # 4000 views - 80 som
+    5000: 100   # 5000 views - 100 som
 }
 
 def get_promotion_price(views: int, tariff: str) -> Decimal:
@@ -195,6 +191,7 @@ async def get_products(
     # This avoids SQLAlchemy lazy loading issues
     products_data = []
     promoted_product_ids = []
+    promoted_products_duplicates = {}  # Track how many times to show each promoted product
 
     for p, seller_profile in products_with_sellers:
         # Access all attributes while objects are still attached to session
@@ -207,7 +204,7 @@ async def get_products(
             city_name = seller_profile.city.name if seller_profile.city else None
             market_name = seller_profile.market.name if seller_profile.market else None
 
-        products_data.append({
+        product_dict = {
             "id": str(p.id),
             "seller_id": str(p.seller_id),
             "product_type": p.product_type,
@@ -231,21 +228,72 @@ async def get_products(
                 "market_id": seller_profile.market_id if seller_profile else None,
                 "market_name": market_name,
             }
-        })
+        }
 
+        products_data.append(product_dict)
+
+        # For promoted products, add multiple appearances to consume views faster
         if promotion_views > 0:
             promoted_product_ids.append(p.id)
+            # Calculate how many additional times to show this product (2-4 extra times)
+            # More views remaining = more duplicates
+            if promotion_views >= 100:
+                extra_appearances = 4  # Show 5 times total (1 original + 4 duplicates)
+            elif promotion_views >= 50:
+                extra_appearances = 3  # Show 4 times total
+            elif promotion_views >= 20:
+                extra_appearances = 2  # Show 3 times total
+            else:
+                extra_appearances = 1  # Show 2 times total
+
+            promoted_products_duplicates[p.id] = {
+                "product_dict": product_dict,
+                "extra_appearances": extra_appearances
+            }
+
+    # Insert duplicate promoted products at different positions
+    # This helps promoted products gain views faster
+    import random
+    if promoted_products_duplicates:
+        # Calculate positions to insert duplicates (spread them evenly)
+        list_length = len(products_data)
+        for product_id, duplicate_info in promoted_products_duplicates.items():
+            extra_count = duplicate_info["extra_appearances"]
+            product_dict = duplicate_info["product_dict"]
+
+            # Insert duplicates at different positions
+            # Spread them throughout the list for better visibility
+            if list_length > 0:
+                for i in range(extra_count):
+                    # Calculate position: spread duplicates evenly
+                    # Position = (i+1) * (list_length / (extra_count + 1))
+                    insert_position = min(
+                        int((i + 1) * (list_length / (extra_count + 1.5))),
+                        len(products_data)
+                    )
+                    products_data.insert(insert_position, product_dict.copy())
 
     # Decrement promotion views for promoted products (they are being shown)
-    if promoted_product_ids:
+    # Each product is decremented by the number of times it appears in the result
+    if promoted_products_duplicates:
         try:
             from sqlalchemy import update as sql_update
-            await db.execute(
-                sql_update(Product)
-                .where(Product.id.in_(promoted_product_ids))
-                .where(func.coalesce(Product.promotion_views_remaining, 0) > 0)
-                .values(promotion_views_remaining=func.coalesce(Product.promotion_views_remaining, 1) - 1)
-            )
+            # Update each promoted product individually based on how many times it appears
+            for product_id, duplicate_info in promoted_products_duplicates.items():
+                # Total appearances = 1 (original) + extra_appearances
+                total_appearances = 1 + duplicate_info["extra_appearances"]
+
+                await db.execute(
+                    sql_update(Product)
+                    .where(Product.id == product_id)
+                    .where(func.coalesce(Product.promotion_views_remaining, 0) > 0)
+                    .values(
+                        promotion_views_remaining=func.greatest(
+                            func.coalesce(Product.promotion_views_remaining, 0) - total_appearances,
+                            0
+                        )
+                    )
+                )
             await db.commit()
         except Exception as e:
             # If decrement fails, just log it and continue (don't block product listing)
@@ -746,11 +794,18 @@ async def promote_product(
     - 0 views: 0 som (free)
     - 500 views: 10 som (FREE) / 6.67 som (PRO) / 5 som (BUSINESS)
     - 1000 views: 20 som (FREE) / 13.33 som (PRO) / 10 som (BUSINESS)
-    - 1500 views: 30 som (FREE) / 20 som (PRO) / 15 som (BUSINESS)
-    - ... up to 5000 views
+    - 2000 views: 40 som (FREE) / 26.67 som (PRO) / 20 som (BUSINESS)
+    - 3000 views: 60 som (FREE) / 40 som (PRO) / 30 som (BUSINESS)
+    - 4000 views: 80 som (FREE) / 53.33 som (PRO) / 40 som (BUSINESS)
+    - 5000 views: 100 som (FREE) / 66.67 som (PRO) / 50 som (BUSINESS)
 
-    Promoted products appear higher in search results.
-    One view is deducted each time the product is shown in search/listing.
+    Promoted products appear multiple times on the main page to gain views faster:
+    - Products with 100+ views remaining: shown 5 times per page load
+    - Products with 50-99 views: shown 4 times per page load
+    - Products with 20-49 views: shown 3 times per page load
+    - Products with 1-19 views: shown 2 times per page load
+
+    Views are deducted based on the number of appearances.
     """
     # Validate views package
     if views not in PROMOTION_PACKAGES:

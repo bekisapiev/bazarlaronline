@@ -3,7 +3,8 @@ Review Endpoints
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, cast
+from sqlalchemy.dialects.postgresql import JSONB
 from typing import Optional
 from uuid import UUID
 from decimal import Decimal
@@ -13,7 +14,7 @@ from app.models.review import Review
 from app.models.order import Order
 from app.models.user import User, SellerProfile
 from app.core.dependencies import get_current_active_user
-from app.schemas.review import ReviewCreate, ReviewResponse, SellerRatingResponse
+from app.schemas.review import ReviewCreate, ReviewCreateByProduct, ReviewResponse, SellerRatingResponse
 
 router = APIRouter()
 
@@ -125,6 +126,128 @@ async def create_review(
     )
 
 
+@router.post("/by-product", response_model=ReviewResponse)
+async def create_review_by_product(
+    review_data: ReviewCreateByProduct,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Create a review for a product (finds completed order automatically)
+
+    Requirements:
+    - User must have purchased this product (completed order containing this product)
+    - User hasn't reviewed this product yet
+    - Automatically finds the first eligible completed order
+    """
+    from app.models.product import Product
+
+    product_id = UUID(review_data.product_id)
+
+    # Verify product exists
+    product_result = await db.execute(
+        select(Product).where(Product.id == product_id)
+    )
+    product = product_result.scalar_one_or_none()
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    # Find completed orders by this user containing this product
+    product_filter = cast([{"product_id": str(product_id)}], JSONB)
+
+    orders_result = await db.execute(
+        select(Order)
+        .where(
+            Order.buyer_id == current_user.id,
+            Order.status == "completed",
+            Order.items.op('@>')(product_filter)
+        )
+        .order_by(desc(Order.created_at))
+    )
+    eligible_orders = orders_result.scalars().all()
+
+    if not eligible_orders:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Вы не можете оставить отзыв. Необходимо купить и получить товар."
+        )
+
+    # Find an order without a review
+    order_to_review = None
+    for order in eligible_orders:
+        # Check if review exists for this order
+        existing_review_result = await db.execute(
+            select(Review).where(
+                Review.order_id == order.id,
+                Review.buyer_id == current_user.id
+            )
+        )
+        existing_review = existing_review_result.scalar_one_or_none()
+
+        if not existing_review:
+            order_to_review = order
+            break
+
+    if not order_to_review:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Вы уже оставили отзыв на все заказы с этим товаром"
+        )
+
+    # Create review
+    review = Review(
+        seller_id=order_to_review.seller_id,
+        buyer_id=current_user.id,
+        order_id=order_to_review.id,
+        rating=review_data.rating,
+        comment=review_data.comment
+    )
+    db.add(review)
+
+    # Update seller profile rating
+    seller_profile_result = await db.execute(
+        select(SellerProfile).where(SellerProfile.user_id == order_to_review.seller_id)
+    )
+    seller_profile = seller_profile_result.scalar_one_or_none()
+
+    if seller_profile:
+        # Recalculate average rating
+        all_reviews_result = await db.execute(
+            select(func.avg(Review.rating), func.count(Review.id))
+            .select_from(Review)
+            .where(Review.seller_id == order_to_review.seller_id)
+        )
+        avg_rating, review_count = all_reviews_result.one()
+
+        # Include new review in calculation
+        if avg_rating:
+            new_avg = (float(avg_rating) * review_count + review_data.rating) / (review_count + 1)
+        else:
+            new_avg = float(review_data.rating)
+
+        seller_profile.rating = Decimal(str(round(new_avg, 2)))
+        seller_profile.reviews_count = (review_count or 0) + 1
+
+    await db.commit()
+    await db.refresh(review)
+
+    return ReviewResponse(
+        id=str(review.id),
+        seller_id=str(review.seller_id),
+        buyer_id=str(review.buyer_id),
+        order_id=str(review.order_id),
+        rating=review.rating,
+        comment=review.comment,
+        created_at=review.created_at,
+        buyer_name=current_user.full_name,
+        order_number=order_to_review.order_number
+    )
+
+
 @router.get("/product/{product_id}")
 async def get_product_reviews(
     product_id: UUID,
@@ -153,7 +276,9 @@ async def get_product_reviews(
         )
 
     # Get reviews for orders containing this product
-    # Join Review with Order to filter by product_id
+    # Use JSONB contains operator to check if product_id exists in items array
+    product_filter = cast([{"product_id": str(product_id)}], JSONB)
+
     result = await db.execute(
         select(Review)
         .join(Order, Review.order_id == Order.id)
@@ -161,7 +286,7 @@ async def get_product_reviews(
             selectinload(Review.buyer),
             selectinload(Review.order)
         )
-        .where(Order.product_id == product_id)
+        .where(Order.items.op('@>')(product_filter))
         .order_by(desc(Review.created_at))
         .limit(limit)
         .offset(offset)
@@ -189,7 +314,7 @@ async def get_product_reviews(
         select(func.count())
         .select_from(Review)
         .join(Order, Review.order_id == Order.id)
-        .where(Order.product_id == product_id)
+        .where(Order.items.op('@>')(product_filter))
     )
     total = count_result.scalar()
 

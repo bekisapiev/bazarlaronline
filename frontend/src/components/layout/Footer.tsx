@@ -60,6 +60,9 @@ const Footer: React.FC = () => {
               Информация
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Link href="/how-it-works" color="text.secondary" underline="hover">
+                Как это работает?
+              </Link>
               <Link href="/about" color="text.secondary" underline="hover">
                 О нас
               </Link>
