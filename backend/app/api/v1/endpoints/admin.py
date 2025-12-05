@@ -472,6 +472,246 @@ async def moderate_product(
 
 # Platform Statistics
 
+# Order Management Endpoints
+
+@router.get("/orders")
+async def get_all_orders(
+    status_filter: Optional[str] = Query(None, description="Filter by status: pending, processing, completed, cancelled"),
+    limit: int = Query(100, le=500),
+    offset: int = 0,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get all orders with optional status filter (admin only)
+
+    Returns all orders in the system with buyer and seller information
+    """
+    # Build query - join with buyer and seller users
+    query = select(Order).order_by(desc(Order.created_at))
+
+    # Apply status filter if provided
+    if status_filter:
+        query = query.where(Order.status == status_filter)
+
+    # Pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    orders = result.scalars().all()
+
+    # Get buyer and seller info for each order
+    orders_list = []
+    for order in orders:
+        # Get buyer info
+        buyer_result = await db.execute(
+            select(User).where(User.id == order.buyer_id)
+        )
+        buyer = buyer_result.scalar_one_or_none()
+
+        # Get seller info
+        seller_result = await db.execute(
+            select(User).where(User.id == order.seller_id)
+        )
+        seller = seller_result.scalar_one_or_none()
+
+        orders_list.append({
+            "id": str(order.id),
+            "order_number": order.order_number,
+            "buyer_id": str(order.buyer_id),
+            "buyer_name": buyer.full_name if buyer else None,
+            "buyer_email": buyer.email if buyer else None,
+            "seller_id": str(order.seller_id),
+            "seller_name": seller.full_name if seller else None,
+            "seller_email": seller.email if seller else None,
+            "items": order.items,
+            "total_amount": float(order.total_amount),
+            "delivery_address": order.delivery_address,
+            "phone_number": order.phone_number,
+            "payment_method": order.payment_method,
+            "notes": order.notes,
+            "status": order.status,
+            "created_at": order.created_at,
+            "updated_at": order.updated_at
+        })
+
+    # Count total
+    count_query = select(func.count()).select_from(Order)
+    if status_filter:
+        count_query = count_query.where(Order.status == status_filter)
+
+    count_result = await db.execute(count_query)
+    total = count_result.scalar()
+
+    return {
+        "items": orders_list,
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+
+@router.put("/orders/{order_id}/status")
+async def update_order_status_admin(
+    order_id: UUID,
+    data: OrderStatusUpdate,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update order status (admin only)
+
+    Supported statuses: pending, processing, completed, cancelled
+    """
+    valid_statuses = ["pending", "processing", "completed", "cancelled"]
+    if data.status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+        )
+
+    result = await db.execute(
+        select(Order).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Update status
+    order.status = data.status
+    order.updated_at = datetime.utcnow()
+
+    # If order is completed, process product referral commissions (same logic as in orders.py)
+    if data.status == "completed":
+        # Find all pending product referral purchases for this order
+        referral_purchases_result = await db.execute(
+            select(ProductReferralPurchase).where(
+                ProductReferralPurchase.order_id == order.id,
+                ProductReferralPurchase.status == "pending"
+            )
+        )
+        referral_purchases = referral_purchases_result.scalars().all()
+
+        for purchase in referral_purchases:
+            # Get product to find owner
+            product_result = await db.execute(
+                select(Product).where(Product.id == purchase.product_id)
+            )
+            product = product_result.scalar_one_or_none()
+
+            if not product:
+                continue
+
+            # Get product owner's wallet
+            owner_wallet_result = await db.execute(
+                select(Wallet).where(Wallet.user_id == product.seller_id)
+            )
+            owner_wallet = owner_wallet_result.scalar_one_or_none()
+
+            if not owner_wallet:
+                owner_wallet = Wallet(user_id=product.seller_id)
+                db.add(owner_wallet)
+                await db.flush()
+
+            # Check if owner has enough balance to pay commission
+            if owner_wallet.main_balance < purchase.commission_amount:
+                # Insufficient balance - skip this commission
+                purchase.status = "failed"
+                purchase.completed_at = datetime.utcnow()
+                continue
+
+            # Deduct commission from product owner's main balance
+            owner_wallet.main_balance -= purchase.commission_amount
+
+            # Create transaction for product owner (deduction)
+            owner_transaction = Transaction(
+                user_id=product.seller_id,
+                type="product_referral_commission_deducted",
+                amount=purchase.commission_amount,
+                balance_type="main",
+                description=f"Комиссия реферальной программы за товар (заказ {order.order_number})",
+                reference_id=order.id,
+                status="completed"
+            )
+            db.add(owner_transaction)
+
+            # Get referrer's wallet
+            referrer_wallet_result = await db.execute(
+                select(Wallet).where(Wallet.user_id == purchase.referrer_id)
+            )
+            referrer_wallet = referrer_wallet_result.scalar_one_or_none()
+
+            if not referrer_wallet:
+                referrer_wallet = Wallet(user_id=purchase.referrer_id)
+                db.add(referrer_wallet)
+                await db.flush()
+
+            # Credit commission to referrer's referral balance
+            referrer_wallet.referral_balance += purchase.commission_amount
+
+            # Create transaction for referrer (credit)
+            referrer_transaction = Transaction(
+                user_id=purchase.referrer_id,
+                type="product_referral_commission",
+                amount=purchase.commission_amount,
+                balance_type="referral",
+                description=f"Комиссия за реферальную покупку товара (заказ {order.order_number})",
+                reference_id=order.id,
+                status="completed"
+            )
+            db.add(referrer_transaction)
+
+            # Update purchase status
+            purchase.status = "completed"
+            purchase.completed_at = datetime.utcnow()
+
+    await db.commit()
+
+    return {"success": True, "message": f"Order status changed to {data.status}"}
+
+
+@router.delete("/orders/{order_id}")
+async def delete_order(
+    order_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete an order (admin only)
+
+    This will permanently delete the order from the database
+    """
+    result = await db.execute(
+        select(Order).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Delete associated product referral purchases if any
+    await db.execute(
+        select(ProductReferralPurchase).where(ProductReferralPurchase.order_id == order_id)
+    )
+    # Note: CASCADE delete should handle this automatically if set in the model
+
+    await db.delete(order)
+    await db.commit()
+
+    return {"success": True, "message": "Order deleted successfully"}
+
+
 @router.get("/stats")
 async def get_platform_stats(
     current_user: User = Depends(require_admin),

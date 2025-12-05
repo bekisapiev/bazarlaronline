@@ -124,6 +124,32 @@ interface Product {
   images: string[];
 }
 
+interface Order {
+  id: string;
+  order_number: string;
+  buyer_id: string;
+  buyer_name: string;
+  buyer_email: string;
+  seller_id: string;
+  seller_name: string;
+  seller_email: string;
+  items: Array<{
+    product_id: string;
+    product_title: string;
+    quantity: number;
+    price: number;
+    discount_price?: number;
+  }>;
+  total_amount: number;
+  delivery_address?: string;
+  phone_number?: string;
+  payment_method?: string;
+  notes?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface PlatformStats {
   total_users: number;
   total_products: number;
@@ -173,6 +199,14 @@ const AdminPanelPage: React.FC = () => {
   // Statistics state
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // Orders state
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [changingOrderStatus, setChangingOrderStatus] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is admin
@@ -244,6 +278,23 @@ const AdminPanelPage: React.FC = () => {
     }
   }, []);
 
+  const loadOrders = useCallback(async () => {
+    try {
+      setOrdersLoading(true);
+      const params = orderStatusFilter === 'all'
+        ? { limit: 100, offset: 0 }
+        : { status_filter: orderStatusFilter, limit: 100, offset: 0 };
+      const response = await api.get('/admin/orders', { params });
+      const ordersData = response.data.items || [];
+      setOrders(ordersData);
+    } catch (err: any) {
+      console.error('Error loading orders:', err);
+      setError(err.response?.data?.detail || 'Не удалось загрузить заказы');
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [orderStatusFilter]);
+
   useEffect(() => {
     if (currentTab === 0) {
       loadStats();
@@ -253,8 +304,10 @@ const AdminPanelPage: React.FC = () => {
       loadUsers();
     } else if (currentTab === 3) {
       loadReports();
+    } else if (currentTab === 4) {
+      loadOrders();
     }
-  }, [currentTab, loadReports, loadUsers, loadProducts, loadStats]);
+  }, [currentTab, loadReports, loadUsers, loadProducts, loadStats, loadOrders]);
 
   // Reload products when filter changes
   useEffect(() => {
@@ -269,6 +322,13 @@ const AdminPanelPage: React.FC = () => {
       loadReports();
     }
   }, [reportStatusFilter]);
+
+  // Reload orders when filter changes
+  useEffect(() => {
+    if (currentTab === 4) {
+      loadOrders();
+    }
+  }, [orderStatusFilter]);
 
   const handleReportReview = async (approved: boolean) => {
     if (!selectedReport) return;
@@ -363,6 +423,48 @@ const AdminPanelPage: React.FC = () => {
     }
   };
 
+  const handleOrderStatusChange = async (orderId: string, newStatus: string) => {
+    try {
+      setChangingOrderStatus(orderId);
+      await api.put(`/admin/orders/${orderId}/status`, {
+        status: newStatus,
+      });
+
+      const statusLabels: { [key: string]: string } = {
+        pending: 'ожидание',
+        processing: 'в обработке',
+        completed: 'завершён',
+        cancelled: 'отменён'
+      };
+
+      setSuccess(`Статус заказа изменён на "${statusLabels[newStatus] || newStatus}"`);
+      loadOrders();
+    } catch (err: any) {
+      console.error('Error changing order status:', err);
+      setError(err.response?.data?.detail || 'Не удалось изменить статус заказа');
+    } finally {
+      setChangingOrderStatus(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот заказ? Это действие необратимо.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.delete(`/admin/orders/${orderId}`);
+      setSuccess('Заказ успешно удалён');
+      loadOrders();
+    } catch (err: any) {
+      console.error('Error deleting order:', err);
+      setError(err.response?.data?.detail || 'Не удалось удалить заказ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getReportTypeLabel = (type: string) => {
     switch (type) {
       case 'product':
@@ -436,6 +538,36 @@ const AdminPanelPage: React.FC = () => {
     }
   };
 
+  const getOrderStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Ожидание';
+      case 'processing':
+        return 'В обработке';
+      case 'completed':
+        return 'Завершён';
+      case 'cancelled':
+        return 'Отменён';
+      default:
+        return status;
+    }
+  };
+
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'processing':
+        return 'info';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
@@ -503,8 +635,191 @@ const AdminPanelPage: React.FC = () => {
           <Tab icon={<Inventory />} iconPosition="start" label="Товары и услуги" />
           <Tab icon={<Person />} iconPosition="start" label="Пользователи" />
           <Tab icon={<Warning />} iconPosition="start" label="Жалобы" />
+          <Tab icon={<ShoppingCart />} iconPosition="start" label="Заказы" />
         </Tabs>
       </Paper>
+
+      {/* Tab 5: Orders */}
+      <TabPanel value={currentTab} index={4}>
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" fontWeight={600}>
+            Управление заказами
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel>Статус</InputLabel>
+            <Select
+              value={orderStatusFilter}
+              label="Статус"
+              onChange={(e) => setOrderStatusFilter(e.target.value)}
+            >
+              <MenuItem value="all">Все</MenuItem>
+              <MenuItem value="pending">Ожидание</MenuItem>
+              <MenuItem value="processing">В обработке</MenuItem>
+              <MenuItem value="completed">Завершённые</MenuItem>
+              <MenuItem value="cancelled">Отменённые</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
+        {ordersLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : orders.length === 0 ? (
+          <Paper sx={{ p: 8, textAlign: 'center' }}>
+            <ShoppingCart sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">
+              Нет заказов
+            </Typography>
+          </Paper>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>№ Заказа</TableCell>
+                  <TableCell>Покупатель</TableCell>
+                  <TableCell>Продавец</TableCell>
+                  <TableCell>Товары</TableCell>
+                  <TableCell>Сумма</TableCell>
+                  <TableCell>Контакт</TableCell>
+                  <TableCell>Статус</TableCell>
+                  <TableCell>Дата</TableCell>
+                  <TableCell align="right">Действия</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {order.order_number}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {order.buyer_name || 'Не указано'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {order.buyer_email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600}>
+                        {order.seller_name || 'Не указано'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {order.seller_email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      {order.items && order.items.length > 0 ? (
+                        <Box>
+                          {order.items.slice(0, 2).map((item, idx) => (
+                            <Typography
+                              key={idx}
+                              variant="body2"
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { textDecoration: 'underline' }
+                              }}
+                              onClick={() => navigate(`/products/${item.product_id}`)}
+                            >
+                              • {item.product_title} (x{item.quantity})
+                            </Typography>
+                          ))}
+                          {order.items.length > 2 && (
+                            <Typography variant="caption" color="text.secondary">
+                              +{order.items.length - 2} ещё
+                            </Typography>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          Нет товаров
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={600} color="primary">
+                        {formatCurrency(order.total_amount)}
+                      </Typography>
+                      {order.payment_method && (
+                        <Typography variant="caption" color="text.secondary">
+                          {order.payment_method === 'cash' ? 'Наличные' : order.payment_method}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {order.phone_number && (
+                        <Typography variant="body2">
+                          {order.phone_number}
+                        </Typography>
+                      )}
+                      {order.delivery_address && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                          {order.delivery_address.length > 30
+                            ? `${order.delivery_address.substring(0, 30)}...`
+                            : order.delivery_address}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <FormControl size="small" fullWidth>
+                        <Select
+                          value={order.status}
+                          onChange={(e) => handleOrderStatusChange(order.id, e.target.value)}
+                          disabled={changingOrderStatus === order.id}
+                        >
+                          <MenuItem value="pending">
+                            <Chip label="Ожидание" size="small" color="warning" />
+                          </MenuItem>
+                          <MenuItem value="processing">
+                            <Chip label="В обработке" size="small" color="info" />
+                          </MenuItem>
+                          <MenuItem value="completed">
+                            <Chip label="Завершён" size="small" color="success" />
+                          </MenuItem>
+                          <MenuItem value="cancelled">
+                            <Chip label="Отменён" size="small" color="error" />
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {formatDate(order.created_at)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setOrderDialogOpen(true);
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteOrder(order.id)}
+                          disabled={loading}
+                        >
+                          <Cancel fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </TabPanel>
 
       {/* Tab 4: Reports */}
       <TabPanel value={currentTab} index={3}>
@@ -1224,6 +1539,176 @@ const AdminPanelPage: React.FC = () => {
           >
             Одобрить
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Order Details Dialog */}
+      <Dialog
+        open={orderDialogOpen}
+        onClose={() => setOrderDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Детали заказа</DialogTitle>
+        <DialogContent>
+          {selectedOrder && (
+            <Box>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Заказ: {selectedOrder.order_number}
+                  </Typography>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Покупатель
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedOrder.buyer_name || 'Не указано'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedOrder.buyer_email}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Продавец
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedOrder.seller_name || 'Не указано'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedOrder.seller_email}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Товары
+                  </Typography>
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                    <Box>
+                      {selectedOrder.items.map((item, idx) => (
+                        <Box key={idx} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={600}
+                            sx={{
+                              cursor: 'pointer',
+                              '&:hover': { color: 'primary.main', textDecoration: 'underline' }
+                            }}
+                            onClick={() => {
+                              navigate(`/products/${item.product_id}`);
+                              setOrderDialogOpen(false);
+                            }}
+                          >
+                            {item.product_title}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Количество: {item.quantity}
+                          </Typography>
+                          <Typography variant="body2" color="primary" fontWeight={600}>
+                            Цена: {formatCurrency(item.discount_price || item.price)}
+                            {item.discount_price && item.discount_price < item.price && (
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                sx={{ ml: 1, textDecoration: 'line-through', color: 'text.secondary' }}
+                              >
+                                {formatCurrency(item.price)}
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Нет товаров
+                    </Typography>
+                  )}
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="h6" color="primary">
+                    Итого: {formatCurrency(selectedOrder.total_amount)}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Способ оплаты
+                  </Typography>
+                  <Typography variant="body2">
+                    {selectedOrder.payment_method === 'cash' ? 'Наличные' : selectedOrder.payment_method || 'Не указан'}
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                    Статус
+                  </Typography>
+                  <Chip
+                    label={getOrderStatusLabel(selectedOrder.status)}
+                    color={getOrderStatusColor(selectedOrder.status) as any}
+                    size="small"
+                  />
+                </Grid>
+
+                {selectedOrder.phone_number && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Телефон
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedOrder.phone_number}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {selectedOrder.delivery_address && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Адрес доставки
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedOrder.delivery_address}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {selectedOrder.notes && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                      Примечания
+                    </Typography>
+                    <Typography variant="body2">
+                      {selectedOrder.notes}
+                    </Typography>
+                  </Grid>
+                )}
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Создан: {formatDate(selectedOrder.created_at)}
+                  </Typography>
+                  <br />
+                  <Typography variant="caption" color="text.secondary">
+                    Обновлён: {formatDate(selectedOrder.updated_at)}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOrderDialogOpen(false)}>Закрыть</Button>
         </DialogActions>
       </Dialog>
 
