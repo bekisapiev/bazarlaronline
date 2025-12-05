@@ -25,10 +25,15 @@ interface Product {
   title: string;
   price: number;
   discount_price?: number;
+  discount_percent?: number;
+  stock_quantity?: number;
   images: string[];
   status: string;
   created_at: string;
   views?: number;
+  is_referral_enabled?: boolean;
+  referral_commission_percent?: number;
+  referral_commission_amount?: number;
 }
 
 const MyProductsSubPage: React.FC = () => {
@@ -120,9 +125,61 @@ const MyProductsSubPage: React.FC = () => {
                   >
                     {product.title}
                   </Typography>
-                  <Typography variant="h6" fontWeight={600} color="primary">
-                    {product.discount_price || product.price} сом
-                  </Typography>
+
+                  {/* Цена */}
+                  <Box sx={{ mb: 1 }}>
+                    {product.discount_price ? (
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="h6" fontWeight={600} color="primary">
+                            {product.discount_price} сом
+                          </Typography>
+                          {product.discount_percent && (
+                            <Chip
+                              label={`-${product.discount_percent}%`}
+                              color="error"
+                              size="small"
+                              sx={{ height: 20, fontSize: '0.75rem' }}
+                            />
+                          )}
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textDecoration: 'line-through' }}
+                        >
+                          {product.price} сом
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="h6" fontWeight={600} color="primary">
+                        {product.price} сом
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Количество на складе */}
+                  {product.stock_quantity !== undefined && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      На складе: <strong>{product.stock_quantity} шт</strong>
+                    </Typography>
+                  )}
+
+                  {/* Реферальная комиссия */}
+                  {product.is_referral_enabled && product.referral_commission_percent && (
+                    <Box sx={{ mb: 1, p: 1, bgcolor: 'success.lighter', borderRadius: 1 }}>
+                      <Typography variant="caption" color="success.dark" display="block" fontWeight={600}>
+                        🎁 Реферальная программа
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Комиссия: {product.referral_commission_percent}%
+                        {product.referral_commission_amount && (
+                          <> ({product.referral_commission_amount.toFixed(2)} сом)</>
+                        )}
+                      </Typography>
+                    </Box>
+                  )}
+
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
                     <Chip
                       label={product.status === 'active' ? 'Активен' : product.status === 'moderation' ? 'На модерации' : 'Неактивен'}
