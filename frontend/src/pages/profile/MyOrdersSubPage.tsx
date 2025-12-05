@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Container,
   Box,
@@ -14,10 +14,18 @@ import {
   Chip,
   CircularProgress,
   Paper,
+  Link as MuiLink,
 } from '@mui/material';
 import { ShoppingCart as ShoppingCartIcon } from '@mui/icons-material';
 import BackButton from '../../components/profile/BackButton';
 import { ordersAPI } from '../../services/api';
+
+interface OrderItem {
+  product_id: string;
+  product_title: string;
+  quantity: number;
+  price: number;
+}
 
 interface Order {
   id: string;
@@ -26,6 +34,7 @@ interface Order {
   status: string;
   created_at: string;
   seller_name: string;
+  items?: OrderItem[];
 }
 
 const MyOrdersSubPage: React.FC = () => {
@@ -132,7 +141,33 @@ const MyOrdersSubPage: React.FC = () => {
               {orders.map((order) => (
                 <TableRow key={order.id} hover>
                   <TableCell>{order.id.slice(0, 8)}</TableCell>
-                  <TableCell>{order.product_title || 'Н/Д'}</TableCell>
+                  <TableCell>
+                    {order.items && order.items.length > 0 ? (
+                      <Box>
+                        {order.items.map((item, idx) => (
+                          <Box key={idx} sx={{ mb: 0.5 }}>
+                            <MuiLink
+                              component={Link}
+                              to={`/products/${item.product_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              underline="hover"
+                              sx={{
+                                color: 'text.primary',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                },
+                              }}
+                            >
+                              • {item.product_title} (x{item.quantity})
+                            </MuiLink>
+                          </Box>
+                        ))}
+                      </Box>
+                    ) : (
+                      order.product_title || 'Н/Д'
+                    )}
+                  </TableCell>
                   <TableCell>{order.seller_name || 'Н/Д'}</TableCell>
                   <TableCell>{order.total_price} сом</TableCell>
                   <TableCell>
