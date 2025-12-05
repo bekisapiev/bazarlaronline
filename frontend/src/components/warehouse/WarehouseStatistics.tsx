@@ -114,8 +114,15 @@ const WarehouseStatistics: React.FC = () => {
     return null;
   }
 
-  const formatNumber = (num: number) => num.toLocaleString('ru-RU');
-  const formatCurrency = (num: number) => `${num.toFixed(2)} сом`;
+  const formatNumber = (num: number | string) => {
+    const value = typeof num === 'string' ? parseFloat(num) : num;
+    return (value || 0).toLocaleString('ru-RU');
+  };
+
+  const formatCurrency = (num: number | string) => {
+    const value = typeof num === 'string' ? parseFloat(num) : num;
+    return `${(value || 0).toFixed(2)} сом`;
+  };
 
   return (
     <Box sx={{ mb: 4 }}>
