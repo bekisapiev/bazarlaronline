@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 import {
   Container,
   Box,
@@ -15,6 +17,7 @@ import {
 } from '@mui/material';
 import { Storefront as StorefrontIcon } from '@mui/icons-material';
 import BackButton from '../../components/profile/BackButton';
+import WarehouseStatistics from '../../components/warehouse/WarehouseStatistics';
 import { productsAPI } from '../../services/api';
 
 interface Product {
@@ -30,6 +33,7 @@ interface Product {
 
 const MyProductsSubPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
 
@@ -56,8 +60,11 @@ const MyProductsSubPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
+    <Container maxWidth="xl" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
       <BackButton title="Мои товары и услуги" />
+
+      {/* Статистика склада - только для Business тарифа */}
+      {user?.tariff === 'business' && !productsLoading && <WarehouseStatistics />}
 
       {productsLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>

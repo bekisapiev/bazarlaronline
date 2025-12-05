@@ -1103,3 +1103,113 @@ async def get_product_by_id(
             "reviews_count": seller_profile.reviews_count if seller_profile else 0,
         }
     }
+
+
+@router.get("/warehouse/statistics")
+async def get_warehouse_statistics(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get warehouse statistics for Business tariff sellers
+    
+    Returns inventory and financial statistics including:
+    - Total stock quantity and purchase cost
+    - Revenue and projected revenue
+    - Partner commissions
+    - Profit calculations
+    """
+    # Only for Business tariff
+    if current_user.tariff != "business":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Warehouse statistics are only available for Business tariff"
+        )
+    
+    from app.models.order import Order, OrderItem
+    from app.schemas.warehouse import WarehouseStatistics
+    
+    # Get all seller's products
+    result = await db.execute(
+        select(Product)
+        .where(Product.seller_id == current_user.id)
+        .where(Product.product_type == "product")  # Only products, not services
+    )
+    products = result.scalars().all()
+    
+    # Calculate warehouse statistics
+    total_stock_quantity = 0
+    total_purchase_cost = Decimal('0')
+    projected_revenue = Decimal('0')
+    total_partner_commission = Decimal('0')  # Potential commission on stock
+    
+    for product in products:
+        quantity = product.stock_quantity or 0
+        purchase_price = product.purchase_price or Decimal('0')
+        sale_price = product.discount_price or product.price
+        
+        total_stock_quantity += quantity
+        total_purchase_cost += purchase_price * quantity
+        projected_revenue += sale_price * quantity
+        
+        # Calculate potential partner commission
+        if product.is_referral_enabled and product.referral_commission_percent:
+            commission_per_item = sale_price * (product.referral_commission_percent / Decimal('100'))
+            total_partner_commission += commission_per_item * quantity
+    
+    # Get sales statistics from completed orders
+    # Find all order items for this seller's products
+    from sqlalchemy import and_
+    
+    result = await db.execute(
+        select(OrderItem, Order, Product)
+        .join(Order, OrderItem.order_id == Order.id)
+        .join(Product, OrderItem.product_id == Product.id)
+        .where(Product.seller_id == current_user.id)
+        .where(Order.status.in_(["completed"]))  # Only completed orders
+    )
+    order_items = result.all()
+    
+    total_revenue = Decimal('0')
+    total_items_sold = 0
+    paid_partner_commission = Decimal('0')
+    
+    for order_item, order, product in order_items:
+        quantity_sold = order_item.quantity
+        item_price = order_item.discount_price or order_item.price
+        
+        total_items_sold += quantity_sold
+        total_revenue += item_price * quantity_sold
+        
+        # Calculate actually paid partner commission
+        # Partner gets 45% of the commission
+        if order_item.product_referrer_id:  # Commission paid only if there was a referrer
+            if product.is_referral_enabled and product.referral_commission_percent:
+                commission_per_item = item_price * (product.referral_commission_percent / Decimal('100'))
+                partner_share = commission_per_item * Decimal('0.45')  # Partner gets 45%
+                paid_partner_commission += partner_share * quantity_sold
+    
+    # Calculate profit
+    # Profit = Revenue - (items_sold * purchase_price) - paid_partner_commission
+    # We need to calculate cost of sold goods
+    cost_of_sold_goods = Decimal('0')
+    for order_item, order, product in order_items:
+        purchase_price = product.purchase_price or Decimal('0')
+        cost_of_sold_goods += purchase_price * order_item.quantity
+    
+    profit = total_revenue - cost_of_sold_goods - paid_partner_commission
+    
+    # Projected profit = projected_revenue - total_purchase_cost - total_partner_commission
+    projected_profit = projected_revenue - total_purchase_cost - total_partner_commission
+    
+    return WarehouseStatistics(
+        total_stock_quantity=total_stock_quantity,
+        total_purchase_cost=total_purchase_cost,
+        total_revenue=total_revenue,
+        projected_revenue=projected_revenue,
+        total_items_sold=total_items_sold,
+        total_partner_commission=total_partner_commission,
+        paid_partner_commission=paid_partner_commission,
+        profit=profit,
+        projected_profit=projected_profit
+    )

@@ -162,6 +162,7 @@ export const productsAPI = {
   deleteProduct: (id: string) => api.delete(`/products/${id}`),
   getPromotionPackages: () => api.get('/products/promotion/packages'),
   promoteProduct: (id: string, views: number) => api.post(`/products/${id}/promote`, null, { params: { views } }),
+  getWarehouseStatistics: () => api.get('/products/warehouse/statistics'),
   getCategories: (parentId?: number) => api.get('/products/categories/', { params: { parent_id: parentId } }),
   getCities: () => api.get('/locations/cities'),
   getMarkets: (params: any) => api.get('/locations/markets', { params }),

@@ -44,6 +44,7 @@ class Product(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     price = Column(Numeric(10, 2), nullable=False)
     discount_price = Column(Numeric(10, 2), nullable=True)
+    purchase_price = Column(Numeric(10, 2), nullable=True)  # Цена закупа (Business tariff only)
     stock_quantity = Column(Integer, nullable=True)  # Количество товара на складе
     # discount_percent will be calculated as computed column
     # Referral program fields (Business tariff only)

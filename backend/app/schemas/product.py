@@ -14,6 +14,7 @@ class ProductCreate(BaseModel):
     category_id: Optional[int] = None
     price: Decimal
     discount_price: Optional[Decimal] = None
+    purchase_price: Optional[Decimal] = None  # Цена закупа (Business tariff only)
     stock_quantity: Optional[int] = None  # Количество на складе (обязательно для реферальной программы)
     product_type: Optional[str] = "product"  # "product" or "service"
     delivery_type: Optional[str] = "pickup"
@@ -50,6 +51,7 @@ class ProductUpdate(BaseModel):
     category_id: Optional[int] = None
     price: Optional[Decimal] = None
     discount_price: Optional[Decimal] = None
+    purchase_price: Optional[Decimal] = None  # Цена закупа (Business tariff only)
     stock_quantity: Optional[int] = None  # Количество на складе
     product_type: Optional[str] = None  # "product" or "service"
     delivery_type: Optional[str] = None
@@ -72,6 +74,7 @@ class ProductResponse(BaseModel):
     price: Decimal
     discount_price: Optional[Decimal]
     discount_percent: Optional[int]
+    purchase_price: Optional[Decimal]
     stock_quantity: Optional[int]
     delivery_type: Optional[str]
     delivery_methods: Optional[List[str]]

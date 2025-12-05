@@ -57,6 +57,7 @@ interface ProductFormData {
   is_service: boolean;
   discount_price?: number;
   discount_percent?: number;
+  purchase_price?: number;  // Цена закупа (Business tariff only)
   stock_quantity?: number;
   delivery_available: boolean;
   characteristics: Record<string, string>;
@@ -230,6 +231,7 @@ const ProductFormPage: React.FC = () => {
         is_service: product.product_type === 'service',
         discount_price: product.discount_price,
         discount_percent: product.discount_percent,
+        purchase_price: product.purchase_price,
         stock_quantity: product.stock_quantity,
         delivery_available: product.delivery_type === 'paid',
         characteristics: characteristicsObject,
@@ -549,6 +551,7 @@ const ProductFormPage: React.FC = () => {
         product_type: formData.is_service ? 'service' : 'product',
         characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
         discount_price: formData.discount_price || undefined,
+        purchase_price: formData.purchase_price || undefined,
         stock_quantity: formData.stock_quantity || undefined,
         delivery_type: formData.delivery_available ? 'paid' : 'pickup',
         is_referral_enabled: formData.is_referral_enabled || false,
@@ -735,18 +738,50 @@ const ProductFormPage: React.FC = () => {
               </Grid>
 
               {!formData.is_service && (
-                <TextField
-                  fullWidth
-                  label="Количество на складе"
-                  type="number"
-                  value={formData.stock_quantity || ''}
-                  onChange={(e) =>
-                    handleInputChange('stock_quantity', e.target.value ? Number(e.target.value) : undefined)
-                  }
-                  error={!!formErrors.stock_quantity}
-                  helperText={formErrors.stock_quantity}
-                  sx={{ mt: 2 }}
-                />
+                <>
+                  {/* Цена закупа - только для Business тарифа */}
+                  {user?.tariff === 'business' && (
+                    <TextField
+                      fullWidth
+                      label="Цена закупа (для учета склада)"
+                      type="number"
+                      value={formData.purchase_price || ''}
+                      onChange={(e) =>
+                        handleInputChange('purchase_price', e.target.value ? Number(e.target.value) : undefined)
+                      }
+                      helperText="Цена по которой вы закупили товар (не видна покупателям)"
+                      sx={{ mt: 2 }}
+                    />
+                  )}
+
+                  <TextField
+                    fullWidth
+                    label="Количество на складе"
+                    type="number"
+                    value={formData.stock_quantity || ''}
+                    onChange={(e) =>
+                      handleInputChange('stock_quantity', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    error={!!formErrors.stock_quantity}
+                    helperText={formErrors.stock_quantity}
+                    sx={{ mt: 2 }}
+                  />
+
+                  {/* Сумма закупа - только для Business тарифа */}
+                  {user?.tariff === 'business' && formData.purchase_price && formData.stock_quantity && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Сумма закупа товаров на складе:
+                      </Typography>
+                      <Typography variant="h6" fontWeight={600} color="info.main">
+                        {(formData.purchase_price * formData.stock_quantity).toFixed(2)} сом
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formData.stock_quantity} шт × {formData.purchase_price} сом
+                      </Typography>
+                    </Box>
+                  )}
+                </>
               )}
 
               <FormControlLabel
