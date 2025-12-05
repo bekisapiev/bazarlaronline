@@ -929,6 +929,7 @@ async def get_my_products(
                 discount_price=p.discount_price,
                 discount_percent=p.discount_percent,
                 stock_quantity=p.stock_quantity,
+                purchase_price=p.purchase_price,
                 delivery_type=p.delivery_type,
                 delivery_methods=p.delivery_methods,
                 characteristics=p.characteristics,
@@ -1126,9 +1127,9 @@ async def get_warehouse_statistics(
             detail="Warehouse statistics are only available for Business tariff"
         )
     
-    from app.models.order import Order, OrderItem
+    from app.models.order import Order
     from app.schemas.warehouse import WarehouseStatistics
-    
+
     # Get all seller's products
     result = await db.execute(
         select(Product)
@@ -1136,69 +1137,76 @@ async def get_warehouse_statistics(
         .where(Product.product_type == "product")  # Only products, not services
     )
     products = result.scalars().all()
-    
+
+    # Create a map of products for quick lookup
+    product_map = {str(p.id): p for p in products}
+
     # Calculate warehouse statistics
     total_stock_quantity = 0
     total_purchase_cost = Decimal('0')
     projected_revenue = Decimal('0')
     total_partner_commission = Decimal('0')  # Potential commission on stock
-    
+
     for product in products:
         quantity = product.stock_quantity or 0
         purchase_price = product.purchase_price or Decimal('0')
         sale_price = product.discount_price or product.price
-        
+
         total_stock_quantity += quantity
         total_purchase_cost += purchase_price * quantity
         projected_revenue += sale_price * quantity
-        
+
         # Calculate potential partner commission
         if product.is_referral_enabled and product.referral_commission_percent:
             commission_per_item = sale_price * (product.referral_commission_percent / Decimal('100'))
             total_partner_commission += commission_per_item * quantity
-    
+
     # Get sales statistics from completed orders
-    # Find all order items for this seller's products
-    from sqlalchemy import and_
-    
     result = await db.execute(
-        select(OrderItem, Order, Product)
-        .join(Order, OrderItem.order_id == Order.id)
-        .join(Product, OrderItem.product_id == Product.id)
-        .where(Product.seller_id == current_user.id)
-        .where(Order.status.in_(["completed"]))  # Only completed orders
+        select(Order)
+        .where(Order.seller_id == current_user.id)
+        .where(Order.status == "completed")
     )
-    order_items = result.all()
-    
+    orders = result.scalars().all()
+
     total_revenue = Decimal('0')
     total_items_sold = 0
     paid_partner_commission = Decimal('0')
-    
-    for order_item, order, product in order_items:
-        quantity_sold = order_item.quantity
-        item_price = order_item.discount_price or order_item.price
-        
-        total_items_sold += quantity_sold
-        total_revenue += item_price * quantity_sold
-        
-        # Calculate actually paid partner commission
-        # Partner gets 45% of the commission
-        if order_item.product_referrer_id:  # Commission paid only if there was a referrer
-            if product.is_referral_enabled and product.referral_commission_percent:
-                commission_per_item = item_price * (product.referral_commission_percent / Decimal('100'))
-                partner_share = commission_per_item * Decimal('0.45')  # Partner gets 45%
-                paid_partner_commission += partner_share * quantity_sold
-    
-    # Calculate profit
-    # Profit = Revenue - (items_sold * purchase_price) - paid_partner_commission
-    # We need to calculate cost of sold goods
     cost_of_sold_goods = Decimal('0')
-    for order_item, order, product in order_items:
-        purchase_price = product.purchase_price or Decimal('0')
-        cost_of_sold_goods += purchase_price * order_item.quantity
-    
+
+    # Process each order
+    for order in orders:
+        # items is a JSONB field containing array of {product_id, quantity, price, discount_price, ...}
+        if not order.items:
+            continue
+
+        for item in order.items:
+            product_id = item.get('product_id')
+            if not product_id or product_id not in product_map:
+                continue
+
+            product = product_map[product_id]
+            quantity_sold = item.get('quantity', 0)
+            item_price = Decimal(str(item.get('discount_price') or item.get('price', 0)))
+
+            total_items_sold += quantity_sold
+            total_revenue += item_price * quantity_sold
+
+            # Calculate cost of sold goods
+            purchase_price = product.purchase_price or Decimal('0')
+            cost_of_sold_goods += purchase_price * quantity_sold
+
+            # Calculate actually paid partner commission
+            # Partner gets 45% of the commission if there was a referrer
+            if item.get('referrer_id'):
+                if product.is_referral_enabled and product.referral_commission_percent:
+                    commission_per_item = item_price * (product.referral_commission_percent / Decimal('100'))
+                    partner_share = commission_per_item * Decimal('0.45')  # Partner gets 45%
+                    paid_partner_commission += partner_share * quantity_sold
+
+    # Calculate profit
     profit = total_revenue - cost_of_sold_goods - paid_partner_commission
-    
+
     # Projected profit = projected_revenue - total_purchase_cost - total_partner_commission
     projected_profit = projected_revenue - total_purchase_cost - total_partner_commission
     
