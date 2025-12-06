@@ -1,0 +1,31 @@
+[Unit]
+Description=Bazarlar Online Celery Worker
+After=network.target redis.service postgresql.service
+Wants=redis.service postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/bazarlaronline/backend
+Environment="PATH=/var/www/bazarlaronline/venv/bin"
+EnvironmentFile=/var/www/bazarlaronline/backend/.env
+
+# Run celery worker
+ExecStart=/var/www/bazarlaronline/venv/bin/celery -A app.celery_worker worker \
+    --loglevel=info \
+    --concurrency=4
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bazarlar-celery
+
+[Install]
+WantedBy=multi-user.target

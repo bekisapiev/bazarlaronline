@@ -1,0 +1,38 @@
+[Unit]
+Description=Bazarlar Online FastAPI Backend
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/bazarlaronline/backend
+Environment="PATH=/var/www/bazarlaronline/venv/bin"
+EnvironmentFile=/var/www/bazarlaronline/backend/.env
+
+# Run uvicorn with 4 workers
+ExecStart=/var/www/bazarlaronline/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 4 \
+    --log-level info \
+    --access-log
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bazarlar-api
+
+[Install]
+WantedBy=multi-user.target
