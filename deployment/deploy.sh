@@ -1,12 +1,5 @@
-#!/bin/bash
-
-# ============================================
-# Bazarlar Online Deployment Script
-# ============================================
-# This script updates and restarts the application
-# Run this script after initial setup to deploy updates
-
-set -e  # Exit on any error
+#!/usr/bin/env bash
+set -e
 
 echo "=========================================="
 echo "Bazarlar Online Deployment Started"
