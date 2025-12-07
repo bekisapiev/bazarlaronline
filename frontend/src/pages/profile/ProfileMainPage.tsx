@@ -124,7 +124,7 @@ const ProfileMainPage: React.FC = () => {
       showBalance: true,
     },
     {
-      title: 'Резервальные товары',
+      title: 'Реферальные товары',
       icon: <InventoryIcon sx={{ fontSize: 40 }} />,
       path: '/profile/reserved-products',
     },

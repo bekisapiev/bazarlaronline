@@ -243,8 +243,9 @@ const SellerDashboardPage: React.FC = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `${amount.toLocaleString('ru-RU')} сом`;
+  const formatCurrency = (amount: number | undefined | null) => {
+    const value = amount ?? 0;
+    return `${value.toLocaleString('ru-RU')} сом`;
   };
 
   if (loading && !dashboardData) {

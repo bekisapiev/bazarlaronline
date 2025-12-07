@@ -57,7 +57,7 @@ const ReservedProductsSubPage: React.FC = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 2, px: { xs: 2, md: 3 } }}>
-      <BackButton title="Резервальные товары" />
+      <BackButton title="Реферальные товары" />
 
       {partnerProductsLoading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -157,10 +157,15 @@ const ReservedProductsSubPage: React.FC = () => {
 
                     <Box sx={{ mt: 2, p: 1, bgcolor: 'success.50', borderRadius: 1 }}>
                       <Typography variant="caption" color="text.secondary" display="block">
-                        Ваша комиссия:
+                        Ваша комиссия (45% от общей):
                       </Typography>
                       <Typography variant="subtitle2" fontWeight={600} color="success.main">
-                        {product.referral_commission_amount || 0} сом ({product.referral_commission_percent || 0}%)
+                        {(() => {
+                          const partnerAmount = (product.referral_commission_amount || 0) * 0.45;
+                          const partnerPercent = (product.referral_commission_percent || 0) * 0.45;
+                          const sellerPercent = product.referral_commission_percent || 0;
+                          return `${partnerAmount.toFixed(2)} сом (${partnerPercent.toFixed(1)}% от ${sellerPercent}%)`;
+                        })()}
                       </Typography>
                     </Box>
 

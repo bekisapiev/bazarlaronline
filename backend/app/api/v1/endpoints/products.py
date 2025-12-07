@@ -515,6 +515,7 @@ async def create_product(
         price=product_data.price,
         discount_price=product_data.discount_price,
         stock_quantity=product_data.stock_quantity,
+        purchase_price=product_data.purchase_price,
         product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
@@ -539,6 +540,7 @@ async def create_product(
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
         stock_quantity=product.stock_quantity,
+        purchase_price=product.purchase_price,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,
@@ -604,6 +606,8 @@ async def update_product(
         product.discount_price = product_data.discount_price
     if product_data.stock_quantity is not None:
         product.stock_quantity = product_data.stock_quantity
+    if product_data.purchase_price is not None:
+        product.purchase_price = product_data.purchase_price
     if product_data.product_type is not None:
         if product_data.product_type not in ["product", "service"]:
             raise HTTPException(
@@ -707,6 +711,7 @@ async def update_product(
         discount_price=product.discount_price,
         discount_percent=product.discount_percent,
         stock_quantity=product.stock_quantity,
+        purchase_price=product.purchase_price,
         delivery_type=product.delivery_type,
         delivery_methods=product.delivery_methods,
         characteristics=product.characteristics,
@@ -929,6 +934,7 @@ async def get_my_products(
                 discount_price=p.discount_price,
                 discount_percent=p.discount_percent,
                 stock_quantity=p.stock_quantity,
+                purchase_price=p.purchase_price,
                 delivery_type=p.delivery_type,
                 delivery_methods=p.delivery_methods,
                 characteristics=p.characteristics,
@@ -1103,3 +1109,122 @@ async def get_product_by_id(
             "reviews_count": seller_profile.reviews_count if seller_profile else 0,
         }
     }
+
+
+@router.get("/warehouse/statistics")
+async def get_warehouse_statistics(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get warehouse statistics for Business tariff sellers
+    
+    Returns inventory and financial statistics including:
+    - Total stock quantity and purchase cost
+    - Revenue and projected revenue
+    - Partner commissions
+    - Profit calculations
+    """
+    # Only for Business tariff
+    if current_user.tariff != "business":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Warehouse statistics are only available for Business tariff"
+        )
+    
+    from app.models.order import Order
+    from app.schemas.warehouse import WarehouseStatistics
+
+    # Get all seller's products
+    result = await db.execute(
+        select(Product)
+        .where(Product.seller_id == current_user.id)
+        .where(Product.product_type == "product")  # Only products, not services
+    )
+    products = result.scalars().all()
+
+    # Create a map of products for quick lookup
+    product_map = {str(p.id): p for p in products}
+
+    # Calculate warehouse statistics
+    total_products_count = len(products)  # Количество позиций товаров
+    total_stock_quantity = 0
+    total_purchase_cost = Decimal('0')
+    projected_revenue = Decimal('0')
+    total_partner_commission = Decimal('0')  # Potential commission on stock
+
+    for product in products:
+        quantity = product.stock_quantity or 0
+        purchase_price = product.purchase_price or Decimal('0')
+        sale_price = product.discount_price or product.price
+
+        total_stock_quantity += quantity
+        total_purchase_cost += purchase_price * quantity
+        projected_revenue += sale_price * quantity
+
+        # Calculate potential partner commission
+        if product.is_referral_enabled and product.referral_commission_percent:
+            commission_per_item = sale_price * (product.referral_commission_percent / Decimal('100'))
+            total_partner_commission += commission_per_item * quantity
+
+    # Get sales statistics from completed orders
+    result = await db.execute(
+        select(Order)
+        .where(Order.seller_id == current_user.id)
+        .where(Order.status == "completed")
+    )
+    orders = result.scalars().all()
+
+    total_revenue = Decimal('0')
+    total_items_sold = 0
+    paid_partner_commission = Decimal('0')
+    cost_of_sold_goods = Decimal('0')
+
+    # Process each order
+    for order in orders:
+        # items is a JSONB field containing array of {product_id, quantity, price, discount_price, ...}
+        if not order.items:
+            continue
+
+        for item in order.items:
+            product_id = item.get('product_id')
+            if not product_id or product_id not in product_map:
+                continue
+
+            product = product_map[product_id]
+            quantity_sold = item.get('quantity', 0)
+            item_price = Decimal(str(item.get('discount_price') or item.get('price', 0)))
+
+            total_items_sold += quantity_sold
+            total_revenue += item_price * quantity_sold
+
+            # Calculate cost of sold goods
+            purchase_price = product.purchase_price or Decimal('0')
+            cost_of_sold_goods += purchase_price * quantity_sold
+
+            # Calculate actually paid partner commission
+            # Partner gets 45% of the commission if there was a referrer
+            if item.get('referrer_id'):
+                if product.is_referral_enabled and product.referral_commission_percent:
+                    commission_per_item = item_price * (product.referral_commission_percent / Decimal('100'))
+                    partner_share = commission_per_item * Decimal('0.45')  # Partner gets 45%
+                    paid_partner_commission += partner_share * quantity_sold
+
+    # Calculate profit
+    profit = total_revenue - cost_of_sold_goods - paid_partner_commission
+
+    # Projected profit = projected_revenue - total_purchase_cost - total_partner_commission
+    projected_profit = projected_revenue - total_purchase_cost - total_partner_commission
+    
+    return WarehouseStatistics(
+        total_products_count=total_products_count,
+        total_stock_quantity=total_stock_quantity,
+        total_purchase_cost=total_purchase_cost,
+        total_revenue=total_revenue,
+        projected_revenue=projected_revenue,
+        total_items_sold=total_items_sold,
+        total_partner_commission=total_partner_commission,
+        paid_partner_commission=paid_partner_commission,
+        profit=profit,
+        projected_profit=projected_profit
+    )
