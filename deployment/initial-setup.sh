@@ -1,12 +1,5 @@
-#!/bin/bash
-
-# ============================================
-# Bazarlar Online Initial Server Setup Script
-# ============================================
-# This script should be run ONCE on a fresh VPS server
-# It installs all necessary dependencies and configures the server
-
-set -e  # Exit on any error
+#!/usr/bin/env bash
+set -e
 
 echo "=========================================="
 echo "Bazarlar Online Initial Setup"
