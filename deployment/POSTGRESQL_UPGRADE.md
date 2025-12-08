@@ -1,4 +1,13 @@
-# Обновление PostgreSQL с версии 16 на версию 17
+# Обновление PostgreSQL с версии 16 на версию 18
+
+PostgreSQL 18 - новейшая версия, выпущенная 25 сентября 2025 года. Основные улучшения:
+
+- **Асинхронный I/O (AIO)** - до 3x прирост производительности в некоторых сценариях
+- **Skip Scan для B-tree индексов** - быстрее запросы без указания всех ведущих колонок
+- **Новый протокол 3.2** - первое обновление протокола с 2003 года
+- **Улучшенные обновления** - сохранение статистики планировщика при обновлении версий
+- **Virtual generated columns** - виртуальные вычисляемые колонки
+- **OAuth аутентификация** - встроенная поддержка OAuth
 
 ## Автоматическое обновление (рекомендуется)
 
@@ -14,7 +23,7 @@ sudo ./deployment/upgrade-postgresql.sh
 - Остановит PostgreSQL 16
 - Предложит создать backup (рекомендуется выбрать "yes")
 - Удалит PostgreSQL 16
-- Установит PostgreSQL 17
+- Установит PostgreSQL 18
 - Предложит восстановить данные из backup
 
 ---
@@ -69,10 +78,10 @@ sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresq
 sudo apt update
 ```
 
-### Шаг 5: Установите PostgreSQL 17
+### Шаг 5: Установите PostgreSQL 18
 
 ```bash
-sudo apt install -y postgresql-17 postgresql-client-17 postgresql-contrib-17
+sudo apt install -y postgresql-18 postgresql-client-18 postgresql-contrib-18
 ```
 
 ### Шаг 6: Запустите PostgreSQL
@@ -88,7 +97,7 @@ sudo systemctl enable postgresql
 sudo -u postgres psql -c "SELECT version();"
 ```
 
-Вы должны увидеть "PostgreSQL 17.x"
+Вы должны увидеть "PostgreSQL 18.x"
 
 ### Шаг 8: Восстановите данные из backup
 
@@ -217,11 +226,11 @@ PostgreSQL 16 - это стабильная и актуальная версия
 Если после обновления возникли проблемы:
 
 ```bash
-# Остановите PostgreSQL 17
+# Остановите PostgreSQL 18
 sudo systemctl stop postgresql
 
-# Удалите PostgreSQL 17
-sudo apt remove --purge postgresql-17 postgresql-client-17 -y
+# Удалите PostgreSQL 18
+sudo apt remove --purge postgresql-18 postgresql-client-18 -y
 
 # Установите PostgreSQL 16
 sudo apt install -y postgresql-16 postgresql-client-16 postgresql-contrib-16
@@ -251,7 +260,7 @@ psql -h localhost -U bazarlar_user -d bazarlar_prod -c "SELECT current_database(
 sudo -u postgres psql -d bazarlar_prod -c "\dt"
 
 # 6. Проверьте логи PostgreSQL
-sudo tail -f /var/log/postgresql/postgresql-17-main.log
+sudo tail -f /var/log/postgresql/postgresql-18-main.log
 ```
 
 ---
@@ -259,8 +268,8 @@ sudo tail -f /var/log/postgresql/postgresql-17-main.log
 ## Важные замечания
 
 1. **Всегда делайте backup** перед обновлением!
-2. PostgreSQL 16 - это актуальная стабильная версия, обновление на 17 не обязательно
-3. PostgreSQL 18 еще не вышла (последняя версия - 17)
+2. PostgreSQL 16 - это стабильная версия, обновление на 18 не обязательно
+3. PostgreSQL 18 - новейшая версия (выпущена 25 сентября 2025)
 4. Если у вас уже есть данные в PostgreSQL 16, обязательно создайте backup перед удалением
 5. После обновления проверьте работу всех функций приложения
 
@@ -268,10 +277,11 @@ sudo tail -f /var/log/postgresql/postgresql-17-main.log
 
 ## Поддержка версий PostgreSQL
 
-- PostgreSQL 17 - Latest (выпущена в 2024)
+- PostgreSQL 18 - Latest (выпущена 25 сентября 2025)
+- PostgreSQL 17 - Stable (выпущена в 2024)
 - PostgreSQL 16 - Stable (текущая стабильная)
 - PostgreSQL 15 - Stable
 - PostgreSQL 14 - Stable
 - PostgreSQL 13 и ниже - Legacy
 
-**Рекомендация:** Для production используйте PostgreSQL 16 или 17.
+**Рекомендация:** Для production используйте PostgreSQL 16, 17 или 18.
