@@ -3,7 +3,7 @@ set -e
 
 echo "=========================================="
 echo "PostgreSQL Version Upgrade Script"
-echo "Remove PostgreSQL 16 and Install PostgreSQL 17"
+echo "Remove PostgreSQL 16 and Install PostgreSQL 18"
 echo "=========================================="
 
 # Colors
@@ -86,11 +86,11 @@ sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org
 apt update
 print_success "PostgreSQL repository added"
 
-# 5. Install PostgreSQL 17
+# 5. Install PostgreSQL 18
 echo ""
-echo "5. Installing PostgreSQL 17..."
-apt install -y postgresql-17 postgresql-client-17 postgresql-contrib-17
-print_success "PostgreSQL 17 installed"
+echo "5. Installing PostgreSQL 18..."
+apt install -y postgresql-18 postgresql-client-18 postgresql-contrib-18
+print_success "PostgreSQL 18 installed"
 
 # 6. Start and enable PostgreSQL
 echo ""
@@ -104,7 +104,7 @@ echo ""
 echo "7. Verifying installation..."
 PG_VERSION=$(sudo -u postgres psql -c "SELECT version();" | grep PostgreSQL)
 echo "$PG_VERSION"
-print_success "PostgreSQL 17 is running"
+print_success "PostgreSQL 18 is running"
 
 # 8. Restore backup if exists
 echo ""
@@ -123,7 +123,7 @@ echo "=========================================="
 print_success "PostgreSQL upgrade completed!"
 echo "=========================================="
 echo ""
-echo "PostgreSQL 17 is now installed and running."
+echo "PostgreSQL 18 is now installed and running."
 echo "Next steps:"
 echo "1. Create your database and user (see below)"
 echo "2. Update your .env file with new connection settings"
@@ -133,4 +133,7 @@ echo "  sudo -u postgres psql"
 echo "  CREATE USER bazarlar_user WITH PASSWORD 'your_password';"
 echo "  CREATE DATABASE bazarlar_prod OWNER bazarlar_user;"
 echo "  GRANT ALL PRIVILEGES ON DATABASE bazarlar_prod TO bazarlar_user;"
+echo "  \\c bazarlar_prod"
+echo "  GRANT ALL ON SCHEMA public TO bazarlar_user;"
+echo "  GRANT CREATE ON SCHEMA public TO bazarlar_user;"
 echo ""
