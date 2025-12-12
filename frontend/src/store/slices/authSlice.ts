@@ -5,8 +5,6 @@ interface User {
   email: string;
   full_name?: string;
   phone?: string;
-  telegram_id?: string;
-  telegram_username?: string;
   tariff: 'free' | 'pro' | 'business';
   role?: 'user' | 'admin';
   referral_id?: string;

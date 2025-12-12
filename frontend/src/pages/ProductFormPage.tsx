@@ -228,7 +228,7 @@ const ProductFormPage: React.FC = () => {
         price: product.price,
         category_id: product.category_id,
         images: product.images || [],
-        is_service: product.product_type === 'service',
+        is_service: false,
         discount_price: product.discount_price,
         discount_percent: product.discount_percent,
         purchase_price: product.purchase_price,
@@ -275,21 +275,6 @@ const ProductFormPage: React.FC = () => {
       setCategorySelection(formData.category_id, flatCategories);
     }
   }, [formData.category_id, flatCategories, setCategorySelection]);
-
-  // Auto-detect is_service based on level 1 category
-  useEffect(() => {
-    if (selectedLevel1 && flatCategories.length > 0) {
-      const level1Category = flatCategories.find(c => c.id === selectedLevel1);
-      if (level1Category) {
-        // Check if category name is "Услуги" or slug is "uslugi"
-        const isService = level1Category.name === 'Услуги' || level1Category.slug === 'uslugi';
-        setFormData(prev => ({
-          ...prev,
-          is_service: isService
-        }));
-      }
-    }
-  }, [selectedLevel1, flatCategories]);
 
   const loadPromotionPackages = async () => {
     try {
@@ -435,7 +420,7 @@ const ProductFormPage: React.FC = () => {
   // Обработчик переключателя реферальной программы
   const handleReferralToggle = (checked: boolean) => {
     // Если пытаемся включить, проверяем необходимые условия
-    if (checked && !formData.is_service) {
+    if (checked) {
       // Проверяем наличие необходимых данных
       if (!formData.price) {
         setReferralToggleWarning('Укажите цену, количество на складе, без этих данных реферальную программу нельзя включить');
@@ -502,7 +487,7 @@ const ProductFormPage: React.FC = () => {
       errors.images = 'Загрузите хотя бы одно изображение';
     }
 
-    if (!formData.is_service && formData.stock_quantity !== undefined && formData.stock_quantity < 0) {
+    if (formData.stock_quantity !== undefined && formData.stock_quantity < 0) {
       errors.stock_quantity = 'Количество не может быть отрицательным';
     }
 
@@ -548,7 +533,6 @@ const ProductFormPage: React.FC = () => {
         price: formData.price,
         category_id: formData.category_id!,
         images: formData.images,
-        product_type: formData.is_service ? 'service' : 'product',
         characteristics: characteristicsArray.length > 0 ? characteristicsArray : undefined,
         discount_price: formData.discount_price || undefined,
         purchase_price: formData.purchase_price || undefined,
@@ -560,14 +544,10 @@ const ProductFormPage: React.FC = () => {
 
       if (isEditMode && id) {
         await productsAPI.updateProduct(id, productData);
-        setSuccess(
-          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'обновлена' : 'обновлен'}`
-        );
+        setSuccess('Товар успешно обновлен');
       } else {
         const response = await productsAPI.createProduct(productData);
-        setSuccess(
-          `${formData.is_service ? 'Услуга' : 'Товар'} успешно ${formData.is_service ? 'добавлена' : 'добавлен'}! Теперь вы можете продвинуть его.`
-        );
+        setSuccess('Товар успешно добавлен! Теперь вы можете продвинуть его.');
 
         // Redirect to edit page after 1.5 seconds so user can promote
         setTimeout(() => {
@@ -576,7 +556,7 @@ const ProductFormPage: React.FC = () => {
       }
     } catch (err: any) {
       setError(
-        formatErrorMessage(err, `Ошибка при сохранении ${formData.is_service ? 'услуги' : 'товара'}`)
+        formatErrorMessage(err, 'Ошибка при сохранении товара')
       );
     } finally {
       setSaving(false);
@@ -644,9 +624,7 @@ const ProductFormPage: React.FC = () => {
 
       {/* Page Header */}
       <Typography variant="h4" gutterBottom fontWeight={600}>
-        {isEditMode
-          ? `Редактировать ${formData.is_service ? 'услугу' : 'товар'}`
-          : `Добавить ${formData.is_service ? 'услугу' : 'товар'}`}
+        {isEditMode ? 'Редактировать товар' : 'Добавить товар'}
       </Typography>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -737,51 +715,47 @@ const ProductFormPage: React.FC = () => {
                 </Grid>
               </Grid>
 
-              {!formData.is_service && (
-                <>
-                  {/* Цена закупа - только для Business тарифа */}
-                  {user?.tariff === 'business' && (
-                    <TextField
-                      fullWidth
-                      label="Цена закупа (для учета склада)"
-                      type="number"
-                      value={formData.purchase_price || ''}
-                      onChange={(e) =>
-                        handleInputChange('purchase_price', e.target.value ? Number(e.target.value) : undefined)
-                      }
-                      helperText="Цена по которой вы закупили товар (не видна покупателям)"
-                      sx={{ mt: 2 }}
-                    />
-                  )}
+              {/* Цена закупа - только для Business тарифа */}
+              {user?.tariff === 'business' && (
+                <TextField
+                  fullWidth
+                  label="Цена закупа (для учета склада)"
+                  type="number"
+                  value={formData.purchase_price || ''}
+                  onChange={(e) =>
+                    handleInputChange('purchase_price', e.target.value ? Number(e.target.value) : undefined)
+                  }
+                  helperText="Цена по которой вы закупили товар (не видна покупателям)"
+                  sx={{ mt: 2 }}
+                />
+              )}
 
-                  <TextField
-                    fullWidth
-                    label="Количество на складе"
-                    type="number"
-                    value={formData.stock_quantity || ''}
-                    onChange={(e) =>
-                      handleInputChange('stock_quantity', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    error={!!formErrors.stock_quantity}
-                    helperText={formErrors.stock_quantity}
-                    sx={{ mt: 2 }}
-                  />
+              <TextField
+                fullWidth
+                label="Количество на складе"
+                type="number"
+                value={formData.stock_quantity || ''}
+                onChange={(e) =>
+                  handleInputChange('stock_quantity', e.target.value ? Number(e.target.value) : undefined)
+                }
+                error={!!formErrors.stock_quantity}
+                helperText={formErrors.stock_quantity}
+                sx={{ mt: 2 }}
+              />
 
-                  {/* Сумма закупа - только для Business тарифа */}
-                  {user?.tariff === 'business' && formData.purchase_price && formData.stock_quantity && (
-                    <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Сумма закупа товаров на складе:
-                      </Typography>
-                      <Typography variant="h6" fontWeight={600} color="info.main">
-                        {(formData.purchase_price * formData.stock_quantity).toFixed(2)} сом
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {formData.stock_quantity} шт × {formData.purchase_price} сом
-                      </Typography>
-                    </Box>
-                  )}
-                </>
+              {/* Сумма закупа - только для Business тарифа */}
+              {user?.tariff === 'business' && formData.purchase_price && formData.stock_quantity && (
+                <Box sx={{ mt: 2, p: 2, bgcolor: 'info.lighter', borderRadius: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Сумма закупа товаров на складе:
+                  </Typography>
+                  <Typography variant="h6" fontWeight={600} color="info.main">
+                    {(formData.purchase_price * formData.stock_quantity).toFixed(2)} сом
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formData.stock_quantity} шт × {formData.purchase_price} сом
+                  </Typography>
+                </Box>
               )}
 
               <FormControlLabel
@@ -808,7 +782,7 @@ const ProductFormPage: React.FC = () => {
                 <Alert severity="info" sx={{ mb: 2 }}>
                   <Typography variant="body2">
                     <strong>Основной баланс:</strong> {walletBalance.main_balance.toFixed(2)} сом
-                    {formData.is_referral_enabled && !formData.is_service && formData.stock_quantity && formData.referral_commission_percent && formData.price && (
+                    {formData.is_referral_enabled && formData.stock_quantity && formData.referral_commission_percent && formData.price && (
                       <>
                         <br />
                         <strong>Будет списано:</strong> {(formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100).toFixed(2)} сом
@@ -838,7 +812,7 @@ const ProductFormPage: React.FC = () => {
 
                 {formData.is_referral_enabled && (
                   <>
-                    {!formData.is_service && !formData.stock_quantity && (
+                    {!formData.stock_quantity && (
                       <Alert severity="warning" sx={{ mb: 2 }}>
                         <Typography variant="body2">
                           Для включения реферальной программы необходимо указать количество товара на складе выше в форме
@@ -882,7 +856,7 @@ const ProductFormPage: React.FC = () => {
                         </Alert>
 
                         {/* Calculate and show total commission reserve required */}
-                        {!formData.is_service && formData.stock_quantity && (
+                        {formData.stock_quantity && (
                           <Alert
                             severity={
                               ((formData.stock_quantity * (formData.discount_price || formData.price) * formData.referral_commission_percent / 100) > walletBalance.main_balance)
@@ -1049,7 +1023,7 @@ const ProductFormPage: React.FC = () => {
               ) : (
                 <>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Выберите категорию для вашего {formData.is_service ? 'услуги' : 'товара'}
+                    Выберите категорию для вашего товара
                   </Typography>
 
                   {/* Level 1: Товары/Услуги */}
@@ -1257,7 +1231,7 @@ const ProductFormPage: React.FC = () => {
                     ? 'Сохранение...'
                     : isEditMode
                     ? 'Сохранить изменения'
-                    : `Добавить ${formData.is_service ? 'услугу' : 'товар'}`}
+                    : 'Добавить товар'}
                 </Button>
 
                 <Button

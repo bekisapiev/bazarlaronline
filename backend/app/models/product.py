@@ -33,12 +33,11 @@ class Category(Base):
 
 
 class Product(Base):
-    """Product model - can be either physical product or service"""
+    """Product model"""
     __tablename__ = "products"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     seller_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    product_type = Column(String(20), default="product", nullable=False)  # product or service
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
@@ -75,7 +74,6 @@ class Product(Base):
     # Constraints
     __table_args__ = (
         CheckConstraint('referral_commission_percent IS NULL OR (referral_commission_percent >= 1 AND referral_commission_percent <= 50)', name='check_referral_commission'),
-        CheckConstraint("product_type IN ('product', 'service')", name='check_product_type'),
     )
 
     def __repr__(self):

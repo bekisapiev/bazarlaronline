@@ -88,8 +88,7 @@ INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_a
 (6, NULL, 'Косметика и красота', 'beauty', 1, 'sparkles', 6, true),
 (7, NULL, 'Детские товары', 'kids', 1, 'baby', 7, true),
 (8, NULL, 'Спорт и отдых', 'sports', 1, 'football', 8, true),
-(9, NULL, 'Услуги', 'services', 1, 'briefcase', 9, true),
-(10, NULL, 'Авто и мото', 'auto', 1, 'car', 10, true)
+(10, NULL, 'Авто и мото', 'auto', 1, 'car', 9, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- === УРОВЕНЬ 2: Подкатегории ===
@@ -164,15 +163,6 @@ INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_a
 (85, 8, 'Велосипеды', 'sports-bikes', 2, NULL, 5, true)
 ON CONFLICT (id) DO NOTHING;
 
--- Услуги (9)
-INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_active) VALUES
-(91, 9, 'Красота и здоровье', 'services-beauty', 2, NULL, 1, true),
-(92, 9, 'Образование', 'services-education', 2, NULL, 2, true),
-(93, 9, 'Ремонт и строительство', 'services-repair', 2, NULL, 3, true),
-(94, 9, 'Авто услуги', 'services-auto', 2, NULL, 4, true),
-(95, 9, 'Домашние услуги', 'services-home', 2, NULL, 5, true)
-ON CONFLICT (id) DO NOTHING;
-
 -- Авто и мото (10)
 INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_active) VALUES
 (101, 10, 'Автомобили', 'auto-cars', 2, NULL, 1, true),
@@ -210,25 +200,8 @@ INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_a
 (314, 31, 'Кнопочные телефоны', 'electronics-phones-button', 3, NULL, 4, true)
 ON CONFLICT (id) DO NOTHING;
 
--- Красота и здоровье (91)
-INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_active) VALUES
-(911, 91, 'Парикмахерские услуги', 'services-beauty-hair', 3, NULL, 1, true),
-(912, 91, 'Маникюр и педикюр', 'services-beauty-nails', 3, NULL, 2, true),
-(913, 91, 'Массаж', 'services-beauty-massage', 3, NULL, 3, true),
-(914, 91, 'Косметология', 'services-beauty-cosmetology', 3, NULL, 4, true),
-(915, 91, 'Стоматология', 'services-beauty-dental', 3, NULL, 5, true)
-ON CONFLICT (id) DO NOTHING;
-
--- Образование (92)
-INSERT INTO categories (id, parent_id, name, slug, level, icon, sort_order, is_active) VALUES
-(921, 92, 'Репетиторство', 'services-education-tutoring', 3, NULL, 1, true),
-(922, 92, 'Языковые курсы', 'services-education-languages', 3, NULL, 2, true),
-(923, 92, 'Компьютерные курсы', 'services-education-computer', 3, NULL, 3, true),
-(924, 92, 'Музыка и танцы', 'services-education-music', 3, NULL, 4, true)
-ON CONFLICT (id) DO NOTHING;
-
 DO $$ BEGIN
-    RAISE NOTICE '✓ Загружено категорий: 10 уровня 1, 50 уровня 2, 27 уровня 3';
+    RAISE NOTICE '✓ Загружено категорий: 9 уровня 1, 45 уровня 2, 18 уровня 3';
 END $$;
 
 -- Установка правильной последовательности для AUTO_INCREMENT

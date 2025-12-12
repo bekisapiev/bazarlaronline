@@ -159,11 +159,10 @@ DO $$ BEGIN
     RAISE NOTICE 'Создание таблиц товаров и услуг...';
 END $$;
 
--- Таблица: products (Товары и услуги)
+-- Таблица: products (Товары)
 CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    product_type VARCHAR(20) DEFAULT 'product' NOT NULL CHECK (product_type IN ('product', 'service')),
     title VARCHAR(100) NOT NULL,
     description TEXT,
     category_id INTEGER REFERENCES categories(id),
@@ -179,27 +178,28 @@ CREATE TABLE IF NOT EXISTS products (
     is_promoted BOOLEAN DEFAULT false,
     promoted_at TIMESTAMP,
     views_count INTEGER DEFAULT 0,
+    stock_quantity INTEGER,
+    purchase_price NUMERIC(10, 2),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_seller_id ON products(seller_id);
-CREATE INDEX IF NOT EXISTS idx_products_product_type ON products(product_type);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
 CREATE INDEX IF NOT EXISTS idx_products_is_promoted ON products(is_promoted);
 CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
 
 DO $$ BEGIN
-    RAISE NOTICE '✓ Таблицы товаров и услуг созданы';
+    RAISE NOTICE '✓ Таблица товаров создана';
 END $$;
 
 -- =====================================================================
--- 4. ЗАКАЗЫ И ЗАПИСИ НА УСЛУГИ
+-- 4. ЗАКАЗЫ
 -- =====================================================================
 
 DO $$ BEGIN
-    RAISE NOTICE 'Создание таблиц заказов и записей...';
+    RAISE NOTICE 'Создание таблицы заказов...';
 END $$;
 
 -- Таблица: orders (Заказы товаров)
@@ -227,31 +227,8 @@ CREATE INDEX IF NOT EXISTS idx_orders_seller_id ON orders(seller_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
 
--- Таблица: bookings (Записи на услуги)
-CREATE TABLE IF NOT EXISTS bookings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    service_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    buyer_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    customer_name VARCHAR(100) NOT NULL,
-    customer_phone VARCHAR(20) NOT NULL,
-    booking_datetime TIMESTAMP NOT NULL,
-    comment TEXT,
-    status VARCHAR(20) DEFAULT 'pending' NOT NULL CHECK (status IN ('pending', 'confirmed', 'cancelled', 'completed')),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_bookings_service_id ON bookings(service_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_seller_id ON bookings(seller_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_buyer_id ON bookings(buyer_id);
-CREATE INDEX IF NOT EXISTS idx_bookings_booking_datetime ON bookings(booking_datetime);
-CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
-CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at);
-CREATE INDEX IF NOT EXISTS idx_bookings_seller_datetime ON bookings(seller_id, booking_datetime) WHERE status IN ('pending', 'confirmed');
-
 DO $$ BEGIN
-    RAISE NOTICE '✓ Таблицы заказов и записей созданы';
+    RAISE NOTICE '✓ Таблица заказов создана';
 END $$;
 
 -- =====================================================================
@@ -262,28 +239,21 @@ DO $$ BEGIN
     RAISE NOTICE 'Создание таблицы отзывов...';
 END $$;
 
--- Таблица: reviews (Отзывы на товары и услуги)
+-- Таблица: reviews (Отзывы на товары)
 CREATE TABLE IF NOT EXISTS reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     seller_id UUID NOT NULL REFERENCES users(id),
     buyer_id UUID NOT NULL REFERENCES users(id),
-    order_id UUID REFERENCES orders(id),
-    booking_id UUID REFERENCES bookings(id),
+    order_id UUID NOT NULL REFERENCES orders(id),
     rating INTEGER NOT NULL CHECK (rating >= 0 AND rating <= 10),
     comment TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    CONSTRAINT check_order_or_booking CHECK (
-        (order_id IS NOT NULL AND booking_id IS NULL) OR
-        (order_id IS NULL AND booking_id IS NOT NULL)
-    ),
-    CONSTRAINT unique_review_per_order UNIQUE (order_id, buyer_id),
-    CONSTRAINT unique_review_per_booking UNIQUE (booking_id, buyer_id)
+    CONSTRAINT unique_review_per_order UNIQUE (order_id, buyer_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_reviews_seller_id ON reviews(seller_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_buyer_id ON reviews(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_order_id ON reviews(order_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_booking_id ON reviews(booking_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at);
 
 DO $$ BEGIN
@@ -615,20 +585,19 @@ BEGIN
     RAISE NOTICE '  4. users - Пользователи';
     RAISE NOTICE '  5. seller_profiles - Профили продавцов';
     RAISE NOTICE '  6. wallets - Кошельки';
-    RAISE NOTICE '  7. products - Товары и услуги';
+    RAISE NOTICE '  7. products - Товары';
     RAISE NOTICE '  8. orders - Заказы товаров';
-    RAISE NOTICE '  9. bookings - Записи на услуги';
-    RAISE NOTICE ' 10. reviews - Отзывы';
-    RAISE NOTICE ' 11. transactions - Транзакции';
-    RAISE NOTICE ' 12. withdrawal_requests - Заявки на вывод';
-    RAISE NOTICE ' 13. chats - Чаты';
-    RAISE NOTICE ' 14. messages - Сообщения';
-    RAISE NOTICE ' 15. notifications - Уведомления';
-    RAISE NOTICE ' 16. favorites - Избранное';
-    RAISE NOTICE ' 17. view_history - История просмотров';
-    RAISE NOTICE ' 18. auto_promotions - Автопродвижение';
-    RAISE NOTICE ' 19. reports - Жалобы';
-    RAISE NOTICE ' 20. coupons - Купоны';
-    RAISE NOTICE ' 21. coupon_usage - Использование купонов';
+    RAISE NOTICE '  9. reviews - Отзывы';
+    RAISE NOTICE ' 10. transactions - Транзакции';
+    RAISE NOTICE ' 11. withdrawal_requests - Заявки на вывод';
+    RAISE NOTICE ' 12. chats - Чаты';
+    RAISE NOTICE ' 13. messages - Сообщения';
+    RAISE NOTICE ' 14. notifications - Уведомления';
+    RAISE NOTICE ' 15. favorites - Избранное';
+    RAISE NOTICE ' 16. view_history - История просмотров';
+    RAISE NOTICE ' 17. auto_promotions - Автопродвижение';
+    RAISE NOTICE ' 18. reports - Жалобы';
+    RAISE NOTICE ' 19. coupons - Купоны';
+    RAISE NOTICE ' 20. coupon_usage - Использование купонов';
     RAISE NOTICE '========================================';
 END $$;

@@ -842,9 +842,6 @@ const DocumentationPage: React.FC = () => {
                   - Google OAuth 2.0
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  - Telegram авторизация (Widget и WebApp)
-                </Typography>
-                <Typography variant="body2" color="text.secondary" paragraph>
                   - Email + пароль (bcrypt шифрование)
                 </Typography>
                 <Typography variant="body2" color="text.secondary" paragraph>

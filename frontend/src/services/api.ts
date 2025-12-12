@@ -120,31 +120,6 @@ export const authAPI = {
   logout: () => api.post('/auth/logout'),
   getCurrentUser: () => api.get('/auth/me'),
 
-  // Telegram auth methods
-  telegramWidget: (data: {
-    id: string;
-    first_name: string;
-    last_name?: string;
-    username?: string;
-    photo_url?: string;
-    auth_date: string;
-    hash: string;
-  }) => api.post('/auth/telegram/widget', data),
-
-  telegramRequestCode: (telegram_id: string, phone: string) =>
-    api.post('/auth/telegram/request-code', { telegram_id, phone }),
-
-  telegramVerifyCode: (data: {
-    telegram_id: string;
-    phone: string;
-    code: string;
-    telegram_username?: string;
-    full_name?: string;
-  }) => api.post('/auth/telegram/verify', data),
-
-  telegramWebApp: (init_data: string) =>
-    api.post('/auth/telegram/webapp', { init_data }),
-
   // Email auth methods
   register: (email: string, password: string, full_name?: string, ref_code?: string) =>
     api.post('/auth/register', { email, password, full_name, ref_code }),

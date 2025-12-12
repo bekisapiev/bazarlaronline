@@ -82,7 +82,6 @@ async def get_products(
     city_id: Optional[int] = Query(None, description="Filter by seller city"),
     seller_id: Optional[UUID] = Query(None, description="Filter by seller ID"),
     seller_type: Optional[str] = Query(None, description="Filter by seller type (market, boutique, shop, etc)"),
-    product_type: Optional[str] = Query(None, description="Filter by product type (product or service)"),
     search: Optional[str] = Query(None, description="Search in product titles"),
     min_price: Optional[float] = Query(None, description="Minimum price"),
     max_price: Optional[float] = Query(None, description="Maximum price"),
@@ -98,7 +97,6 @@ async def get_products(
     - city_id: Filter by seller city (from seller profile)
     - seller_id: Filter by seller user ID
     - seller_type: Filter by seller type (market, boutique, shop, office, home, mobile, warehouse)
-    - product_type: Filter by product type (product or service)
     - search: Search in product titles
     - min_price/max_price: Filter by price range
     """
@@ -141,10 +139,6 @@ async def get_products(
     if seller_type:
         query = query.where(SellerProfile.seller_type == seller_type)
 
-    # Product type filter (product or service)
-    if product_type:
-        query = query.where(Product.product_type == product_type)
-
     # Order by promotion views remaining (promoted products first), then by created_at
     # Products with promotion_views_remaining > 0 appear first (in random order for fairness)
     # Then regular products sorted by newest first
@@ -175,8 +169,6 @@ async def get_products(
         count_query = count_query.where(SellerProfile.city_id == city_id)
     if seller_type:
         count_query = count_query.where(SellerProfile.seller_type == seller_type)
-    if product_type:
-        count_query = count_query.where(Product.product_type == product_type)
 
     count_result = await db.execute(count_query)
     total = count_result.scalar()
@@ -207,7 +199,6 @@ async def get_products(
         product_dict = {
             "id": str(p.id),
             "seller_id": str(p.seller_id),
-            "product_type": p.product_type,
             "title": p.title,
             "price": float(p.price),
             "discount_price": float(p.discount_price) if p.discount_price else None,
@@ -471,14 +462,14 @@ async def create_product(
             )
 
         # Stock quantity is required for referral program
-        if product_data.is_referral_enabled and product_data.product_type == "product" and not product_data.stock_quantity:
+        if product_data.is_referral_enabled and not product_data.stock_quantity:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Stock quantity is required when referral program is enabled for products"
+                detail="Stock quantity is required when referral program is enabled"
             )
 
         # Check wallet balance for referral commission reserve
-        if product_data.is_referral_enabled and product_data.product_type == "product" and product_data.stock_quantity:
+        if product_data.is_referral_enabled and product_data.stock_quantity:
             # Get wallet
             wallet_result = await db.execute(
                 select(Wallet).where(Wallet.user_id == current_user.id)
@@ -516,7 +507,6 @@ async def create_product(
         discount_price=product_data.discount_price,
         stock_quantity=product_data.stock_quantity,
         purchase_price=product_data.purchase_price,
-        product_type=product_data.product_type or "product",
         delivery_type=product_data.delivery_type,
         delivery_methods=product_data.delivery_methods,
         characteristics=product_data.characteristics,
@@ -608,13 +598,6 @@ async def update_product(
         product.stock_quantity = product_data.stock_quantity
     if product_data.purchase_price is not None:
         product.purchase_price = product_data.purchase_price
-    if product_data.product_type is not None:
-        if product_data.product_type not in ["product", "service"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Product type must be 'product' or 'service'"
-            )
-        product.product_type = product_data.product_type
     if product_data.delivery_type is not None:
         product.delivery_type = product_data.delivery_type
     if product_data.delivery_methods is not None:
@@ -634,16 +617,16 @@ async def update_product(
 
         # Check if enabling referral program
         if product_data.is_referral_enabled and not product.is_referral_enabled:
-            # Stock quantity is required for products
+            # Stock quantity is required
             stock_qty = product_data.stock_quantity if product_data.stock_quantity is not None else product.stock_quantity
-            if product.product_type == "product" and not stock_qty:
+            if not stock_qty:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Stock quantity is required when enabling referral program for products"
+                    detail="Stock quantity is required when enabling referral program"
                 )
 
             # Check wallet balance
-            if product.product_type == "product" and stock_qty:
+            if stock_qty:
                 # Get wallet
                 wallet_result = await db.execute(
                     select(Wallet).where(Wallet.user_id == current_user.id)
@@ -1066,7 +1049,6 @@ async def get_product_by_id(
     return {
         "id": str(product.id),
         "seller_id": str(product.seller_id),
-        "product_type": product.product_type,
         "title": product.title,
         "description": product.description,
         "price": float(product.price),
@@ -1139,7 +1121,6 @@ async def get_warehouse_statistics(
     result = await db.execute(
         select(Product)
         .where(Product.seller_id == current_user.id)
-        .where(Product.product_type == "product")  # Only products, not services
     )
     products = result.scalars().all()
 

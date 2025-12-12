@@ -25,8 +25,6 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)  # Nullable для поддержки OAuth
     google_id = Column(String(255), unique=True, nullable=True, index=True)
-    telegram_id = Column(String(255), unique=True, nullable=True, index=True)
-    telegram_username = Column(String(255), nullable=True)
     referral_id = Column(String(20), unique=True, nullable=False, default=generate_referral_id, index=True)
     referred_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     referral_expires_at = Column(DateTime, nullable=True)  # Когда заканчивается реферальная программа (1 год)
