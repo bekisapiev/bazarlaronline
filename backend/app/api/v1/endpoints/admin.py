@@ -425,7 +425,6 @@ async def get_all_products(
             "price": float(product.price) if product.price else 0,
             "discount_price": float(product.discount_price) if product.discount_price else None,
             "status": product.status,
-            "product_type": product.product_type,
             "images": product.images or [],
             "seller_id": str(product.seller_id),
             "seller_name": seller_profile.shop_name if seller_profile else (user.full_name or user.email),

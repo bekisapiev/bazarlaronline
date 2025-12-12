@@ -45,7 +45,6 @@ interface Product {
   discount_percent?: number;
   images: string[];
   is_promoted: boolean;
-  product_type: 'product' | 'service';
   seller: {
     shop_name: string;
     seller_type: string;
@@ -232,7 +231,6 @@ const HomePage: React.FC = () => {
       const params: any = {
         page: pageNum,
         page_size: 30,
-        // Load both products and services - no product_type filter
       };
 
       if (selectedCity) params.city_id = selectedCity;

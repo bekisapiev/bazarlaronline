@@ -86,7 +86,6 @@ interface Product {
   is_referral_enabled: boolean;
   referral_commission_percent?: number;
   referral_commission_amount?: number;
-  product_type: 'product' | 'service';
   stock_quantity?: number;
   status: string;
 }
@@ -282,8 +281,8 @@ const ProductDetailPage: React.FC = () => {
         return;
       }
 
-      // Check if product has stock available (for products, not services)
-      if (product.product_type === 'product' && product.stock_quantity !== undefined && product.stock_quantity <= 0) {
+      // Check if product has stock available
+      if (product.stock_quantity !== undefined && product.stock_quantity <= 0) {
         // Show notification and redirect to home if out of stock
         setOutOfStockNotification(true);
         setTimeout(() => {
@@ -346,20 +345,13 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleSubmitOrder = async () => {
-    const isService = product?.product_type === 'service';
-
     if (!orderPhone.trim()) {
       alert('Пожалуйста, укажите номер телефона');
       return;
     }
 
-    if (!isService && !orderAddress.trim()) {
+    if (!orderAddress.trim()) {
       alert('Пожалуйста, укажите адрес доставки');
-      return;
-    }
-
-    if (isService && !orderDateTime.trim()) {
-      alert('Пожалуйста, укажите дату и время записи');
       return;
     }
 
@@ -385,7 +377,7 @@ const ProductDetailPage: React.FC = () => {
             product_referrer_id: productReferralData?.referrerId || null,
           }
         ],
-        delivery_address: isService ? (orderDateTime || '') : orderAddress,
+        delivery_address: orderAddress,
         phone_number: orderPhone,
         payment_method: 'cash',
         notes: orderNotes,
@@ -393,7 +385,7 @@ const ProductDetailPage: React.FC = () => {
 
       await ordersAPI.createOrder(orderData);
 
-      alert(`${isService ? 'Запись' : 'Заказ'} успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
+      alert(`Заказ успешно оформлен!\nПродавец свяжется с вами по телефону ${orderPhone}`);
       setOrderDialogOpen(false);
       setOrderName('');
       setOrderPhone('');
@@ -535,11 +527,6 @@ const ProductDetailPage: React.FC = () => {
                 {product.is_promoted && (
                   <Chip label="Поднято" color="primary" size="small" />
                 )}
-                <Chip
-                  label={product.product_type === 'product' ? 'Товар' : 'Услуга'}
-                  size="small"
-                  color={product.product_type === 'product' ? 'primary' : 'secondary'}
-                />
               </Box>
 
               <Typography variant="h4" gutterBottom fontWeight={700}>
@@ -680,7 +667,7 @@ const ProductDetailPage: React.FC = () => {
                   onClick={handleOpenOrderDialog}
                   sx={{ flexGrow: 1 }}
                 >
-                  {product.product_type === 'service' ? 'Записаться' : 'Заказать'}
+                  Заказать
                 </Button>
                 <IconButton
                   onClick={toggleFavorite}
@@ -1118,99 +1105,56 @@ const ProductDetailPage: React.FC = () => {
         fullWidth
       >
         <DialogTitle>
-          {product?.product_type === 'service' ? 'Запись на услугу' : 'Оформление заказа'}
+          Оформление заказа
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {product?.product_type === 'service'
-                ? 'Заполните данные для записи, и продавец свяжется с вами для подтверждения'
-                : 'Заполните контактные данные, и продавец свяжется с вами для уточнения деталей заказа'}
+              Заполните контактные данные, и продавец свяжется с вами для уточнения деталей заказа
             </Typography>
 
-            {product?.product_type === 'service' ? (
-              <>
-                {/* Service form fields */}
-                <TextField
-                  label="Дата и время записи"
-                  type="datetime-local"
-                  fullWidth
-                  required
-                  value={orderDateTime}
-                  onChange={(e) => setOrderDateTime(e.target.value)}
-                  sx={{ mb: 2 }}
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
+            <TextField
+              label="Количество"
+              type="number"
+              fullWidth
+              required
+              value={orderQuantity}
+              onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              sx={{ mb: 2 }}
+              inputProps={{ min: 1 }}
+            />
 
-                <TextField
-                  label="Номер телефона"
-                  fullWidth
-                  required
-                  value={orderPhone}
-                  onChange={(e) => setOrderPhone(e.target.value)}
-                  sx={{ mb: 2 }}
-                  placeholder="0555 00 00 00"
-                />
+            <TextField
+              label="Адрес доставки"
+              fullWidth
+              required
+              multiline
+              rows={2}
+              value={orderAddress}
+              onChange={(e) => setOrderAddress(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="Введите адрес доставки"
+            />
 
-                <TextField
-                  label="Примечания или комментарий"
-                  multiline
-                  rows={3}
-                  fullWidth
-                  value={orderNotes}
-                  onChange={(e) => setOrderNotes(e.target.value)}
-                  placeholder="Укажите дополнительные пожелания (необязательно)"
-                />
-              </>
-            ) : (
-              <>
-                {/* Product form fields */}
-                <TextField
-                  label="Количество"
-                  type="number"
-                  fullWidth
-                  required
-                  value={orderQuantity}
-                  onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  sx={{ mb: 2 }}
-                  inputProps={{ min: 1 }}
-                />
+            <TextField
+              label="Номер телефона"
+              fullWidth
+              required
+              value={orderPhone}
+              onChange={(e) => setOrderPhone(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="0555 00 00 00"
+            />
 
-                <TextField
-                  label="Адрес доставки"
-                  fullWidth
-                  required
-                  multiline
-                  rows={2}
-                  value={orderAddress}
-                  onChange={(e) => setOrderAddress(e.target.value)}
-                  sx={{ mb: 2 }}
-                  placeholder="Введите адрес доставки"
-                />
-
-                <TextField
-                  label="Номер телефона"
-                  fullWidth
-                  required
-                  value={orderPhone}
-                  onChange={(e) => setOrderPhone(e.target.value)}
-                  sx={{ mb: 2 }}
-                  placeholder="0555 00 00 00"
-                />
-
-                <TextField
-                  label="Примечания или комментарий"
-                  multiline
-                  rows={3}
-                  fullWidth
-                  value={orderNotes}
-                  onChange={(e) => setOrderNotes(e.target.value)}
-                  placeholder="Укажите дополнительные пожелания (необязательно)"
-                />
-              </>
-            )}
+            <TextField
+              label="Примечания или комментарий"
+              multiline
+              rows={3}
+              fullWidth
+              value={orderNotes}
+              onChange={(e) => setOrderNotes(e.target.value)}
+              placeholder="Укажите дополнительные пожелания (необязательно)"
+            />
 
             {/* Payment Method Info */}
             <Divider sx={{ my: 3 }} />
@@ -1226,7 +1170,7 @@ const ProductDetailPage: React.FC = () => {
             {product && (
               <Paper sx={{ p: 2, mt: 3, bgcolor: 'grey.50' }}>
                 <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {product.product_type === 'service' ? 'Услуга:' : 'Товар:'}
+                  Товар:
                 </Typography>
                 <Typography variant="body1" fontWeight={600} gutterBottom>
                   {product.title}
@@ -1234,9 +1178,9 @@ const ProductDetailPage: React.FC = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="h6" color="primary">
                     {product.discount_price || product.price} сом
-                    {product.product_type !== 'service' && orderQuantity > 1 && ` × ${orderQuantity}`}
+                    {orderQuantity > 1 && ` × ${orderQuantity}`}
                   </Typography>
-                  {product.product_type !== 'service' && orderQuantity > 1 && (
+                  {orderQuantity > 1 && (
                     <Typography variant="h5" fontWeight={600} color="primary">
                       = {(product.discount_price || product.price) * orderQuantity} сом
                     </Typography>
@@ -1253,7 +1197,7 @@ const ProductDetailPage: React.FC = () => {
             variant="contained"
             disabled={submittingOrder || !orderPhone.trim()}
           >
-            {submittingOrder ? <CircularProgress size={24} /> : product?.product_type === 'service' ? 'Записаться' : 'Отправить заказ'}
+            {submittingOrder ? <CircularProgress size={24} /> : 'Отправить заказ'}
           </Button>
         </DialogActions>
       </Dialog>
