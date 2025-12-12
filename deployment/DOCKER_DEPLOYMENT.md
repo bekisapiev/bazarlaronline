@@ -146,7 +146,6 @@ ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
 # Остальные настройки (заполните своими данными)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 MBANK_MERCHANT_ID=your-merchant-id
 MBANK_API_KEY=your-api-key
 ```
@@ -568,7 +567,6 @@ docker compose -f docker-compose.prod.yml up -d nginx
 - [ ] Логирование настроено
 - [ ] Мониторинг настроен
 - [ ] Google OAuth credentials для production домена
-- [ ] Telegram Bot Token настроен
 - [ ] MBank credentials настроены
 
 ---

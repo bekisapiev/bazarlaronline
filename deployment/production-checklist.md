@@ -22,7 +22,6 @@
 - [ ] API_URL и FRONTEND_URL указывают на production домен
 - [ ] CORS настроен только для production домена
 - [ ] Google OAuth credentials настроены для production домена
-- [ ] Telegram Bot Token настроен
 - [ ] Google Cloud Vision credentials загружены
 - [ ] MBank payment credentials настроены
 - [ ] SMTP настроен для email уведомлений (опционально)
@@ -113,14 +112,13 @@
 ## Тестирование
 
 - [ ] Регистрация работает
-- [ ] Аутентификация работает (Google, Telegram)
+- [ ] Аутентификация работает (Google, Email)
 - [ ] Создание товара работает
 - [ ] Загрузка изображений работает
 - [ ] Поиск работает
 - [ ] Платежи работают (MBank)
 - [ ] Реферальная программа работает
 - [ ] Email уведомления работают
-- [ ] Telegram уведомления работают
 - [ ] Админ панель доступна
 - [ ] Все API endpoints работают
 - [ ] WebSocket подключение работает
